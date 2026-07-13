@@ -1,0 +1,5850 @@
+{
+  "total": 41,
+  "top_level_fields": [
+    "id",
+    "name",
+    "offer_id",
+    "is_archived",
+    "is_autoarchived",
+    "barcodes",
+    "description_category_id",
+    "type_id",
+    "created_at",
+    "images",
+    "currency_code",
+    "min_price",
+    "old_price",
+    "price",
+    "sources",
+    "model_info",
+    "commissions",
+    "is_prepayment_allowed",
+    "volume_weight",
+    "has_discounted_fbo_item",
+    "is_discounted",
+    "discounted_fbo_stocks",
+    "stocks",
+    "errors",
+    "updated_at",
+    "vat",
+    "visibility_details",
+    "price_indexes",
+    "images360",
+    "is_kgt",
+    "color_image",
+    "primary_image",
+    "statuses",
+    "is_super",
+    "is_seasonal",
+    "promotions",
+    "sku",
+    "availabilities"
+  ],
+  "sku_fields": [],
+  "sample_item": {
+    "id": 5368205964,
+    "name": "Настольные стойки для колонок ABSMusic 2шт.",
+    "offer_id": "33284-Y07U0002-OB02",
+    "is_archived": false,
+    "is_autoarchived": false,
+    "barcodes": [
+      "33284-Y07U0002-OB02"
+    ],
+    "description_category_id": 95617422,
+    "type_id": 95910,
+    "created_at": "2026-07-05T21:47:42.672932Z",
+    "images": [],
+    "currency_code": "RUB",
+    "min_price": "",
+    "old_price": "25999.00",
+    "price": "16999.00",
+    "sources": [
+      {
+        "sku": 4967742027,
+        "source": "sds",
+        "created_at": "2026-07-05T21:49:02.616785Z",
+        "shipment_type": "SHIPMENT_TYPE_GENERAL",
+        "quant_code": ""
+      }
+    ],
+    "model_info": {
+      "model_id": 1898426244,
+      "count": 1
+    },
+    "commissions": [
+      {
+        "delivery_amount": 25,
+        "percent": 44,
+        "return_amount": 108,
+        "sale_schema": "FBO",
+        "value": 7479.56
+      },
+      {
+        "delivery_amount": 25,
+        "percent": 50,
+        "return_amount": 377,
+        "sale_schema": "FBS",
+        "value": 8499.5
+      },
+      {
+        "percent": 50,
+        "sale_schema": "RFBS",
+        "value": 8499.5
+      },
+      {
+        "percent": 50,
+        "sale_schema": "FBP",
+        "value": 8499.5
+      }
+    ],
+    "is_prepayment_allowed": true,
+    "volume_weight": 2.9,
+    "has_discounted_fbo_item": false,
+    "is_discounted": false,
+    "discounted_fbo_stocks": 0,
+    "stocks": {
+      "has_stock": false,
+      "stocks": []
+    },
+    "errors": [],
+    "updated_at": "2026-07-05T21:49:08.915500Z",
+    "vat": "0.00",
+    "visibility_details": {
+      "has_price": true,
+      "has_stock": false
+    },
+    "price_indexes": {
+      "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+      "external_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "ozon_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      },
+      "self_marketplaces_index_data": {
+        "minimal_price": "",
+        "minimal_price_currency": "RUB",
+        "price_index_value": 0
+      }
+    },
+    "images360": [],
+    "is_kgt": false,
+    "color_image": [],
+    "primary_image": [
+      "https://ir-21.ozonru.cn/s3/multimedia-1-h/12214754621.jpg"
+    ],
+    "statuses": {
+      "status": "price_sent",
+      "status_failed": "",
+      "moderate_status": "approved",
+      "validation_status": "success",
+      "status_name": "Готов к продаже",
+      "status_description": "Нет на складе",
+      "is_created": true,
+      "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+      "status_updated_at": "2026-07-05T21:49:03.947996Z"
+    },
+    "is_super": false,
+    "is_seasonal": false,
+    "promotions": [
+      {
+        "is_enabled": false,
+        "type": "REVIEWS_PROMO"
+      }
+    ],
+    "sku": 4967742027,
+    "availabilities": [
+      {
+        "availability": "AVAILABLE",
+        "reasons": [],
+        "sku": 4967742027,
+        "source": "sds"
+      }
+    ]
+  },
+  "all_items": [
+    {
+      "id": 5368205964,
+      "name": "Настольные стойки для колонок ABSMusic 2шт.",
+      "offer_id": "33284-Y07U0002-OB02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "33284-Y07U0002-OB02"
+      ],
+      "description_category_id": 95617422,
+      "type_id": 95910,
+      "created_at": "2026-07-05T21:47:42.672932Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "25999.00",
+      "price": "16999.00",
+      "sources": [
+        {
+          "sku": 4967742027,
+          "source": "sds",
+          "created_at": "2026-07-05T21:49:02.616785Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1898426244,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 7479.56
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 8499.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 8499.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 8499.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.9,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-07-05T21:49:08.915500Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/12214754621.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-05T21:49:03.947996Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4967742027,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4967742027,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4672794384,
+      "name": "Чекодержатель 120 см, держатель для счетов и ценников, для магазина, склада и ресторана, металлический",
+      "offer_id": "42188-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "42188-Y07U0001-A01"
+      ],
+      "description_category_id": 71328593,
+      "type_id": 970615402,
+      "created_at": "2026-05-20T09:30:11.975004Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/11918343784.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/8852936357.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/8852935926.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/8852936501.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/8852935764.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/8852936286.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/8852937548.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/11883611296.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "18698.00",
+      "price": "12875.00",
+      "sources": [
+        {
+          "sku": 4379159848,
+          "source": "sds",
+          "created_at": "2026-05-20T09:31:50.598585Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1881357981,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 43,
+          "return_amount": 85,
+          "sale_schema": "FBO",
+          "value": 989
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 49,
+          "return_amount": 191,
+          "sale_schema": "FBS",
+          "value": 1127
+        },
+        {
+          "percent": 49,
+          "sale_schema": "RFBS",
+          "value": 1127
+        },
+        {
+          "percent": 49,
+          "sale_schema": "FBP",
+          "value": 1127
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 0.8,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 47,
+            "reserved": 0,
+            "sku": 4379159848,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-10T06:35:25.780613Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/12215638437.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-10T06:36:37.996064Z"
+      },
+      "is_super": true,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4379159848,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4379159848,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4559574114,
+      "name": "Бочка садовая ПВХ для воды, 500 литров складная бочка для сбора и хранения воды, дождеприемник",
+      "offer_id": "41986-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41986-Y07U0001-A01"
+      ],
+      "description_category_id": 17027941,
+      "type_id": 268217791,
+      "created_at": "2026-05-13T02:08:17.906213Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/11988834062.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/12037719104.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/12037719209.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/11988835645.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/11988835918.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/10810105989.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/11988833650.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/11988834941.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-q/11988834866.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/11988835422.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "36578.00",
+      "price": "25687.00",
+      "sources": [
+        {
+          "sku": 4284279412,
+          "source": "sds",
+          "created_at": "2026-05-13T02:10:09.974988Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1593015073,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 162,
+          "sale_schema": "FBO",
+          "value": 4356
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 621,
+          "sale_schema": "FBS",
+          "value": 4950
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 4950
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 4950
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.8,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 24,
+            "reserved": 0,
+            "sku": 4284279412,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-08T04:03:42.306455Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/12215611569.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-08T04:04:47.080984Z"
+      },
+      "is_super": true,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4284279412,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4284279412,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3942138638,
+      "name": "Настольная двухъярусная полка-органайзер металлическая, без сверления, с кабель-каналом под столом",
+      "offer_id": "28374-Y07U0009-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "28374-Y07U0009-B03"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-30T07:14:45.822082Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/10561159723.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-9/10440448281.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/10440446953.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/10561612613.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/10450338319.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/10464441436.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/10440448361.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/10464442264.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-3/10440445899.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "36985.00",
+      "price": "25698.00",
+      "sources": [
+        {
+          "sku": 3786635337,
+          "source": "sds",
+          "created_at": "2026-03-30T07:16:58.501643Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1357879099,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 81,
+          "sale_schema": "FBO",
+          "value": 2397
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 154,
+          "sale_schema": "FBS",
+          "value": 2601
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 2601
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 2601
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.1,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 20,
+            "reserved": 0,
+            "sku": 3786635337,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-05-27T09:41:07.459976Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/10561159723.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/10560740612.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-05-27T09:42:23.094233Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3786635337,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3786635337,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3732861728,
+      "name": "Ограждение складное на кровать 93X40CM поручни для пожилых людей обеспечивают безопасность, предотвращая их падение с кровати.",
+      "offer_id": "30296-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "30296-Y07U0001-A01"
+      ],
+      "description_category_id": 200001551,
+      "type_id": 970865516,
+      "created_at": "2026-03-11T02:10:07.503120Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/9255252857.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9306062633.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-q/9255253418.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9255252823.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-9/9255253149.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/7336771479.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-b/7336771535.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/9255253552.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/9255252742.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-f/9255252795.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/9255252981.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "18697.00",
+      "price": "9697.00",
+      "sources": [
+        {
+          "sku": 3621642937,
+          "source": "sds",
+          "created_at": "2026-03-11T02:12:00.053598Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1551936683,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 48,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 2417.28
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 54,
+          "return_amount": 415,
+          "sale_schema": "FBS",
+          "value": 2719.44
+        },
+        {
+          "percent": 54,
+          "sale_schema": "RFBS",
+          "value": 2719.44
+        },
+        {
+          "percent": 54,
+          "sale_schema": "FBP",
+          "value": 2719.44
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 34,
+            "reserved": 0,
+            "sku": 3621642937,
+            "source": "fbo"
+          },
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3621642937,
+            "source": "fbs"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T02:58:16.561229Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_SUPER",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "3425.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.88
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/9306062828.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T02:59:22.703465Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3621642937,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3621642937,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3736365134,
+      "name": "Вешалка напольная металлическая для полотенец и одежды 3 Яруса С 1 Полками Шириной 75 См",
+      "offer_id": "24589-Y07U0003-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "24589-Y07U0003-B02"
+      ],
+      "description_category_id": 17027905,
+      "type_id": 92010,
+      "created_at": "2026-03-11T07:34:25.979322Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-0/9259850520.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/9259849675.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9259849975.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-0/9259852680.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/9259850161.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-m/9259852054.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/9259849772.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "18987.00",
+      "price": "9953.00",
+      "sources": [
+        {
+          "sku": 3624393147,
+          "source": "sds",
+          "created_at": "2026-03-11T07:36:04.147283Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 167118418,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 45,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 4478.85
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 415,
+          "sale_schema": "FBS",
+          "value": 5076.03
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 5076.03
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 5076.03
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.8,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3624393147,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-03-18T07:28:21.775395Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-0/9259850520.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/9259851695.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-03-18T07:29:45.180649Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3624393147,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3624393147,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4559574573,
+      "name": "Бочка садовая ПВХ для воды, 225 литров складная бочка для сбора и хранения воды, дождеприемник",
+      "offer_id": "41987-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41987-Y07U0001-A01",
+        "41987-Y07U0002-OB01"
+      ],
+      "description_category_id": 17027941,
+      "type_id": 268217791,
+      "created_at": "2026-05-13T02:08:19.039834Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/11988834062.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/12037743057.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/12037742761.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/11988835645.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/11988835918.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/10810105989.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/11988833650.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/11988835422.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "29874.00",
+      "price": "14500.00",
+      "sources": [
+        {
+          "sku": 4284277954,
+          "source": "sds",
+          "created_at": "2026-05-13T02:10:07.843978Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1593044841,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 3212
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 448,
+          "sale_schema": "FBS",
+          "value": 3650
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 3650
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 3650
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.9,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 12,
+            "reserved": 0,
+            "sku": 4284277954,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-08T04:04:16.585475Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/12103613593.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-08T04:05:23.751579Z"
+      },
+      "is_super": true,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4284277954,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4284277954,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4844754017,
+      "name": "Опора под спину регулируемая с подлокотниками для лежачих больных: Ортопедическая подставка для кровати, фиксация, безопасность",
+      "offer_id": "31243-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "31243-Y07U0001-A01"
+      ],
+      "description_category_id": 52620587,
+      "type_id": 970573787,
+      "created_at": "2026-06-01T01:33:02.423576Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/11000294398.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/11000293568.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/11000294526.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-k/11000288144.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-9/8031493125.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/8031493231.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/8037905844.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-2/8037905402.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "22499.00",
+      "price": "14999.00",
+      "sources": [
+        {
+          "sku": 4524180586,
+          "source": "sds",
+          "created_at": "2026-06-01T01:34:35.097912Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 646344681,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 48,
+          "return_amount": 139,
+          "sale_schema": "FBO",
+          "value": 2928
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 54,
+          "return_amount": 519,
+          "sale_schema": "FBS",
+          "value": 3294
+        },
+        {
+          "percent": 54,
+          "sale_schema": "RFBS",
+          "value": 3294
+        },
+        {
+          "percent": 54,
+          "sale_schema": "FBP",
+          "value": 3294
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 36,
+            "reserved": 0,
+            "sku": 4524180586,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-09T08:59:41.893073Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "3524.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.11
+        },
+        "ozon_index_data": {
+          "minimal_price": "3094.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.22
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/11000292235.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-09T09:01:57.747462Z"
+      },
+      "is_super": true,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4524180586,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4524180586,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3735991301,
+      "name": "Вешалка напольная металлическая для полотенец и одежды 3 Яруса Высотой 86 СM",
+      "offer_id": "22501-Y07U0010-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "22501-Y07U0010-B02"
+      ],
+      "description_category_id": 17027905,
+      "type_id": 92010,
+      "created_at": "2026-03-11T07:07:15.411243Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9333678343.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/9332849373.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/9332850308.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/9333677682.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-f/9333677355.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-9/9333677457.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/9333676900.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/9259571381.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "15987.00",
+      "price": "7953.00",
+      "sources": [
+        {
+          "sku": 3624094584,
+          "source": "sds",
+          "created_at": "2026-03-11T07:08:43.485158Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 167118418,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 45,
+          "return_amount": 89,
+          "sale_schema": "FBO",
+          "value": 1395
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 236,
+          "sale_schema": "FBS",
+          "value": 1581
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 1581
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 1581
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 17,
+            "reserved": 0,
+            "sku": 3624094584,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:01:01.771736Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-m/9332848822.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/9333678210.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:02:19.137511Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3624094584,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3624094584,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3942098139,
+      "name": "Трос сантехнический для устранения засоров в системе канализации / прочистки труб/трос для прочистки канализации 16mm/9m",
+      "offer_id": "36022-Y07U0001-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "36022-Y07U0001-B03"
+      ],
+      "description_category_id": 17028714,
+      "type_id": 92046,
+      "created_at": "2026-03-30T07:11:45.515639Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/8310932560.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/10438115176.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/10438119521.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/10438120355.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/8310932559.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/8959822477.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/8310932540.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-2/8201710586.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/9546226600.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19857.00",
+      "price": "9857.00",
+      "sources": [
+        {
+          "sku": 3786601820,
+          "source": "sds",
+          "created_at": "2026-03-30T07:13:58.715748Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 860088873,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 1786
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 53,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 2014
+        },
+        {
+          "percent": 53,
+          "sale_schema": "RFBS",
+          "value": 2014
+        },
+        {
+          "percent": 53,
+          "sale_schema": "FBP",
+          "value": 2014
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 37,
+            "reserved": 0,
+            "sku": 3786601820,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:22:12.052208Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/11902896924.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:23:32.169708Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3786601820,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3786601820,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4287593215,
+      "name": "Радиатор масляный для АКПП и трансмиссии, Блок радиатора автомобиля, 6 рядов, черного цвета",
+      "offer_id": "41634-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41634-Y07U0001-A01"
+      ],
+      "description_category_id": 17028756,
+      "type_id": 971072771,
+      "created_at": "2026-04-24T03:58:33.495757Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/10796103774.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10796103924.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/10796103844.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10796104464.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10796103616.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/10796103913.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/10796104081.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/10796104643.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/10796103520.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "16578.00",
+      "price": "9875.00",
+      "sources": [
+        {
+          "sku": 4065669389,
+          "source": "sds",
+          "created_at": "2026-04-24T04:01:04.910962Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1494493680,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 38,
+          "return_amount": 94,
+          "sale_schema": "FBO",
+          "value": 1558
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 300,
+          "sale_schema": "FBS",
+          "value": 1804
+        },
+        {
+          "percent": 44,
+          "sale_schema": "RFBS",
+          "value": 1804
+        },
+        {
+          "percent": 44,
+          "sale_schema": "FBP",
+          "value": 1804
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 0.9,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4065669389,
+            "source": "fbo"
+          },
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4065669389,
+            "source": "fbs"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T04:01:35.592840Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10796103796.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-29T04:03:24.284711Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4065669389,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4065669389,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 5158574102,
+      "name": "Досмотровое телескопическое зеркало для авто с подсветкой, длина 400-1200 мм.",
+      "offer_id": "42871-Y07U0001-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "42871-Y07U0001-C01"
+      ],
+      "description_category_id": 83250454,
+      "type_id": 341100888,
+      "created_at": "2026-06-18T09:09:42.368451Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "21999.00",
+      "price": "14999.00",
+      "sources": [
+        {
+          "sku": 4788709961,
+          "source": "sds",
+          "created_at": "2026-06-18T09:11:14.929809Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1822415457,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 41,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 6149.59
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 428,
+          "sale_schema": "FBS",
+          "value": 7049.53
+        },
+        {
+          "percent": 47,
+          "sale_schema": "RFBS",
+          "value": 7049.53
+        },
+        {
+          "percent": 47,
+          "sale_schema": "FBP",
+          "value": 7049.53
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.8,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-18T09:11:21.233470Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "4204.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.72
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/11683084053.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-18T09:11:15.844115Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4788709961,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4788709961,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3763313893,
+      "name": "Коврик-стол для пазлов 2000 деталей с 6 ящиками, складной подставкой и крышкой, светло-серый",
+      "offer_id": "31250-Y07U0003-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "31250-Y07U0003-B03"
+      ],
+      "description_category_id": 17028665,
+      "type_id": 92941,
+      "created_at": "2026-03-14T01:26:41.967995Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/9380124466.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/9380126678.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/9380124564.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/9380125614.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/9380123580.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/9380124712.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9380124353.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/9380123249.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "29873.00",
+      "price": "19873.00",
+      "sources": [
+        {
+          "sku": 3645748754,
+          "source": "sds",
+          "created_at": "2026-03-14T01:28:36.889477Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1851158136,
+        "count": 4
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 40,
+          "return_amount": 180,
+          "sale_schema": "FBO",
+          "value": 3200
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 46,
+          "return_amount": 722,
+          "sale_schema": "FBS",
+          "value": 3680
+        },
+        {
+          "percent": 46,
+          "sale_schema": "RFBS",
+          "value": 3680
+        },
+        {
+          "percent": 46,
+          "sale_schema": "FBP",
+          "value": 3680
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 5.5,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 8,
+            "reserved": 0,
+            "sku": 3645748754,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:02:10.835481Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_SUPER",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "6139.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.78
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/9618650816.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:03:18.558897Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3645748754,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3645748754,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3780589044,
+      "name": "Коврик-стол для пазлов 1000 деталей с 6 ящиками, складной подставкой и крышкой, темно-серый",
+      "offer_id": "28180-Y07U0008-B01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "28180-Y07U0008-B01"
+      ],
+      "description_category_id": 17028665,
+      "type_id": 92941,
+      "created_at": "2026-03-16T03:28:19.107797Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/7577880651.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/7577880580.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/7577880683.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/7577880579.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/7577880573.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/7577880657.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/7577880565.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/10287401103.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "29873.00",
+      "price": "19873.00",
+      "sources": [
+        {
+          "sku": 3659312124,
+          "source": "sds",
+          "created_at": "2026-03-16T03:30:52.592434Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1851158136,
+        "count": 4
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 40,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 1400
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 46,
+          "return_amount": 448,
+          "sale_schema": "FBS",
+          "value": 1610
+        },
+        {
+          "percent": 46,
+          "sale_schema": "RFBS",
+          "value": 1610
+        },
+        {
+          "percent": 46,
+          "sale_schema": "FBP",
+          "value": 1610
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.5,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 47,
+            "reserved": 0,
+            "sku": 3659312124,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:01:56.336214Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_SUPER",
+        "external_index_data": {
+          "minimal_price": "4511.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.48
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/7577880577.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:03:01.734399Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3659312124,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3659312124,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3868238675,
+      "name": "Чекодержатель 90 см, держатель для счетов и ценников, для магазина, склада и ресторана, металлический",
+      "offer_id": "21071-Y07U0009-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "21071-Y07U0009-A01"
+      ],
+      "description_category_id": 71328593,
+      "type_id": 970615402,
+      "created_at": "2026-03-24T02:19:25.848282Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/8852935975.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/12304783353.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/12304781224.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/12304790790.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/12304782265.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/8852936357.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/8852936286.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/8852937548.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/11883579910.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "15698.00",
+      "price": "9875.00",
+      "sources": [
+        {
+          "sku": 3728396545,
+          "source": "sds",
+          "created_at": "2026-03-24T02:21:03.482609Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1881357981,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 43,
+          "return_amount": 85,
+          "sale_schema": "FBO",
+          "value": 744.33
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 49,
+          "return_amount": 191,
+          "sale_schema": "FBS",
+          "value": 848.19
+        },
+        {
+          "percent": 49,
+          "sale_schema": "RFBS",
+          "value": 848.19
+        },
+        {
+          "percent": 49,
+          "sale_schema": "FBP",
+          "value": 848.19
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 0.8,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 62,
+            "reserved": 0,
+            "sku": 3728396545,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-08T08:03:31.526477Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/12257087964.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-08T08:04:39.793110Z"
+      },
+      "is_super": true,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3728396545,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3728396545,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3780751416,
+      "name": "Коврик-стол для пазлов с 6 ящиками,Стол коврик для сборки пазлов Светло-серый",
+      "offer_id": "15079-Y07U0007-B01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "15079-Y07U0007-B01"
+      ],
+      "description_category_id": 17028665,
+      "type_id": 92941,
+      "created_at": "2026-03-16T03:39:00.876588Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/7574780070.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/7574780071.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/7574780066.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-0/7574780088.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/7574780167.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/7574780056.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/7574780132.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/10287431807.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19873.00",
+      "price": "9873.00",
+      "sources": [
+        {
+          "sku": 3659452182,
+          "source": "sds",
+          "created_at": "2026-03-16T03:41:21.872030Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1851158136,
+        "count": 4
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 40,
+          "return_amount": 180,
+          "sale_schema": "FBO",
+          "value": 1584
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 46,
+          "return_amount": 722,
+          "sale_schema": "FBS",
+          "value": 1821.6
+        },
+        {
+          "percent": 46,
+          "sale_schema": "RFBS",
+          "value": 1821.6
+        },
+        {
+          "percent": 46,
+          "sale_schema": "FBP",
+          "value": 1821.6
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 5.5,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3659452182,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:02:47.149876Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_SUPER",
+        "external_index_data": {
+          "minimal_price": "3361.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.68
+        },
+        "ozon_index_data": {
+          "minimal_price": "2549.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.89
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-2/7574780054.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-29T03:03:57.051743Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3659452182,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3659452182,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4291809687,
+      "name": "Радиатор масляный АКПП универсальный 10 рядов, Блок радиатора автомобиля, черного цвета",
+      "offer_id": "41636-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41636-Y07U0001-A01"
+      ],
+      "description_category_id": 17028756,
+      "type_id": 971072771,
+      "created_at": "2026-04-24T08:06:58.266662Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/10796103844.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/10796192348.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/10796103774.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10796104464.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10796103616.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/10796103913.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/10796104081.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/10796191517.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/10796191254.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "25578.00",
+      "price": "18875.00",
+      "sources": [
+        {
+          "sku": 4068962481,
+          "source": "sds",
+          "created_at": "2026-04-24T08:08:54.273747Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1495601782,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 38,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 2052
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 2376
+        },
+        {
+          "percent": 44,
+          "sale_schema": "RFBS",
+          "value": 2376
+        },
+        {
+          "percent": 44,
+          "sale_schema": "FBP",
+          "value": 2376
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.6,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 4,
+            "reserved": 0,
+            "sku": 4068962481,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-04T06:42:46.224825Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/11127661141.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-04T06:44:11.767546Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4068962481,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4068962481,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3752710125,
+      "name": "2 шт.Выдвижная полка для кухни в шкаф белый органайзер для хранения S Ш-32/52см Г-42см В-7.5см",
+      "offer_id": "38669-Y07U0002-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "38669-Y07U0002-B02"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-13T01:13:07.161781Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/9393916568.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/9393913165.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/9393913853.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-q/9393914906.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9393913541.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/9393915469.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/9393913126.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9393913015.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "22768.00",
+      "price": "13763.00",
+      "sources": [
+        {
+          "sku": 3637345276,
+          "source": "sds",
+          "created_at": "2026-03-13T01:13:36.973558Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1471056131,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 147,
+          "sale_schema": "FBO",
+          "value": 6468.61
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 559,
+          "sale_schema": "FBS",
+          "value": 7019.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 7019.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 7019.13
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 4.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3637345276,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-04-20T00:54:22.546181Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/9393913398.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/9393913101.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-04-20T00:55:27.902403Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3637345276,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3637345276,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3752739652,
+      "name": "Выдвижная полка для кухни в шкаф S Ш-30/54 см Г-42 см В-7.5 см черное",
+      "offer_id": "38846-Y07U0001-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "38846-Y07U0001-B02"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-13T01:16:15.140111Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/9391688546.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-9/9391688037.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/9391687966.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/9391689885.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/9391687928.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/9391689980.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-8/9391688612.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/9391689773.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/9391688281.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19768.00",
+      "price": "9763.00",
+      "sources": [
+        {
+          "sku": 3637373421,
+          "source": "sds",
+          "created_at": "2026-03-13T01:16:58.838262Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1471056131,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 4588.61
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 448,
+          "sale_schema": "FBS",
+          "value": 4979.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 4979.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 4979.13
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3637373421,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-04-20T00:54:22.290456Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "2009.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.6
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/9391688546.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/9391689233.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-04-20T00:55:34.440726Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3637373421,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3637373421,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3735350251,
+      "name": "Штендер уличный рекламный черный металлический 90x60см, двухсторонний, с ручкой для переноски. Для рекламы ресторанов и кофеен.",
+      "offer_id": "31972-Y07U0002-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "31972-Y07U0002-B03",
+        "31972-Y07U0005-OB02"
+      ],
+      "description_category_id": 71328593,
+      "type_id": 970615776,
+      "created_at": "2026-03-11T06:18:40.975729Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/8516164089.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/8516163139.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/8516164186.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/8516163137.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/8516162857.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/10464230093.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/8516164372.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/9258536028.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-b/8516162819.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "18975.00",
+      "price": "8972.00",
+      "sources": [
+        {
+          "sku": 3623578262,
+          "source": "sds",
+          "created_at": "2026-03-11T06:20:13.229978Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 693195088,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 43,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 2297.49
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 49,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 2618.07
+        },
+        {
+          "percent": 49,
+          "sale_schema": "RFBS",
+          "value": 2618.07
+        },
+        {
+          "percent": 49,
+          "sale_schema": "FBP",
+          "value": 2618.07
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3623578262,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-10T07:16:16.287291Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/8516164089.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/9325144522.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-10T07:17:30.934042Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3623578262,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3623578262,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4927077733,
+      "name": "Информационная стойка-пюпитр с лотком А3, черная",
+      "offer_id": "40613-Y07U0002-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "40613-Y07U0002-C01"
+      ],
+      "description_category_id": 71328593,
+      "type_id": 790183771,
+      "created_at": "2026-06-05T06:00:49.480161Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "26999.00",
+      "price": "21999.00",
+      "sources": [
+        {
+          "sku": 4593474332,
+          "source": "sds",
+          "created_at": "2026-06-05T06:01:31.075984Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1730122581,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 43,
+          "return_amount": 228,
+          "sale_schema": "FBO",
+          "value": 9459.57
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 49,
+          "return_amount": 1023,
+          "sale_schema": "FBS",
+          "value": 10779.51
+        },
+        {
+          "percent": 49,
+          "sale_schema": "RFBS",
+          "value": 10779.51
+        },
+        {
+          "percent": 49,
+          "sale_schema": "FBP",
+          "value": 10779.51
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 6.3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-05T06:01:35.927824Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/11166684433.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-05T06:01:32.122578Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4593474332,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4593474332,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 5142605494,
+      "name": "Прикроватный поручень для пожилых, для инвалидов / Вспомогательные перила на кровать для подъема",
+      "offer_id": "27035-Y07U0002-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "27035-Y07U0002-C01"
+      ],
+      "description_category_id": 200001551,
+      "type_id": 970865516,
+      "created_at": "2026-06-17T10:47:23.453005Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19999.00",
+      "price": "12999.00",
+      "sources": [
+        {
+          "sku": 4775239901,
+          "source": "sds",
+          "created_at": "2026-06-17T10:48:48.239993Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1815948994,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 48,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 6239.52
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 54,
+          "return_amount": 428,
+          "sale_schema": "FBS",
+          "value": 7019.46
+        },
+        {
+          "percent": 54,
+          "sale_schema": "RFBS",
+          "value": 7019.46
+        },
+        {
+          "percent": 54,
+          "sale_schema": "FBP",
+          "value": 7019.46
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.4,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-17T10:48:54.099993Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "2276.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.82
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/11646423905.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-17T10:48:50.018438Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4775239901,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4775239901,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3869190973,
+      "name": "Полка для клавиатуры складная 65х24 см, выдвижной чёрный подлокотник для стола, нагрузка до 50 кг",
+      "offer_id": "20150-Y07U0011-B01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "20150-Y07U0011-B01"
+      ],
+      "description_category_id": 53884411,
+      "type_id": 970991002,
+      "created_at": "2026-03-24T03:15:52.440418Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10129467784.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/10854109004.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/10129465147.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/7704576565.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/7704576661.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/7704576821.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/7704860917.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/7704776368.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/7704576510.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "16987.00",
+      "price": "10987.00",
+      "sources": [
+        {
+          "sku": 3729089302,
+          "source": "sds",
+          "created_at": "2026-03-24T03:16:35.816478Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 676834808,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 2639.05
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 457,
+          "sale_schema": "FBS",
+          "value": 2863.65
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 2863.65
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 2863.65
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.6,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 14,
+            "reserved": 0,
+            "sku": 3729089302,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-05T03:46:57.407982Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/11161471783.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-05T03:48:12.891369Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3729089302,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3729089302,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3752557550,
+      "name": "Выдвижная полка для кухни в шкаф белый органайзер для хранения L Ш-43/68см Г-42см В-7.5см",
+      "offer_id": "38841-Y07U0001-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "38841-Y07U0001-B02"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-13T00:56:02.878682Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/9476024406.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/9393913853.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9393913541.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-q/9393914906.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9393913015.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/9393913126.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/9393913165.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-0/9476024616.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19768.00",
+      "price": "9763.00",
+      "sources": [
+        {
+          "sku": 3637228879,
+          "source": "sds",
+          "created_at": "2026-03-13T00:56:26.831032Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1471056131,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 131,
+          "sale_schema": "FBO",
+          "value": 4588.61
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 472,
+          "sale_schema": "FBS",
+          "value": 4979.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 4979.13
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 4979.13
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.1,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3637228879,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-04-20T00:54:22.398479Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/9395923818.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-b/9395922359.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-04-20T00:55:35.198688Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3637228879,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3637228879,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4276605075,
+      "name": "4-крючковая настенная вешалка для шлема деревянная, для снаряжения и одежды, для гаража и гардеробной",
+      "offer_id": "34595-Y07U0002-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "34595-Y07U0002-A01",
+        "34595-Y07U0003-OB01"
+      ],
+      "description_category_id": 80189074,
+      "type_id": 971100145,
+      "created_at": "2026-04-23T09:32:40.310063Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-z/10783748807.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/10783747385.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/12262469382.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/10783746293.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/10783753612.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10816340044.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10783756768.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-z/10783761155.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "26587.00",
+      "price": "16587.00",
+      "sources": [
+        {
+          "sku": 4056864127,
+          "source": "sds",
+          "created_at": "2026-04-23T09:34:23.682698Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1706350887,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 41,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 2993
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 415,
+          "sale_schema": "FBS",
+          "value": 3431
+        },
+        {
+          "percent": 47,
+          "sale_schema": "RFBS",
+          "value": 3431
+        },
+        {
+          "percent": 47,
+          "sale_schema": "FBP",
+          "value": 3431
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 4,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4056864127,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-07T10:24:06.298712Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10783761556.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-07T10:25:08.925720Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4056864127,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4056864127,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4276828751,
+      "name": "Настенная вешалка-кронштейн для шлема с двумя кронштейнами и 4 зажимами, нагрузка 36 кг",
+      "offer_id": "41605-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41605-Y07U0001-A01",
+        "41605-Y07U0002-OB01"
+      ],
+      "description_category_id": 80189074,
+      "type_id": 971100145,
+      "created_at": "2026-04-23T09:43:28.926683Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/10425395513.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/10425392097.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/10425390966.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10498953244.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/10494879353.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-a/10425389734.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/10495555761.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10559814216.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/10425390215.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19587.00",
+      "price": "13587.00",
+      "sources": [
+        {
+          "sku": 4057052510,
+          "source": "sds",
+          "created_at": "2026-04-23T09:45:26.353271Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1706350887,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 41,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 1394
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 1598
+        },
+        {
+          "percent": 47,
+          "sale_schema": "RFBS",
+          "value": 1598
+        },
+        {
+          "percent": 47,
+          "sale_schema": "FBP",
+          "value": 1598
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.3,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 7,
+            "reserved": 0,
+            "sku": 4057052510,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-07T10:15:46.668861Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "1358.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.44
+        },
+        "ozon_index_data": {
+          "minimal_price": "2531.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0.96
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/10425389902.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-07T10:16:53.131132Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4057052510,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4057052510,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4947899535,
+      "name": "Деревянная настольная полка-органайзер, двухъярусная, с креплением на струбцине, коричневая",
+      "offer_id": "35337-Y07U0001-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "35337-Y07U0001-B02"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-06-06T08:09:45.241027Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "13999.00",
+      "price": "9999.00",
+      "sources": [
+        {
+          "sku": 4611149076,
+          "source": "sds",
+          "created_at": "2026-06-06T08:11:09.325116Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1357879099,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 120,
+          "sale_schema": "FBO",
+          "value": 4699.53
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 399,
+          "sale_schema": "FBS",
+          "value": 5099.49
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 5099.49
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 5099.49
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-06T08:11:13.359135Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/11211465408.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-06T08:11:10.242653Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4611149076,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4611149076,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 5142490754,
+      "name": "Прикроватный поручень для пожилых, для инвалидов / Вспомогательные перила на кровать для подъема",
+      "offer_id": "42845-Y07U0001-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "42845-Y07U0001-C01"
+      ],
+      "description_category_id": 200001551,
+      "type_id": 970865516,
+      "created_at": "2026-06-17T10:41:20.327737Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "21999.00",
+      "price": "14999.00",
+      "sources": [
+        {
+          "sku": 4775150804,
+          "source": "sds",
+          "created_at": "2026-06-17T10:42:56.574011Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1815948994,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 48,
+          "return_amount": 131,
+          "sale_schema": "FBO",
+          "value": 7199.52
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 54,
+          "return_amount": 472,
+          "sale_schema": "FBS",
+          "value": 8099.46
+        },
+        {
+          "percent": 54,
+          "sale_schema": "RFBS",
+          "value": 8099.46
+        },
+        {
+          "percent": 54,
+          "sale_schema": "FBP",
+          "value": 8099.46
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-18T00:59:38.921335Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/11646132139.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-18T01:00:45.274175Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4775150804,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4775150804,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3737437208,
+      "name": "Полка угловая для ванной телескопическая 4 ярусная, высота регулируется 85-316 см, нержавеющая сталь",
+      "offer_id": "38311-Y07U0001-B02",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "38311-Y07U0001-B02"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-11T08:43:04.369903Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9818563169.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/9818560973.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/9818559840.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9818562463.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-q/9818560430.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9818559367.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9818561299.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19957.00",
+      "price": "9753.00",
+      "sources": [
+        {
+          "sku": 3625269128,
+          "source": "sds",
+          "created_at": "2026-03-11T08:44:49.943015Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1037883428,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 4583.91
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 448,
+          "sale_schema": "FBS",
+          "value": 4974.03
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 4974.03
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 4974.03
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.6,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3625269128,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-04-15T08:46:18.075106Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-y/9261120994.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-04-15T08:47:42.604037Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3625269128,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3625269128,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4853945624,
+      "name": "Держатель для шланга садовый: для хранения шланга, со стойкой и 2 крючками, напольный, металлический",
+      "offer_id": "42481-Y07U0001-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "42481-Y07U0001-C01"
+      ],
+      "description_category_id": 17028746,
+      "type_id": 971299476,
+      "created_at": "2026-06-01T09:28:03.227901Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "17999.00",
+      "price": "11999.00",
+      "sources": [
+        {
+          "sku": 4531986822,
+          "source": "sds",
+          "created_at": "2026-06-01T09:29:41.813795Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1701411431,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 125,
+          "sale_schema": "FBO",
+          "value": 5279.56
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 448,
+          "sale_schema": "FBS",
+          "value": 5999.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 5999.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 5999.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.9,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-07-13T01:45:34.134374Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/11017915482.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-13T01:46:39.865736Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4531986822,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4531986822,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4291231674,
+      "name": "Радиатор масляный для АКПП и трансмиссии, Блок радиатора автомобиля, 8 рядов, черного цвета",
+      "offer_id": "41635-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41635-Y07U0001-A01"
+      ],
+      "description_category_id": 17028756,
+      "type_id": 971072771,
+      "created_at": "2026-04-24T07:40:09.276667Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/10796103844.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/10796103774.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/10796153895.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10796104464.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10796103616.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/10796103913.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/10796104081.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/10796154111.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/10796153551.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "18578.00",
+      "price": "10875.00",
+      "sources": [
+        {
+          "sku": 4068502054,
+          "source": "sds",
+          "created_at": "2026-04-24T07:42:03.049506Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1495401813,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 38,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 1691
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 1958
+        },
+        {
+          "percent": 44,
+          "sale_schema": "RFBS",
+          "value": 1958
+        },
+        {
+          "percent": 44,
+          "sale_schema": "FBP",
+          "value": 1958
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.4,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4068502054,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T05:50:42.406227Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/11020979293.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-29T05:52:12.801500Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4068502054,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4068502054,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4735442111,
+      "name": "Напольная сушилка для белья на улицу (складная 4 луча, вертикальная 1.8 м, металлическая)",
+      "offer_id": "10220-Y07U0025-B01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "10220-Y07U0025-B01"
+      ],
+      "description_category_id": 17027909,
+      "type_id": 93682,
+      "created_at": "2026-05-25T06:02:37.396018Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-2/7850227718.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/7850227825.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/7850227789.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/7850228139.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/7850228630.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-z/7850228147.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-z/7850227895.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/7850228477.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/10773633461.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/10773629893.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "31999.00",
+      "price": "21999.00",
+      "sources": [
+        {
+          "sku": 4431750292,
+          "source": "sds",
+          "created_at": "2026-05-25T06:04:10.423009Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1747739849,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 180,
+          "sale_schema": "FBO",
+          "value": 5264
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 53,
+          "return_amount": 722,
+          "sale_schema": "FBS",
+          "value": 5936
+        },
+        {
+          "percent": 53,
+          "sale_schema": "RFBS",
+          "value": 5936
+        },
+        {
+          "percent": 53,
+          "sale_schema": "FBP",
+          "value": 5936
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 4.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4431750292,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-02T03:00:45.244787Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/7850228104.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-02T03:01:48.329974Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4431750292,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4431750292,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3861731366,
+      "name": "Вспомогательный поручень для людей с ограниченной подвижностью, регулировка высоты 3 режима,82X40X50cm",
+      "offer_id": "37255-Y07U0001-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "37255-Y07U0001-B03"
+      ],
+      "description_category_id": 200001551,
+      "type_id": 970865516,
+      "created_at": "2026-03-23T09:43:00.025794Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/10044236557.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/10044236141.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/10044234991.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/10044234869.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/10044236714.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/10119582385.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-b/8864850395.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "23658.00",
+      "price": "13679.00",
+      "sources": [
+        {
+          "sku": 3723409741,
+          "source": "sds",
+          "created_at": "2026-03-23T09:43:33.333117Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1551936683,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 48,
+          "return_amount": 120,
+          "sale_schema": "FBO",
+          "value": 3792
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 54,
+          "return_amount": 399,
+          "sale_schema": "FBS",
+          "value": 4266
+        },
+        {
+          "percent": 54,
+          "sale_schema": "RFBS",
+          "value": 4266
+        },
+        {
+          "percent": 54,
+          "sale_schema": "FBP",
+          "value": 4266
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 3.4,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 89,
+            "reserved": 0,
+            "sku": 3723409741,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-06T11:59:16.585492Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_RED",
+        "external_index_data": {
+          "minimal_price": "3804.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.25
+        },
+        "ozon_index_data": {
+          "minimal_price": "4023.00",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 1.2
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-r/10119464919.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-07-06T12:00:29.111061Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3723409741,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3723409741,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4854134834,
+      "name": "Напольная сушилка для белья на улицу (складная 4 луча, вертикальная 1.8 м, металлическая) , зеленый",
+      "offer_id": "20103-Y07U0015-B01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "20103-Y07U0015-B01"
+      ],
+      "description_category_id": 17027909,
+      "type_id": 93682,
+      "created_at": "2026-06-01T09:36:12.818132Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/11618962253.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/11618962237.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/11660856487.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/11660857170.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/11136314064.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/11059023121.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/11136318397.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/11136310421.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/11136313013.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-t/11136310085.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/11059022733.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/11059022500.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "31999.00",
+      "price": "21999.00",
+      "sources": [
+        {
+          "sku": 4532141713,
+          "source": "sds",
+          "created_at": "2026-06-01T09:37:35.659434Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1747739849,
+        "count": 2
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 180,
+          "sale_schema": "FBO",
+          "value": 4977.77
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 53,
+          "return_amount": 722,
+          "sale_schema": "FBS",
+          "value": 5613.23
+        },
+        {
+          "percent": 53,
+          "sale_schema": "RFBS",
+          "value": 5613.23
+        },
+        {
+          "percent": 53,
+          "sale_schema": "FBP",
+          "value": 5613.23
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 4.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 4532141713,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-07-02T03:00:35.395445Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-m/11153065198.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-02T03:01:40.228999Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4532141713,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4532141713,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 5208817544,
+      "name": "Органайзер для стола с полками в офис и на кухню, черный",
+      "offer_id": "12650-Y07U0005-C01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "12650-Y07U0005-C01"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-06-23T08:29:59.088900Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "19999.00",
+      "price": "9999.00",
+      "sources": [
+        {
+          "sku": 4831169329,
+          "source": "sds",
+          "created_at": "2026-06-23T08:31:20.624213Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1840763784,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 94,
+          "sale_schema": "FBO",
+          "value": 4699.53
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 300,
+          "sale_schema": "FBS",
+          "value": 5099.49
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 5099.49
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 5099.49
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 2.6,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-06-23T08:31:28.963267Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-d/11806369537.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-06-23T08:31:21.221929Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4831169329,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4831169329,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3763227247,
+      "name": "Коврик-стол для пазлов 2000 деталей с 6 ящиками, складной подставкой и крышкой, темно-серый",
+      "offer_id": "14435-Y07U0007-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "14435-Y07U0007-B03"
+      ],
+      "description_category_id": 17028665,
+      "type_id": 92941,
+      "created_at": "2026-03-14T01:16:24.010993Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/9380267303.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/9380268084.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-7/9380266999.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-m/9380267194.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/9380266998.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/9380266693.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-b/9380267255.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/9380266716.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "29873.00",
+      "price": "19873.00",
+      "sources": [
+        {
+          "sku": 3645671998,
+          "source": "sds",
+          "created_at": "2026-03-14T01:20:08.914601Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1851158136,
+        "count": 4
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 40,
+          "return_amount": 180,
+          "sale_schema": "FBO",
+          "value": 3200
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 46,
+          "return_amount": 722,
+          "sale_schema": "FBS",
+          "value": 3680
+        },
+        {
+          "percent": 46,
+          "sale_schema": "RFBS",
+          "value": 3680
+        },
+        {
+          "percent": 46,
+          "sale_schema": "FBP",
+          "value": 3680
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 5.5,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 17,
+            "reserved": 0,
+            "sku": 3645671998,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:02:20.838632Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9618657475.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:03:35.332314Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3645671998,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3645671998,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4276362074,
+      "name": "Набор вешалок плечиков, Крепление для мотоциклетного шлема, настенный держатель и крюк для тактического снаряжения. вешалка для бронежилета 1 шт",
+      "offer_id": "41604-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41604-Y07U0001-A01"
+      ],
+      "description_category_id": 17027919,
+      "type_id": 93671,
+      "created_at": "2026-04-23T09:20:00.330631Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-1/11208439297.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/11208446152.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/10404278925.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-3/10404279687.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/10404278796.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-z/10404276839.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/10404278544.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "12457.00",
+      "price": "8754.00",
+      "sources": [
+        {
+          "sku": 4056661309,
+          "source": "sds",
+          "created_at": "2026-04-23T09:21:54.153304Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1847768525,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 108,
+          "sale_schema": "FBO",
+          "value": 1198.5
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 377,
+          "sale_schema": "FBS",
+          "value": 1300.5
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 1300.5
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 1300.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.2,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 1,
+            "reserved": 1,
+            "sku": 4056661309,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-06-29T03:07:56.930655Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/10409776698.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/11208443704.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-06-29T03:09:36.333900Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4056661309,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4056661309,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3942528205,
+      "name": "Полка органайзер настольная, двухъярусная, металлическая, с креплением на струбцине, 1 шт.",
+      "offer_id": "41090-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41090-Y07U0001-A01"
+      ],
+      "description_category_id": 80731485,
+      "type_id": 115946601,
+      "created_at": "2026-03-30T07:36:46.659030Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10489506504.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/10493890050.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-4/10493887216.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/10493884014.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-e/10493885714.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/10493883813.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/10440314214.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-2/10493885990.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-6/10493886570.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-l/10493883705.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "36985.00",
+      "price": "25698.00",
+      "sources": [
+        {
+          "sku": 3786946279,
+          "source": "sds",
+          "created_at": "2026-03-30T07:38:23.807416Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1357879099,
+        "count": 3
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 47,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 1903.5
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 51,
+          "return_amount": 415,
+          "sale_schema": "FBS",
+          "value": 2065.5
+        },
+        {
+          "percent": 51,
+          "sale_schema": "RFBS",
+          "value": 2065.5
+        },
+        {
+          "percent": 51,
+          "sale_schema": "FBP",
+          "value": 2065.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.7,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": true,
+        "stocks": [
+          {
+            "present": 14,
+            "reserved": 0,
+            "sku": 3786946279,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-05-15T08:49:49.823853Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": true
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-o/10489506504.jpg"
+      ],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-n/10493889359.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Продается",
+        "status_description": "",
+        "is_created": true,
+        "status_tooltip": "",
+        "status_updated_at": "2026-05-15T08:49:23.222279Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3786946279,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3786946279,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 5335653892,
+      "name": "Медальница с полкой для кубков и грамот",
+      "offer_id": "43183-Y07U0001-OB01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "43183-Y07U0001-OB01"
+      ],
+      "description_category_id": 17029000,
+      "type_id": 98333,
+      "created_at": "2026-07-03T04:05:57.774373Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "7999.00",
+      "price": "4999.00",
+      "sources": [
+        {
+          "sku": 4939850150,
+          "source": "sds",
+          "created_at": "2026-07-03T04:07:20.817277Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 1886407453,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 43,
+          "return_amount": 89,
+          "sale_schema": "FBO",
+          "value": 2149.57
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 49,
+          "return_amount": 236,
+          "sale_schema": "FBS",
+          "value": 2449.51
+        },
+        {
+          "percent": 49,
+          "sale_schema": "RFBS",
+          "value": 2449.51
+        },
+        {
+          "percent": 49,
+          "sale_schema": "FBP",
+          "value": 2449.51
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 1.1,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-07-03T04:07:28.256222Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-c/12127665936.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-07-03T04:07:21.699488Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4939850150,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4939850150,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 3734323056,
+      "name": "Металлическая стойка для хранения садовых инструментов, 6 колеса, с крючками и держателями, для дома и дачи",
+      "offer_id": "33047-Y07U0008-B03",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "33047-Y07U0008-B03"
+      ],
+      "description_category_id": 17028746,
+      "type_id": 971299476,
+      "created_at": "2026-03-11T04:10:20.902072Z",
+      "images": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/8290405852.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-s/8290407268.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-j/8290407115.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-w/8290406264.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/8290405903.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-h/9333624077.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-u/9257168514.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-i/8405463402.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9333623335.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-v/9333622867.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-x/9333623157.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-g/8405464192.jpg",
+        "https://ir-21.ozonru.cn/s3/multimedia-1-5/9333623633.jpg"
+      ],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "21579.00",
+      "price": "13975.00",
+      "sources": [
+        {
+          "sku": 3623297872,
+          "source": "sds",
+          "created_at": "2026-03-11T05:46:26.490353Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 846293640,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 147,
+          "sale_schema": "FBO",
+          "value": 6149
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 559,
+          "sale_schema": "FBS",
+          "value": 6987.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 6987.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 6987.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 4.9,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": [
+          {
+            "present": 0,
+            "reserved": 0,
+            "sku": 3623297872,
+            "source": "fbo"
+          }
+        ]
+      },
+      "errors": [],
+      "updated_at": "2026-03-25T08:20:14.448723Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/9474415837.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-03-25T08:21:28.460559Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 3623297872,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 3623297872,
+          "source": "sds"
+        }
+      ]
+    },
+    {
+      "id": 4559463568,
+      "name": "Грядки оцинкованные и с полимерным покрытием, 120x30 см",
+      "offer_id": "41992-Y07U0001-A01",
+      "is_archived": false,
+      "is_autoarchived": false,
+      "barcodes": [
+        "41992-Y07U0001-A01"
+      ],
+      "description_category_id": 17028745,
+      "type_id": 98280,
+      "created_at": "2026-05-13T02:03:38.877733Z",
+      "images": [],
+      "currency_code": "RUB",
+      "min_price": "",
+      "old_price": "25478.00",
+      "price": "12597.00",
+      "sources": [
+        {
+          "sku": 4284185370,
+          "source": "sds",
+          "created_at": "2026-05-13T02:05:46.027228Z",
+          "shipment_type": "SHIPMENT_TYPE_GENERAL",
+          "quant_code": ""
+        }
+      ],
+      "model_info": {
+        "model_id": 785402614,
+        "count": 1
+      },
+      "commissions": [
+        {
+          "delivery_amount": 25,
+          "percent": 44,
+          "return_amount": 122,
+          "sale_schema": "FBO",
+          "value": 5542.68
+        },
+        {
+          "delivery_amount": 25,
+          "percent": 50,
+          "return_amount": 428,
+          "sale_schema": "FBS",
+          "value": 6298.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "RFBS",
+          "value": 6298.5
+        },
+        {
+          "percent": 50,
+          "sale_schema": "FBP",
+          "value": 6298.5
+        }
+      ],
+      "is_prepayment_allowed": true,
+      "volume_weight": 6,
+      "has_discounted_fbo_item": false,
+      "is_discounted": false,
+      "discounted_fbo_stocks": 0,
+      "stocks": {
+        "has_stock": false,
+        "stocks": []
+      },
+      "errors": [],
+      "updated_at": "2026-05-13T02:10:58.967195Z",
+      "vat": "0.00",
+      "visibility_details": {
+        "has_price": true,
+        "has_stock": false
+      },
+      "price_indexes": {
+        "color_index": "COLOR_INDEX_WITHOUT_INDEX",
+        "external_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "ozon_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        },
+        "self_marketplaces_index_data": {
+          "minimal_price": "",
+          "minimal_price_currency": "RUB",
+          "price_index_value": 0
+        }
+      },
+      "images360": [],
+      "is_kgt": false,
+      "color_image": [],
+      "primary_image": [
+        "https://ir-21.ozonru.cn/s3/multimedia-1-p/10424949433.jpg"
+      ],
+      "statuses": {
+        "status": "price_sent",
+        "status_failed": "",
+        "moderate_status": "approved",
+        "validation_status": "success",
+        "status_name": "Готов к продаже",
+        "status_description": "Нет на складе",
+        "is_created": true,
+        "status_tooltip": "Можно создать новую поставку или указать количество на своем складе",
+        "status_updated_at": "2026-05-13T02:12:13.595219Z"
+      },
+      "is_super": false,
+      "is_seasonal": false,
+      "promotions": [
+        {
+          "is_enabled": false,
+          "type": "REVIEWS_PROMO"
+        }
+      ],
+      "sku": 4284185370,
+      "availabilities": [
+        {
+          "availability": "AVAILABLE",
+          "reasons": [],
+          "sku": 4284185370,
+          "source": "sds"
+        }
+      ]
+    }
+  ]
+}
