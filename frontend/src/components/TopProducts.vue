@@ -45,9 +45,9 @@ function handleRowClick(row: ProductSummary) {
       </template>
     </el-table-column>
 
-    <el-table-column prop="offer_id" label="货号" width="120" sortable>
+    <el-table-column prop="offer_id" label="货号" width="200" sortable>
       <template #default="{ row }">
-        <span style="font-family: monospace; font-size: 12px; color: #909399;">
+        <span style="font-family: monospace; font-size: 12px; color: #909399; white-space: nowrap;">
           {{ row.offer_id }}
         </span>
       </template>
@@ -73,7 +73,7 @@ function handleRowClick(row: ProductSummary) {
     <el-table-column
       prop="name"
       label="商品名称"
-      min-width="140"
+      min-width="100"
       show-overflow-tooltip
     />
 
@@ -86,13 +86,6 @@ function handleRowClick(row: ProductSummary) {
         >
           {{ row.stock_present }}
         </el-tag>
-      </template>
-    </el-table-column>
-
-    <el-table-column prop="stock_reserved" label="预留" width="70" align="right" sortable>
-      <template #default="{ row }">
-        <span v-if="row.stock_reserved > 0" style="color: #e6a23c;">{{ row.stock_reserved }}</span>
-        <span v-else style="color: #c0c4cc;">0</span>
       </template>
     </el-table-column>
 
@@ -168,7 +161,5 @@ function handleRowClick(row: ProductSummary) {
         </el-tag>
       </template>
     </el-table-column>
-
-    <el-table-column prop="day_count" label="天数" width="55" align="right" sortable />
   </el-table>
 </template>
