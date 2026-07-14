@@ -59,6 +59,21 @@ export interface DateRangeInfo {
   max_date: string
 }
 
+export interface ProductSummary {
+  sku_id: number
+  offer_id: string
+  name: string
+  primary_image: string | null
+  revenue: number
+  net_profit: number
+  profit_margin: number
+  ordered_units: number
+  returns_amount: number
+  stock_present: number
+  stock_reserved: number
+  day_count: number
+}
+
 export interface FinanceTransaction {
   operation_id: number
   operation_type_name: string | null

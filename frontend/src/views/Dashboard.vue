@@ -2,12 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDashboard } from '@/composables/useDashboard'
-import type { ProductSummary } from '@/components/TopProducts.vue'
+import type { ProductSummary } from '@/types'
 import type { SummaryRow, FinanceTransaction } from '@/types'
 import { getFinanceTransactions } from '@/api'
 import SummaryCards from '@/components/SummaryCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
 import TopProducts from '@/components/TopProducts.vue'
+import InventoryHealth from '@/components/InventoryHealth.vue'
+import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
 
 const {
   dateRange,
@@ -41,6 +43,7 @@ function openProductDetail(product: ProductSummary) {
 // 展开行：加载当日订单流水
 const transactionsMap = ref<Record<string, FinanceTransaction[]>>({})
 const loadingTx = ref<Record<string, boolean>>({})
+const activeTab = ref('all')
 
 function rowKey(row: SummaryRow) {
   return `${row.date}_${row.sku_id}`
@@ -263,20 +266,43 @@ onMounted(() => {
 
         <!-- 商品排行榜（预留） -->
 
-        <!-- 商品汇总表 -->
+        <!-- 商品分析 Tab 面板 -->
         <el-card shadow="hover" style="margin-top: 20px;">
-          <template #header>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-weight: 600">商品汇总</span>
-              <el-tag type="info" size="small">
-                {{ productSummary.length }} 个商品
-              </el-tag>
-            </div>
-          </template>
-          <TopProducts
-            :products="productSummary"
-            @row-click="openProductDetail"
-          />
+          <el-tabs v-model="activeTab" style="padding: 0 4px;">
+            <el-tab-pane label="全部数据" name="all">
+              <template #label>
+                <span><el-icon><DataBoard /></el-icon> 全部数据</span>
+              </template>
+              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 12px;">
+                <el-tag type="info" size="small">{{ productSummary.length }} 个商品</el-tag>
+              </div>
+              <TopProducts
+                :products="productSummary"
+                @row-click="openProductDetail"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="库存健康" name="inventory">
+              <template #label>
+                <span><el-icon><Box /></el-icon> 库存健康</span>
+              </template>
+              <InventoryHealth
+                :products="productSummary"
+                :summary-rows="summaryRows"
+                :active-tab="activeTab"
+                @row-click="openProductDetail"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="退货分析" name="returns">
+              <template #label>
+                <span><el-icon><Failed /></el-icon> 退货分析</span>
+              </template>
+              <ReturnAnalysis
+                :products="productSummary"
+                :active-tab="activeTab"
+                @row-click="openProductDetail"
+              />
+            </el-tab-pane>
+          </el-tabs>
         </el-card>
       </div>
     </el-main>

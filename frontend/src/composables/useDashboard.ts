@@ -41,6 +41,7 @@ export function useDashboard() {
       net_profit: number
       profit_margin: number
       ordered_units: number
+      returns_amount: number
       stock_present: number
       stock_reserved: number
       day_count: number
@@ -51,6 +52,7 @@ export function useDashboard() {
         d.revenue += row.revenue
         d.net_profit += row.net_profit
         d.ordered_units += row.ordered_units
+        d.returns_amount += row.returns_amount
         d.day_count += 1
       } else {
         map.set(row.sku_id, {
@@ -62,6 +64,7 @@ export function useDashboard() {
           net_profit: row.net_profit,
           profit_margin: 0,
           ordered_units: row.ordered_units,
+          returns_amount: row.returns_amount,
           stock_present: row.stock_present,
           stock_reserved: row.stock_reserved,
           day_count: 1,

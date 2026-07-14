@@ -1,17 +1,5 @@
 <script setup lang="ts">
-export interface ProductSummary {
-  sku_id: number
-  offer_id: string
-  name: string
-  primary_image: string | null
-  revenue: number
-  net_profit: number
-  profit_margin: number
-  ordered_units: number
-  stock_present: number
-  stock_reserved: number
-  day_count: number
-}
+import type { ProductSummary } from '@/types'
 
 defineProps<{
   products: ProductSummary[]
