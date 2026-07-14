@@ -1,0 +1,11 @@
+"""API 路由注册"""
+from fastapi import APIRouter
+
+from app.api.products import router as products_router
+from app.api.summary import router as summary_router
+from app.api.sync import router as sync_router
+
+api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(products_router)
+api_router.include_router(summary_router)
+api_router.include_router(sync_router)

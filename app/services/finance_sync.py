@@ -76,7 +76,7 @@ def sync_finance(db: Session, client: OzonClient,
         }
 
         stmt = pg_insert(FinanceTransaction).values(**data).on_conflict_do_nothing(
-            constraint="finance_transactions_operation_id_key",
+            index_elements=["operation_id"],
         )
         result = db.execute(stmt)
         if result.rowcount:

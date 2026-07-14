@@ -42,7 +42,7 @@ def sync_analytics(db: Session, client: OzonClient,
             ordered_units=ordered_units,
             revenue=revenue,
         ).on_conflict_do_update(
-            constraint="sku_daily_summary_date_sku_id_key",
+            index_elements=["date", "sku_id"],
             set_={
                 "ordered_units": ordered_units,
                 "revenue": revenue,

@@ -91,7 +91,7 @@ def sync_products(db: Session, client: OzonClient) -> dict:
     stocks_upserted = 0
     for s_data in stocks_to_insert:
         stmt = pg_insert(Stock).values(**s_data).on_conflict_do_update(
-            constraint="stocks_sku_id_source_key",
+            index_elements=["sku_id", "source"],
             set_={
                 "present": s_data["present"],
                 "reserved": s_data["reserved"],

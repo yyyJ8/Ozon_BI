@@ -1,0 +1,44 @@
+"""SKU 日汇总响应模型"""
+from datetime import date
+from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel
+
+
+class SummaryItem(BaseModel):
+    """单条日汇总"""
+    date: date
+    sku_id: int
+    offer_id: Optional[str] = None
+    name: Optional[str] = None          # 来自 products 表
+    ordered_units: int = 0
+    revenue: Decimal = Decimal("0")
+    returns_amount: Decimal = Decimal("0")
+    commissions: Decimal = Decimal("0")
+    logistics_costs: Decimal = Decimal("0")
+    storage_fees: Decimal = Decimal("0")
+    advertising: Decimal = Decimal("0")
+    other_costs: Decimal = Decimal("0")
+    net_profit: Decimal = Decimal("0")
+    profit_margin: Decimal = Decimal("0")
+    data_quality: str = "partial"
+
+    class Config:
+        from_attributes = True
+
+
+class SummaryStats(BaseModel):
+    """看板顶部汇总卡"""
+    total_revenue: Decimal = Decimal("0")
+    total_net_profit: Decimal = Decimal("0")
+    avg_profit_margin: Decimal = Decimal("0")
+    total_ordered_units: int = 0
+    total_commissions: Decimal = Decimal("0")
+    total_logistics: Decimal = Decimal("0")
+    total_returns: Decimal = Decimal("0")
+    total_storage: Decimal = Decimal("0")
+    total_advertising: Decimal = Decimal("0")
+    total_other_costs: Decimal = Decimal("0")
+    day_count: int = 0
+    sku_count: int = 0
