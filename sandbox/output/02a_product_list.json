@@ -1,5 +1,5 @@
 {
-  "total": 41,
+  "total": 39,
   "fields": [
     "product_id",
     "offer_id",
@@ -12,414 +12,394 @@
   ],
   "items": [
     {
-      "product_id": 3732861728,
-      "offer_id": "30296-Y07U0001-A01",
+      "product_id": 3738051225,
+      "offer_id": "31852-Y07U0002-B01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3621642937
+      "sku": 3625752471
     },
     {
-      "product_id": 3734323056,
-      "offer_id": "33047-Y07U0008-B03",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3623297872
-    },
-    {
-      "product_id": 3735350251,
-      "offer_id": "31972-Y07U0002-B03",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3623578262
-    },
-    {
-      "product_id": 3735991301,
-      "offer_id": "22501-Y07U0010-B02",
+      "product_id": 3738174858,
+      "offer_id": "31853-Y07U0002-B01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3624094584
+      "sku": 3625849128
     },
     {
-      "product_id": 3736365134,
-      "offer_id": "24589-Y07U0003-B02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3624393147
-    },
-    {
-      "product_id": 3737437208,
-      "offer_id": "38311-Y07U0001-B02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3625269128
-    },
-    {
-      "product_id": 3752557550,
-      "offer_id": "38841-Y07U0001-B02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3637228879
-    },
-    {
-      "product_id": 3752710125,
-      "offer_id": "38669-Y07U0002-B02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3637345276
-    },
-    {
-      "product_id": 3752739652,
-      "offer_id": "38846-Y07U0001-B02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3637373421
-    },
-    {
-      "product_id": 3763227247,
-      "offer_id": "14435-Y07U0007-B03",
+      "product_id": 3742946322,
+      "offer_id": "38799-Y07U0001-A01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3645671998
+      "sku": 3629638193
     },
     {
-      "product_id": 3763313893,
-      "offer_id": "31250-Y07U0003-B03",
+      "product_id": 3743030244,
+      "offer_id": "38798-Y07U0001-A01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3645748754
+      "sku": 3629697772
     },
     {
-      "product_id": 3780589044,
-      "offer_id": "28180-Y07U0008-B01",
+      "product_id": 3743261677,
+      "offer_id": "38797-Y07U0001-A01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3659312124
+      "sku": 3629891330
     },
     {
-      "product_id": 3780751416,
-      "offer_id": "15079-Y07U0007-B01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 3659452182
-    },
-    {
-      "product_id": 3861731366,
-      "offer_id": "37255-Y07U0001-B03",
+      "product_id": 3754673683,
+      "offer_id": "15079-Y07U0005-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3723409741
+      "sku": 3638915082
     },
     {
-      "product_id": 3868238675,
-      "offer_id": "21071-Y07U0009-A01",
+      "product_id": 3754737999,
+      "offer_id": "31250-Y07U0002-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3728396545
+      "sku": 3638954806
     },
     {
-      "product_id": 3869190973,
-      "offer_id": "20150-Y07U0011-B01",
+      "product_id": 3763008754,
+      "offer_id": "14435-Y07U0005-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3729089302
+      "sku": 3645557597
     },
     {
-      "product_id": 3942098139,
-      "offer_id": "36022-Y07U0001-B03",
+      "product_id": 3763282532,
+      "offer_id": "28180-Y07U0006-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3786601820
+      "sku": 3645735675
     },
     {
-      "product_id": 3942138638,
-      "offer_id": "28374-Y07U0009-B03",
+      "product_id": 3764717447,
+      "offer_id": "37248-Y07U0001-B01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3786635337
+      "sku": 3646802847
     },
     {
-      "product_id": 3942528205,
-      "offer_id": "41090-Y07U0001-A01",
+      "product_id": 3765510083,
+      "offer_id": "33645-Y07U0003-B01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 3786946279
+      "sku": 3647432444
     },
     {
-      "product_id": 4276362074,
-      "offer_id": "41604-Y07U0001-A01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4056661309
-    },
-    {
-      "product_id": 4276605075,
-      "offer_id": "34595-Y07U0002-A01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4056864127
-    },
-    {
-      "product_id": 4276828751,
-      "offer_id": "41605-Y07U0001-A01",
+      "product_id": 3766251900,
+      "offer_id": "40009-Y07U0001-A01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4057052510
+      "sku": 3648027599
     },
     {
-      "product_id": 4287593215,
-      "offer_id": "41634-Y07U0001-A01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4065669389
-    },
-    {
-      "product_id": 4291231674,
-      "offer_id": "41635-Y07U0001-A01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4068502054
-    },
-    {
-      "product_id": 4291809687,
-      "offer_id": "41636-Y07U0001-A01",
+      "product_id": 3766696116,
+      "offer_id": "40002-Y07U0001-A01",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4068962481
+      "sku": 3648377250
     },
     {
-      "product_id": 4559463568,
-      "offer_id": "41992-Y07U0001-A01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4284185370
-    },
-    {
-      "product_id": 4559574114,
-      "offer_id": "41986-Y07U0001-A01",
+      "product_id": 3780026739,
+      "offer_id": "30305-Y07U0005-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4284279412
+      "sku": 3658853604
     },
     {
-      "product_id": 4559574573,
-      "offer_id": "41987-Y07U0001-A01",
+      "product_id": 3780324246,
+      "offer_id": "33365-Y07U0001-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4284277954
+      "sku": 3659084810
     },
     {
-      "product_id": 4672794384,
-      "offer_id": "42188-Y07U0001-A01",
+      "product_id": 3780439311,
+      "offer_id": "29714-Y07U0008-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4379159848
+      "sku": 3659186043
     },
     {
-      "product_id": 4735442111,
-      "offer_id": "10220-Y07U0025-B01",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4431750292
-    },
-    {
-      "product_id": 4844754017,
-      "offer_id": "31243-Y07U0001-A01",
+      "product_id": 3780521679,
+      "offer_id": "30275-Y07U0005-B02",
       "has_fbo_stocks": true,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4524180586
+      "sku": 3659251893
     },
     {
-      "product_id": 4853945624,
-      "offer_id": "42481-Y07U0001-C01",
+      "product_id": 3790773042,
+      "offer_id": "37808-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3667366626
+    },
+    {
+      "product_id": 3791027312,
+      "offer_id": "37757-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3667565377
+    },
+    {
+      "product_id": 3860157251,
+      "offer_id": "37612-Y07U0001",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4531986822
+      "sku": 3722158650
     },
     {
-      "product_id": 4854134834,
-      "offer_id": "20103-Y07U0015-B01",
+      "product_id": 3861551501,
+      "offer_id": "20162-Y07U0015-B01",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4532141713
+      "sku": 3723279679
     },
     {
-      "product_id": 4927077733,
-      "offer_id": "40613-Y07U0002-C01",
+      "product_id": 3943371198,
+      "offer_id": "40243-Y07U0001-A01",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3787642179
+    },
+    {
+      "product_id": 3985376137,
+      "offer_id": "41316-Y07U0001-A01",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3821772809
+    },
+    {
+      "product_id": 3992604810,
+      "offer_id": "33367-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3827770156
+    },
+    {
+      "product_id": 3993005471,
+      "offer_id": "37965-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3828092422
+    },
+    {
+      "product_id": 3993267183,
+      "offer_id": "33386-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3828309212
+    },
+    {
+      "product_id": 3993460825,
+      "offer_id": "37053-Y07U0001-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3828469066
+    },
+    {
+      "product_id": 4112346385,
+      "offer_id": "38555-Y07U0001-A01",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3924023594
+    },
+    {
+      "product_id": 4112438491,
+      "offer_id": "38559-Y07U0001-A01",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 3924092892
+    },
+    {
+      "product_id": 4511612783,
+      "offer_id": "35352-Y07U0002-B02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 4245380491
+    },
+    {
+      "product_id": 4846002899,
+      "offer_id": "39842-Y07U0002-C02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 4525217472
+    },
+    {
+      "product_id": 4846092188,
+      "offer_id": "40218-Y07U0001-C02",
+      "has_fbo_stocks": true,
+      "has_fbs_stocks": false,
+      "archived": false,
+      "is_discounted": false,
+      "quants": [],
+      "sku": 4525296761
+    },
+    {
+      "product_id": 4931990283,
+      "offer_id": "42570-Y07U0001-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4593474332
+      "sku": 4597608993
     },
     {
-      "product_id": 4947899535,
-      "offer_id": "35337-Y07U0001-B02",
+      "product_id": 4932108341,
+      "offer_id": "42572-Y07U0001-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4611149076
+      "sku": 4597705617
     },
     {
-      "product_id": 5142490754,
-      "offer_id": "42845-Y07U0001-C01",
+      "product_id": 5094162188,
+      "offer_id": "31451-Y07U0002-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4775150804
+      "sku": 4734766594
     },
     {
-      "product_id": 5142605494,
-      "offer_id": "27035-Y07U0002-C01",
+      "product_id": 5094619325,
+      "offer_id": "40868-Y07U0002-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4775239901
+      "sku": 4735147152
     },
     {
-      "product_id": 5158574102,
-      "offer_id": "42871-Y07U0001-C01",
+      "product_id": 5094654429,
+      "offer_id": "42150-Y07U0002-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4788709961
+      "sku": 4735176365
     },
     {
-      "product_id": 5208817544,
-      "offer_id": "12650-Y07U0005-C01",
+      "product_id": 5208901065,
+      "offer_id": "42929-Y07U0001-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4831169329
+      "sku": 4831256013
     },
     {
-      "product_id": 5335653892,
-      "offer_id": "43183-Y07U0001-OB01",
+      "product_id": 5208972293,
+      "offer_id": "42910-Y07U0001-C02",
       "has_fbo_stocks": false,
       "has_fbs_stocks": false,
       "archived": false,
       "is_discounted": false,
       "quants": [],
-      "sku": 4939850150
-    },
-    {
-      "product_id": 5368205964,
-      "offer_id": "33284-Y07U0002-OB02",
-      "has_fbo_stocks": false,
-      "has_fbs_stocks": false,
-      "archived": false,
-      "is_discounted": false,
-      "quants": [],
-      "sku": 4967742027
+      "sku": 4831316726
     }
   ]
 }
