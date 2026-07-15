@@ -15,3 +15,4 @@ class ProductItem(BaseModel):
     price: Optional[Decimal] = None
     status: Optional[str] = None
     category_id: Optional[int] = None
+    primary_image: Optional[str] = None

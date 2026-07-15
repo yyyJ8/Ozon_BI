@@ -5,6 +5,7 @@ export interface Product {
   price: number
   status: string
   category_id: number
+  primary_image: string | null
 }
 
 export interface SummaryRow {

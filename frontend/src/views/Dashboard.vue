@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useDashboard } from '@/composables/useDashboard'
 import type { ProductSummary } from '@/types'
@@ -21,6 +21,7 @@ const {
   dailyAggregation,
   productSummary,
   disabledDate,
+  availableRange,
   fetchProducts,
 } = useDashboard()
 
@@ -44,6 +45,44 @@ function openProductDetail(product: ProductSummary) {
 const transactionsMap = ref<Record<string, FinanceTransaction[]>>({})
 const loadingTx = ref<Record<string, boolean>>({})
 const activeTab = ref('all')
+
+// ─── 日期预设 ──────────────────────────────────────────────
+const periodPreset = ref('30days')
+const showCustomDate = ref(false)
+
+function daysAgoStr(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return d.toISOString().split('T')[0]
+}
+
+function applyPreset(preset: string) {
+  showCustomDate.value = preset === 'custom'
+  switch (preset) {
+    case 'yesterday': {
+      const y = daysAgoStr(1)
+      dateRange.value = [y, y]
+      break
+    }
+    case '7days':
+      dateRange.value = [daysAgoStr(6), daysAgoStr(0)]
+      break
+    case '30days':
+      dateRange.value = [daysAgoStr(29), daysAgoStr(0)]
+      break
+    case 'all':
+    default:
+      if (availableRange.value) {
+        dateRange.value = [availableRange.value.min_date, availableRange.value.max_date]
+      }
+      break
+  }
+}
+
+// 首次拿到日期范围后，按默认预设（近30天）设置
+watch(availableRange, (range) => {
+  if (range) applyPreset('30days')
+})
 
 function rowKey(row: SummaryRow) {
   return `${row.date}_${row.sku_id}`
@@ -219,7 +258,20 @@ onMounted(() => {
 
       <div style="flex: 1; min-width: 20px" />
 
+      <el-select
+        v-model="periodPreset"
+        style="width: 120px"
+        @change="applyPreset"
+      >
+        <el-option label="昨天" value="yesterday" />
+        <el-option label="近7天" value="7days" />
+        <el-option label="近30天" value="30days" />
+        <el-option label="全部" value="all" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+
       <el-date-picker
+        v-if="showCustomDate"
         v-model="dateRange"
         type="daterange"
         range-separator="至"

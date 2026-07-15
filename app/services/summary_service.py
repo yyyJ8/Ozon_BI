@@ -20,9 +20,10 @@ from decimal import Decimal
 from typing import Optional
 
 from loguru import logger
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import FinanceTransaction, SkuDailySummary
+from app.models import FinanceTransaction, SkuDailySummary, Stock
 
 
 def _parse_amount(val) -> Decimal:
@@ -104,7 +105,18 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
 
     logger.info(f"分组聚合: {len(groups)} 个 (date, sku) 组合")
 
-    # 3. 更新 sku_daily_summary
+    # 3. 预加载库存（所有涉及 SKU 的当前库存）
+    all_sku_ids = list(set(sid for _, sid in groups.keys()))
+    stock_map: dict[int, tuple[int, int]] = {}
+    if all_sku_ids:
+        stock_rows = db.query(
+            Stock.sku_id,
+            func.coalesce(func.sum(Stock.present), 0).label("present"),
+            func.coalesce(func.sum(Stock.reserved), 0).label("reserved"),
+        ).filter(Stock.sku_id.in_(all_sku_ids)).group_by(Stock.sku_id).all()
+        stock_map = {r.sku_id: (int(r.present), int(r.reserved)) for r in stock_rows}
+
+    # 4. 更新 sku_daily_summary
     updated = 0
     for (op_date, sku_id), vals in groups.items():
         summary = db.query(SkuDailySummary).filter(
@@ -112,14 +124,18 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             SkuDailySummary.sku_id == sku_id,
         ).first()
 
+        sp, sr = stock_map.get(sku_id, (0, 0))
+
         if not summary:
             summary = SkuDailySummary(
                 record_date=op_date,
                 sku_id=sku_id,
+                stock_present=sp,
+                stock_reserved=sr,
             )
             db.add(summary)
 
-        # 更新费用字段
+        # 更新费用字段（库存只在 INSERT 时写入当日快照，不覆盖历史）
         summary.returns_amount = vals["returns_amount"]
         summary.commissions = vals["commissions"]
         summary.logistics_costs = vals["logistics_costs"]

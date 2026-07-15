@@ -13,10 +13,21 @@ const emit = defineEmits<{
   (e: 'row-click', product: ProductSummary): void
 }>()
 
-// ─── 总库存折线图数据 ────────────────────────────────────
+// ─── 选中商品 → 折线图数据 ────────────────────────────────
+const selectedSkuId = ref<number | null>(null)
+const selectedSkuLabel = computed(() => {
+  if (selectedSkuId.value === null) return '全部商品'
+  const p = props.products.find(x => x.sku_id === selectedSkuId.value)
+  const oid = p?.offer_id || '—'
+  return `SKU ${selectedSkuId.value} / ${oid}`
+})
+
 const dailyInventory = computed(() => {
+  const rows = selectedSkuId.value === null
+    ? props.summaryRows
+    : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
   const map = new Map<string, number>()
-  for (const row of props.summaryRows) {
+  for (const row of rows) {
     const prev = map.get(row.date) || 0
     map.set(row.date, prev + row.stock_present)
   }
@@ -24,6 +35,26 @@ const dailyInventory = computed(() => {
     .map(([date, stock]) => ({ date, stock }))
     .sort((a, b) => a.date.localeCompare(b.date))
 })
+
+// 同数据源的日销量聚合
+const dailySales = computed(() => {
+  const rows = selectedSkuId.value === null
+    ? props.summaryRows
+    : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
+  const map = new Map<string, number>()
+  for (const row of rows) {
+    const prev = map.get(row.date) || 0
+    map.set(row.date, prev + row.ordered_units)
+  }
+  return Array.from(map.entries())
+    .map(([date, units]) => ({ date, units }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+})
+
+function selectSku(skuId: number) {
+  // 点击同一个取消选中
+  selectedSkuId.value = selectedSkuId.value === skuId ? null : skuId
+}
 
 // ─── 库存列表 ─────────────────────────────────────────────
 interface InventoryItem {
@@ -121,20 +152,24 @@ function renderChart() {
 
   const dates = dailyInventory.value.map(d => d.date.slice(5))
   const stocks = dailyInventory.value.map(d => d.stock)
+  const sales = dailySales.value.map(d => d.units)
 
   chart.setOption(
     {
       tooltip: {
         trigger: 'axis',
-        formatter: (params: { axisValue: string; value: number }[]) => {
-          const val = params[0].value as number
-          return `<div style="font-size:13px;line-height:1.8">
-            <strong>${params[0].axisValue}</strong><br/>
-            总库存: <strong>${val.toLocaleString()} 件</strong>
-          </div>`
+        formatter: (params: { seriesName: string; value: number; axisValue: string }[]) => {
+          const items = Array.isArray(params) ? params : [params]
+          let html = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue || ''}</strong>`
+          for (const p of items) {
+            const color = p.seriesName === '库存' ? '#409eff' : '#e6a23c'
+            html += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 件</strong>`
+          }
+          html += `</div>`
+          return html
         },
       },
-      grid: { left: 60, right: 20, top: 20, bottom: 30 },
+      grid: { left: 60, right: 20, top: 20, bottom: 40 },
       xAxis: {
         type: 'category',
         data: dates,
@@ -142,23 +177,20 @@ function renderChart() {
       },
       yAxis: {
         type: 'value',
-        axisLabel: {
-          fontSize: 11,
-          formatter: (v: number) => {
-            if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M'
-            if (v >= 1_000) return (v / 1_000).toFixed(1) + 'K'
-            return String(v)
-          },
-        },
+        axisLabel: { fontSize: 11 },
+      },
+      legend: {
+        data: ['库存', '销量'],
+        bottom: 0,
       },
       series: [
         {
-          name: '总库存',
+          name: '库存',
           type: 'line',
           data: stocks,
           smooth: true,
           symbol: 'circle',
-          symbolSize: 5,
+          symbolSize: 4,
           lineStyle: { width: 2, color: '#409eff' },
           itemStyle: { color: '#409eff' },
           areaStyle: {
@@ -167,6 +199,16 @@ function renderChart() {
               { offset: 1, color: 'rgba(64,158,255,0.02)' },
             ]),
           },
+        },
+        {
+          name: '销量',
+          type: 'line',
+          data: sales,
+          smooth: true,
+          symbol: 'diamond',
+          symbolSize: 5,
+          lineStyle: { width: 2, color: '#e6a23c' },
+          itemStyle: { color: '#e6a23c' },
         },
       ],
     },
@@ -196,9 +238,10 @@ watch(() => props.activeTab, (tab) => {
   }
 })
 
-watch(() => [props.summaryRows], () => {
-  if (initialized) renderChart()
-}, { deep: true })
+watch(
+  () => [dailyInventory.value, dailySales.value],
+  () => { if (initialized) renderChart() },
+)
 
 onUnmounted(() => {
   chart?.dispose()
@@ -218,8 +261,17 @@ function statusTagType(status: string): string {
         <el-card shadow="hover">
           <template #header>
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-weight: 600">📈 总库存趋势</span>
-              <el-tag type="info" size="small">{{ dailyInventory.length }} 天</el-tag>
+              <span style="font-weight: 600">
+                📈 {{ selectedSkuId === null ? '总库存趋势' : selectedSkuLabel + ' 库存趋势' }}
+              </span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-button
+                  v-if="selectedSkuId !== null"
+                  size="small"
+                  @click="selectSku(selectedSkuId!)"
+                >显示全部</el-button>
+                <el-tag type="info" size="small">{{ dailyInventory.length }} 天</el-tag>
+              </div>
             </div>
           </template>
           <div ref="chartRef" style="width: 100%; height: 360px" />
@@ -299,7 +351,7 @@ function statusTagType(status: string): string {
         style="width: 100%"
         max-height="480"
         highlight-current-row
-        @row-click="(row: InventoryItem) => emit('row-click', products.find(p => p.sku_id === row.sku_id)!)"
+        @row-click="(row: InventoryItem) => selectSku(row.sku_id)"
       >
         <el-table-column prop="sku_id" label="SKU" width="100" sortable>
           <template #default="{ row }">

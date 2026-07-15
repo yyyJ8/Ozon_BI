@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Product, SkuDailySummary, Stock
+from app.models import Product, SkuDailySummary
 from app.schemas.summary import SummaryItem, SummaryStats, DateRange
 
 router = APIRouter(prefix="/summary", tags=["summary"])
@@ -47,28 +47,16 @@ def list_summary(
         SkuDailySummary.sku_id,
     ).all()
 
-    # 预加载每个 SKU 的库存汇总
-    sku_ids_in_result = list(set(s.sku_id for s, _, _, _ in rows))
-    stock_map: dict[int, tuple[int, int]] = {}
-    if sku_ids_in_result:
-        for row in db.query(
-            Stock.sku_id,
-            func.coalesce(func.sum(Stock.present), 0).label("total_present"),
-            func.coalesce(func.sum(Stock.reserved), 0).label("total_reserved"),
-        ).filter(Stock.sku_id.in_(sku_ids_in_result)).group_by(Stock.sku_id).all():
-            stock_map[row.sku_id] = (int(row.total_present), int(row.total_reserved))
-
     result = []
     for s, name, primary_image, offer_id in rows:
-        present, reserved = stock_map.get(s.sku_id, (0, 0))
         result.append(SummaryItem(
             date=s.record_date,
             sku_id=s.sku_id,
             offer_id=offer_id or s.offer_id,
             name=name,
             primary_image=primary_image,
-            stock_present=present,
-            stock_reserved=reserved,
+            stock_present=s.stock_present,
+            stock_reserved=s.stock_reserved,
             ordered_units=s.ordered_units,
             revenue=s.revenue,
             returns_amount=s.returns_amount,

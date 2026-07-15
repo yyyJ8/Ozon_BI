@@ -30,7 +30,7 @@ export function useDashboard() {
       .sort((a, b) => a.date.localeCompare(b.date))
   })
 
-  // 按 SKU 聚合 — 商品汇总表
+  // 按 SKU 聚合 — 商品汇总表（基于全量商品列表，缺失商品填 0）
   const productSummary = computed(() => {
     const map = new Map<number, {
       sku_id: number
@@ -46,6 +46,26 @@ export function useDashboard() {
       stock_reserved: number
       day_count: number
     }>()
+
+    // 先填充全量商品（兜底值）
+    for (const p of products.value) {
+      map.set(p.sku_id, {
+        sku_id: p.sku_id,
+        offer_id: p.offer_id,
+        name: p.name,
+        primary_image: p.primary_image,
+        revenue: 0,
+        net_profit: 0,
+        profit_margin: 0,
+        ordered_units: 0,
+        returns_amount: 0,
+        stock_present: 0,
+        stock_reserved: 0,
+        day_count: 0,
+      })
+    }
+
+    // 用汇总数据覆盖
     for (const row of summaryRows.value) {
       const d = map.get(row.sku_id)
       if (d) {
@@ -54,23 +74,16 @@ export function useDashboard() {
         d.ordered_units += row.ordered_units
         d.returns_amount += row.returns_amount
         d.day_count += 1
-      } else {
-        map.set(row.sku_id, {
-          sku_id: row.sku_id,
-          offer_id: row.offer_id,
-          name: row.name || `SKU ${row.sku_id}`,
-          primary_image: row.primary_image,
-          revenue: row.revenue,
-          net_profit: row.net_profit,
-          profit_margin: 0,
-          ordered_units: row.ordered_units,
-          returns_amount: row.returns_amount,
-          stock_present: row.stock_present,
-          stock_reserved: row.stock_reserved,
-          day_count: 1,
-        })
+        if (row.primary_image) d.primary_image = row.primary_image
+        if (row.stock_present !== 0 || d.stock_present === 0) {
+          d.stock_present = row.stock_present
+        }
+        if (row.stock_reserved !== 0 || d.stock_reserved === 0) {
+          d.stock_reserved = row.stock_reserved
+        }
       }
     }
+
     const arr = Array.from(map.values())
     for (const p of arr) {
       p.profit_margin = p.revenue > 0 ? (p.net_profit / p.revenue) * 100 : 0
@@ -197,6 +210,7 @@ export function useDashboard() {
     dailyAggregation,
     productSummary,
     disabledDate,
+    availableRange,
     fetchProducts,
     fetchData,
   }

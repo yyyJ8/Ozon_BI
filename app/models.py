@@ -74,6 +74,10 @@ class SkuDailySummary(Base):
     ordered_units: Mapped[int] = mapped_column(Integer, default=0, comment="下单件数（analytics API）")
     revenue: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="销售收入 RUB（analytics API）")
 
+    # 库存快照（来源：stocks 表，同步时快照）
+    stock_present: Mapped[int] = mapped_column(Integer, default=0, comment="现有库存件数")
+    stock_reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留件数")
+
     # 财务指标（来源：finance API，按 sku + date 聚合）
     returns_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="退货退款金额 RUB（负数）")
     commissions: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="佣金总额 RUB（负数）")
