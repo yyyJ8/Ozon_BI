@@ -6,6 +6,7 @@ export interface Product {
   status: string
   category_id: number
   primary_image: string | null
+  commission_fbo_pct: number | null
 }
 
 export interface SummaryRow {
@@ -70,6 +71,8 @@ export interface ProductSummary {
   profit_margin: number
   ordered_units: number
   returns_amount: number
+  commissions: number
+  commission_rate: number | null
   stock_present: number
   stock_reserved: number
   day_count: number

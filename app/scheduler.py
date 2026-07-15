@@ -1,5 +1,5 @@
 """
-定时同步调度 — 每天 17:00 自动同步最近 3 天数据
+定时同步调度 — 每天 5:00 和 16:00 自动同步最近 3 天数据
 """
 from datetime import date, timedelta
 
@@ -30,18 +30,27 @@ def sync_recent_data():
 
 
 def start_scheduler():
-    """启动定时调度，每天 17:00 执行同步"""
+    """启动定时调度，每天 5:00 和 16:00 执行同步"""
     scheduler.add_job(
         sync_recent_data,
         trigger="cron",
-        hour=17,
+        hour=5,
         minute=0,
-        id="daily_sync_at_5pm",
+        id="daily_sync_at_5am",
         replace_existing=True,
-        misfire_grace_time=600,  # 允许延迟 10 分钟内执行
+        misfire_grace_time=600,
+    )
+    scheduler.add_job(
+        sync_recent_data,
+        trigger="cron",
+        hour=16,
+        minute=0,
+        id="daily_sync_at_4pm",
+        replace_existing=True,
+        misfire_grace_time=600,
     )
     scheduler.start()
-    logger.info("定时调度已启动: 每天 17:00 同步最近数据")
+    logger.info("定时调度已启动: 每天 5:00、16:00 同步最近数据")
 
 
 def stop_scheduler():

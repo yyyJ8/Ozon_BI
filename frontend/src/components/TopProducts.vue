@@ -77,6 +77,13 @@ function handleRowClick(row: ProductSummary) {
       </template>
     </el-table-column>
 
+    <el-table-column prop="stock_reserved" label="预留" width="70" align="right" sortable>
+      <template #default="{ row }">
+        <span v-if="row.stock_reserved > 0" style="color: #e6a23c;">{{ row.stock_reserved }}</span>
+        <span v-else style="color: #c0c4cc;">0</span>
+      </template>
+    </el-table-column>
+
     <el-table-column
       prop="stock_present - stock_reserved"
       label="可用"
@@ -98,6 +105,15 @@ function handleRowClick(row: ProductSummary) {
       align="right"
       sortable
     />
+
+    <el-table-column prop="commission_rate" label="佣金率" width="80" align="right" sortable>
+      <template #default="{ row }">
+        <span v-if="row.commission_rate != null">
+          {{ row.commission_rate.toFixed(1) }}%
+        </span>
+        <span v-else style="color: #c0c4cc;">—</span>
+      </template>
+    </el-table-column>
 
     <el-table-column prop="revenue" label="收入" width="110" align="right" sortable>
       <template #default="{ row }">

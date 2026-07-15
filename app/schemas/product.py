@@ -16,3 +16,4 @@ class ProductItem(BaseModel):
     status: Optional[str] = None
     category_id: Optional[int] = None
     primary_image: Optional[str] = None
+    commission_fbo_pct: Optional[Decimal] = None

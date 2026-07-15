@@ -42,6 +42,8 @@ export function useDashboard() {
       profit_margin: number
       ordered_units: number
       returns_amount: number
+      commissions: number
+      commission_rate: number | null
       stock_present: number
       stock_reserved: number
       day_count: number
@@ -59,6 +61,8 @@ export function useDashboard() {
         profit_margin: 0,
         ordered_units: 0,
         returns_amount: 0,
+        commissions: 0,
+        commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
         stock_present: 0,
         stock_reserved: 0,
         day_count: 0,
@@ -73,6 +77,7 @@ export function useDashboard() {
         d.net_profit += row.net_profit
         d.ordered_units += row.ordered_units
         d.returns_amount += row.returns_amount
+        d.commissions += row.commissions
         d.day_count += 1
         if (row.primary_image) d.primary_image = row.primary_image
         if (row.stock_present !== 0 || d.stock_present === 0) {

@@ -298,7 +298,7 @@ onMounted(() => {
       </el-select>
 
       <el-tag type="info" effect="plain" size="small" style="margin-left: 8px;">
-        每日 17:00 自动同步
+        每日 5:00 / 16:00 自动同步
       </el-tag>
     </el-header>
 
