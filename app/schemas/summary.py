@@ -18,8 +18,11 @@ class SummaryItem(BaseModel):
     stock_present: int = 0              # 当前库存总量（FBO+FBS）
     stock_reserved: int = 0             # 已预留库存
     ordered_units: int = 0
+    delivered_units: int = 0
+    cancelled_units: int = 0
     revenue: Decimal = Decimal("0")
     returns_amount: Decimal = Decimal("0")
+    returns_units: int = 0
     commissions: Decimal = Decimal("0")
     logistics_costs: Decimal = Decimal("0")
     storage_fees: Decimal = Decimal("0")
@@ -38,9 +41,12 @@ class SummaryStats(BaseModel):
     total_net_profit: Decimal = Decimal("0")
     avg_profit_margin: Decimal = Decimal("0")
     total_ordered_units: int = 0
+    total_delivered_units: int = 0
+    total_cancelled_units: int = 0
     total_commissions: Decimal = Decimal("0")
     total_logistics: Decimal = Decimal("0")
     total_returns: Decimal = Decimal("0")
+    total_returns_units: int = 0
     total_storage: Decimal = Decimal("0")
     total_advertising: Decimal = Decimal("0")
     total_other_costs: Decimal = Decimal("0")

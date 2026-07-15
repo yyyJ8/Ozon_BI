@@ -12,6 +12,7 @@ from app.models import SyncLog
 from app.services.product_sync import sync_products
 from app.services.analytics_sync import sync_analytics
 from app.services.finance_sync import sync_finance
+from app.services.posting_sync import sync_postings
 from app.services.summary_service import build_summary
 
 
@@ -88,7 +89,23 @@ def run_full_sync(db: Session, client: OzonClient,
         _log_sync(db, "finance", "failed", error=str(e), batch_id=batch_id)
         results["finance"] = {"error": str(e)}
 
-    # ── 4. 构建汇总 ──
+    # ── 4. 订单履约同步（增量: 最近30天到昨天 + 补齐缺失）──
+    try:
+        yesterday = today - timedelta(days=1)
+        _log_sync(db, "postings", "running", batch_id=batch_id)
+        pr = sync_postings(db, client,
+                          date_from=(yesterday - timedelta(days=30)).isoformat(),
+                          date_to=yesterday.isoformat())
+        results["postings"] = pr
+        _log_sync(db, "postings", "success",
+                  records=pr.get("posting_list_inserted", 0) + pr.get("posting_get_inserted", 0),
+                  batch_id=batch_id)
+    except Exception as e:
+        logger.error(f"订单履约同步失败: {e}")
+        _log_sync(db, "postings", "failed", error=str(e), batch_id=batch_id)
+        results["postings"] = {"error": str(e)}
+
+    # ── 5. 构建汇总 ──
     try:
         _log_sync(db, "summary", "running", batch_id=batch_id)
         sr = build_summary(db, start_date, today)

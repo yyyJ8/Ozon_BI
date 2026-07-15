@@ -33,7 +33,7 @@ function handleRowClick(row: ProductSummary) {
       </template>
     </el-table-column>
 
-    <el-table-column prop="offer_id" label="货号" width="200" sortable>
+    <el-table-column prop="offer_id" label="货号" width="160" sortable>
       <template #default="{ row }">
         <span style="font-family: monospace; font-size: 12px; color: #909399; white-space: nowrap;">
           {{ row.offer_id }}
@@ -65,7 +65,7 @@ function handleRowClick(row: ProductSummary) {
       show-overflow-tooltip
     />
 
-    <el-table-column prop="stock_present" label="现有库存" width="80" align="right" sortable>
+    <el-table-column prop="stock_present" label="库存" width="65" align="right" sortable>
       <template #default="{ row }">
         <el-tag
           :type="row.stock_present > 10 ? 'success' : row.stock_present > 0 ? 'warning' : 'danger'"
@@ -77,41 +77,30 @@ function handleRowClick(row: ProductSummary) {
       </template>
     </el-table-column>
 
-    <el-table-column prop="stock_reserved" label="预留" width="70" align="right" sortable>
+    <el-table-column prop="ordered_units" label="下单" width="55" align="right" sortable>
       <template #default="{ row }">
-        <span v-if="row.stock_reserved > 0" style="color: #e6a23c;">{{ row.stock_reserved }}</span>
-        <span v-else style="color: #c0c4cc;">0</span>
-      </template>
-    </el-table-column>
-
-    <el-table-column
-      prop="stock_present - stock_reserved"
-      label="可用"
-      width="70"
-      align="right"
-      sortable
-    >
-      <template #default="{ row }">
-        <span :style="{ color: row.stock_present - row.stock_reserved > 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
-          {{ Math.max(0, row.stock_present - row.stock_reserved) }}
+        <span :style="{ color: row.ordered_units > 0 ? '#303133' : '#c0c4cc' }">
+          {{ row.ordered_units }}
         </span>
       </template>
     </el-table-column>
 
-    <el-table-column
-      prop="ordered_units"
-      label="销量"
-      width="60"
-      align="right"
-      sortable
-    />
-
-    <el-table-column prop="commission_rate" label="佣金率" width="80" align="right" sortable>
+    <el-table-column prop="delivered_units" label="送达" width="55" align="right" sortable>
       <template #default="{ row }">
-        <span v-if="row.commission_rate != null">
-          {{ row.commission_rate.toFixed(1) }}%
+        <span :style="{
+          color: row.delivered_units > 0 ? '#409eff' : '#c0c4cc',
+          fontWeight: row.delivered_units > 0 ? 600 : 400,
+        }">
+          {{ row.delivered_units }}
         </span>
-        <span v-else style="color: #c0c4cc;">—</span>
+      </template>
+    </el-table-column>
+
+    <el-table-column prop="returns_units" label="退货" width="55" align="right" sortable>
+      <template #default="{ row }">
+        <span :style="{ color: row.returns_units > 0 ? '#f56c6c' : '#c0c4cc' }">
+          {{ row.returns_units }}
+        </span>
       </template>
     </el-table-column>
 
@@ -126,7 +115,7 @@ function handleRowClick(row: ProductSummary) {
 
     <el-table-column
       prop="net_profit"
-      label="净利润"
+      label="净利"
       width="110"
       align="right"
       sortable
@@ -146,7 +135,7 @@ function handleRowClick(row: ProductSummary) {
     <el-table-column
       prop="profit_margin"
       label="利润率"
-      width="80"
+      width="70"
       align="right"
       sortable
     >

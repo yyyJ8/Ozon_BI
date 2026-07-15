@@ -132,6 +132,73 @@ class OzonClient:
             page += 1
         return all_ops
 
+    # ── 订单履约接口 ──────────────────────────────────────
+
+    def get_posting_fbo_page(self, date_from: str, date_to: str,
+                              offset: int = 0, limit: int = 1000,
+                              status: str = "") -> tuple[list[dict], bool]:
+        """获取一页 FBO 订单（含 products、status、created_at 等完整字段）"""
+        data = self._request("/v2/posting/fbo/list", {
+            "dir": "asc",
+            "filter": {
+                "since": date_from + "T00:00:00Z",
+                "to": date_to + "T23:59:59Z",
+                "status": status,
+            },
+            "limit": limit,
+            "offset": offset,
+        })
+        result = data.get("result", {})
+        if isinstance(result, dict):
+            return result.get("postings", []), result.get("has_next", False)
+        return result, False if isinstance(result, list) else False
+
+    def get_posting_fbs_page(self, date_from: str, date_to: str,
+                              offset: int = 0, limit: int = 1000,
+                              status: str = "") -> tuple[list[dict], bool]:
+        """获取一页 FBS 订单"""
+        data = self._request("/v3/posting/fbs/list", {
+            "dir": "asc",
+            "filter": {
+                "since": date_from + "T00:00:00Z",
+                "to": date_to + "T23:59:59Z",
+                "status": status,
+            },
+            "limit": limit,
+            "offset": offset,
+        })
+        result = data.get("result", {})
+        if isinstance(result, dict):
+            return result.get("postings", []), result.get("has_next", False)
+        return result, False if isinstance(result, list) else False
+
+    def get_all_postings(self, date_from: str, date_to: str,
+                          schema: str = "FBO") -> list[dict]:
+        """全量拉取订单履约数据（处理分页）"""
+        all_postings: list[dict] = []
+        offset = 0
+        get_page = self.get_posting_fbo_page if schema == "FBO" else self.get_posting_fbs_page
+        while True:
+            postings, has_next = get_page(date_from, date_to, offset=offset)
+            all_postings.extend(postings)
+            if not has_next:
+                break
+            offset += len(postings)
+        return all_postings
+
+    def get_posting_detail(self, posting_number: str) -> dict | None:
+        """获取单个 posting 详情（先试 FBO，失败试 FBS）"""
+        for endpoint in ("/v2/posting/fbo/get", "/v3/posting/fbs/get"):
+            try:
+                resp = self._client.request("POST", endpoint, json={"posting_number": posting_number})
+                if resp.status_code == 200:
+                    return resp.json().get("result", {})
+                if resp.status_code != 404:
+                    resp.raise_for_status()
+            except Exception:
+                continue
+        return None
+
     def close(self):
         self._client.close()
 

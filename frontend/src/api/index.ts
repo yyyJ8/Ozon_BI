@@ -61,3 +61,21 @@ export async function getFinanceTransactions(
     `${BASE}/finance/transactions?sku_id=${skuId}&date=${date}`,
   )
 }
+
+export async function getReturnsByPostings(
+  postingNumbers: string[],
+): Promise<FinanceTransaction[]> {
+  if (!postingNumbers.length) return []
+  return fetchJson<FinanceTransaction[]>(
+    `${BASE}/finance/returns-by-postings?posting_numbers=${postingNumbers.join(',')}`,
+  )
+}
+
+export async function getTransactionsByPostings(
+  postingNumbers: string[],
+): Promise<FinanceTransaction[]> {
+  if (!postingNumbers.length) return []
+  return fetchJson<FinanceTransaction[]>(
+    `${BASE}/finance/by-postings?posting_numbers=${postingNumbers.join(',')}`,
+  )
+}

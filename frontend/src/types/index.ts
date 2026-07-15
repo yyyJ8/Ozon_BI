@@ -18,8 +18,11 @@ export interface SummaryRow {
   stock_present: number
   stock_reserved: number
   ordered_units: number
+  delivered_units: number
+  cancelled_units: number
   revenue: number
   returns_amount: number
+  returns_units: number
   commissions: number
   logistics_costs: number
   storage_fees: number
@@ -38,6 +41,7 @@ export interface SummaryStats {
   total_commissions: number
   total_logistics: number
   total_returns: number
+  total_returns_units: number
   total_storage: number
   total_advertising: number
   total_other_costs: number
@@ -70,7 +74,10 @@ export interface ProductSummary {
   net_profit: number
   profit_margin: number
   ordered_units: number
+  delivered_units: number
+  cancelled_units: number
   returns_amount: number
+  returns_units: number
   commissions: number
   commission_rate: number | null
   stock_present: number

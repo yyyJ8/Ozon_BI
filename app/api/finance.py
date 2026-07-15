@@ -67,6 +67,9 @@ def translate_operation_type(transaction: FinanceTransaction) -> str:
     return transaction.operation_type_name or "未知操作"
 
 
+from typing import Optional
+
+
 router = APIRouter(prefix="/finance", tags=["finance"])
 
 
@@ -87,5 +90,78 @@ def list_transactions(
     # 翻译操作类型
     for tx in rows:
         tx.operation_type_name = translate_operation_type(tx)
+
+    return rows
+
+
+@router.get("/returns-by-postings", response_model=list[FinanceTransactionItem])
+def list_returns_by_postings(
+    posting_numbers: str = Query(..., description="逗号分隔的 posting_number 列表"),
+    db: Session = Depends(get_db),
+):
+    """按 posting_number 批量查询退货流水（跨日期），用于展开行退货溯源"""
+    from app.models import Posting
+
+    pns = [p.strip() for p in posting_numbers.split(",") if p.strip()]
+    if not pns:
+        return []
+
+    rows = db.query(FinanceTransaction).filter(
+        FinanceTransaction.posting_number.in_(pns),
+        FinanceTransaction.operation_type.in_(
+            ("OperationItemReturn", "ClientReturnAgentOperation")
+        ),
+    ).order_by(
+        FinanceTransaction.operation_date.desc(),
+    ).all()
+
+    # 关联 posting 状态，用于区分"真退货"vs"取消退款"
+    posting_status_map = dict(
+        db.query(Posting.posting_number, Posting.status)
+        .filter(Posting.posting_number.in_(pns))
+        .all()
+    )
+
+    for tx in rows:
+        tx.operation_type_name = translate_operation_type(tx)
+        # 注入 posting_status 到 type 字段（前端用 type 字段区分展示）
+        pstatus = posting_status_map.get(tx.posting_number)
+        if pstatus == "cancelled":
+            tx.type = "cancellation"  # 取消退款，不是真退货
+        elif pstatus == "delivered":
+            tx.type = "returns"       # 真退货
+
+    return rows
+
+
+@router.get("/by-postings", response_model=list[FinanceTransactionItem])
+def list_by_postings(
+    posting_numbers: str = Query(..., description="逗号分隔的 posting_number 列表"),
+    db: Session = Depends(get_db),
+):
+    """按 posting_number 批量查询所有类型流水（跨日期），用于展开行展示订单全生命周期"""
+    from app.models import Posting
+
+    pns = [p.strip() for p in posting_numbers.split(",") if p.strip()]
+    if not pns:
+        return []
+
+    rows = db.query(FinanceTransaction).filter(
+        FinanceTransaction.posting_number.in_(pns),
+    ).order_by(
+        FinanceTransaction.operation_date.asc(),
+    ).all()
+
+    posting_status_map = dict(
+        db.query(Posting.posting_number, Posting.status)
+        .filter(Posting.posting_number.in_(pns))
+        .all()
+    )
+
+    for tx in rows:
+        tx.operation_type_name = translate_operation_type(tx)
+        pstatus = posting_status_map.get(tx.posting_number)
+        if tx.type == "returns" and pstatus == "cancelled":
+            tx.type = "cancellation"
 
     return rows

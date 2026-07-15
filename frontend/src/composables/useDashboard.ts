@@ -17,12 +17,14 @@ export function useDashboard() {
 
   // 按日期聚合 — 趋势图使用
   const dailyAggregation = computed(() => {
-    const map = new Map<string, { revenue: number; net_profit: number; ordered_units: number }>()
+    const map = new Map<string, { revenue: number; net_profit: number; ordered_units: number; delivered_units: number; returns_units: number }>()
     for (const row of summaryRows.value) {
-      const d = map.get(row.date) || { revenue: 0, net_profit: 0, ordered_units: 0 }
+      const d = map.get(row.date) || { revenue: 0, net_profit: 0, ordered_units: 0, returns_units: 0 }
       d.revenue += row.revenue
       d.net_profit += row.net_profit
       d.ordered_units += row.ordered_units
+      d.delivered_units += row.delivered_units
+      d.returns_units += row.returns_units
       map.set(row.date, d)
     }
     return Array.from(map.entries())
@@ -41,7 +43,10 @@ export function useDashboard() {
       net_profit: number
       profit_margin: number
       ordered_units: number
+      delivered_units: number
+      cancelled_units: number
       returns_amount: number
+      returns_units: number
       commissions: number
       commission_rate: number | null
       stock_present: number
@@ -60,7 +65,10 @@ export function useDashboard() {
         net_profit: 0,
         profit_margin: 0,
         ordered_units: 0,
+        delivered_units: 0,
+        cancelled_units: 0,
         returns_amount: 0,
+        returns_units: 0,
         commissions: 0,
         commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
         stock_present: 0,
@@ -76,7 +84,10 @@ export function useDashboard() {
         d.revenue += row.revenue
         d.net_profit += row.net_profit
         d.ordered_units += row.ordered_units
+        d.delivered_units += row.delivered_units
+        d.cancelled_units += row.cancelled_units
         d.returns_amount += row.returns_amount
+        d.returns_units += row.returns_units
         d.commissions += row.commissions
         d.day_count += 1
         if (row.primary_image) d.primary_image = row.primary_image
@@ -100,17 +111,21 @@ export function useDashboard() {
   function disabledDate(time: Date): boolean {
     if (!availableRange.value) return false
     const d = time.toISOString().split('T')[0]
-    return d < availableRange.value.min_date || d > availableRange.value.max_date
+    const today = new Date().toISOString().split('T')[0]
+    return d < availableRange.value.min_date || d >= today  // 不能选今天及未来
   }
 
   // 获取可用日期范围
   async function fetchDateRange() {
     try {
       availableRange.value = await getDateRange()
-      // 初始化日期范围：默认为全部可用数据
+      // 初始化日期范围：默认到昨天（今天数据不完整）
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayStr = yesterday.toISOString().split('T')[0]
       dateRange.value = [
         availableRange.value.min_date,
-        availableRange.value.max_date,
+        yesterdayStr < availableRange.value.max_date ? yesterdayStr : availableRange.value.max_date,
       ]
     } catch {
       // 如果失败，退回到最近 30 天
@@ -148,7 +163,10 @@ export function useDashboard() {
       stock_present: toNum(r.stock_present),
       stock_reserved: toNum(r.stock_reserved),
       ordered_units: toNum(r.ordered_units),
+      delivered_units: toNum(r.delivered_units),
+      cancelled_units: toNum(r.cancelled_units),
       returns_amount: toNum(r.returns_amount),
+      returns_units: toNum(r.returns_units),
       commissions: toNum(r.commissions),
       logistics_costs: toNum(r.logistics_costs),
       storage_fees: toNum(r.storage_fees),
@@ -169,6 +187,7 @@ export function useDashboard() {
       total_commissions: toNum(s.total_commissions),
       total_logistics: toNum(s.total_logistics),
       total_returns: toNum(s.total_returns),
+      total_returns_units: toNum(s.total_returns_units),
       total_storage: toNum(s.total_storage),
       total_advertising: toNum(s.total_advertising),
       total_other_costs: toNum(s.total_other_costs),

@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import { useDashboard } from '@/composables/useDashboard'
 import type { ProductSummary } from '@/types'
 import type { SummaryRow, FinanceTransaction } from '@/types'
-import { getFinanceTransactions } from '@/api'
+import { getFinanceTransactions, getTransactionsByPostings } from '@/api'
 import SummaryCards from '@/components/SummaryCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
 import TopProducts from '@/components/TopProducts.vue'
@@ -65,15 +65,18 @@ function applyPreset(preset: string) {
       break
     }
     case '7days':
-      dateRange.value = [daysAgoStr(6), daysAgoStr(0)]
+      dateRange.value = [daysAgoStr(7), daysAgoStr(1)]
       break
     case '30days':
-      dateRange.value = [daysAgoStr(29), daysAgoStr(0)]
+      dateRange.value = [daysAgoStr(30), daysAgoStr(1)]
       break
     case 'all':
     default:
       if (availableRange.value) {
-        dateRange.value = [availableRange.value.min_date, availableRange.value.max_date]
+        // 排除今天（T+0 数据不完整）
+        const maxDate = availableRange.value.max_date
+        const yesterday = daysAgoStr(1)
+        dateRange.value = [availableRange.value.min_date, maxDate < yesterday ? maxDate : yesterday]
       }
       break
   }
@@ -108,8 +111,30 @@ async function handleExpandChange(row: SummaryRow, expandedRows: SummaryRow[]) {
 
   loadingTx.value[key] = true
   try {
+    // 1. 获取当天流水
     const raw = await getFinanceTransactions(row.sku_id, row.date)
-    transactionsMap.value[key] = raw.map(normalizeTx)
+    const txs = raw.map(normalizeTx)
+
+    // 2. 跨日期查询这些 posting 的完整流水（销售、退货、费用）
+    const postingNumbers = [...new Set(
+      txs.map(tx => tx.posting_number).filter(Boolean) as string[]
+    )]
+    if (postingNumbers.length > 0) {
+      try {
+        const allTxs = await getTransactionsByPostings(postingNumbers)
+        // 合并（去重：同一 operation_id 已存在则跳过）
+        const existingIds = new Set(txs.map(tx => tx.operation_id))
+        for (const ftx of allTxs.map(normalizeTx)) {
+          if (!existingIds.has(ftx.operation_id)) {
+            txs.push(ftx)
+          }
+        }
+      } catch {
+        // 溯源失败不阻塞主流程
+      }
+    }
+
+    transactionsMap.value[key] = txs
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '未知错误'
     ElMessage.error('加载订单流水失败: ' + msg)
@@ -192,8 +217,11 @@ interface OpGroup {
 
 function categorizeOperation(op: FinanceTransaction): string {
   const name = (op.operation_type_name || '').toLowerCase()
+  if (op.type === 'cancellation') return '取消退款'
   if (name.includes('退货') || op.type === 'returns') return '退货'
   if (op.accruals_for_sale > 0 || (op.amount > 0 && name.includes('配送完成'))) return '销售'
+  // 内部会计操作（Redistribution = 支付手续费冲销，净额=0，无实际财务影响）
+  if ((op.operation_type || '').includes('Redistribution')) return '冲销'
   return '费用'
 }
 
@@ -201,7 +229,9 @@ function groupOperations(ops: FinanceTransaction[]): { orderOps: OpGroup[]; othe
   const orderOps: FinanceTransaction[] = []
   const otherFees: FinanceTransaction[] = []
   for (const op of ops) {
-    if (op.posting_number && op.posting_number !== '(无订单号)') {
+    // Redistribution 类型是内部会计调整（如手续费冲销），不是真实订单
+    const isInternalAdjustment = (op.operation_type || '').includes('Redistribution')
+    if (op.posting_number && op.posting_number !== '(无订单号)' && !isInternalAdjustment) {
       orderOps.push(op)
     } else {
       otherFees.push(op)
@@ -216,9 +246,11 @@ function groupOperations(ops: FinanceTransaction[]): { orderOps: OpGroup[]; othe
   const meta: Record<string, { icon: string; color: string }> = {
     '销售': { icon: '💰', color: '#67c23a' },
     '退货': { icon: '↩️', color: '#f56c6c' },
+    '取消退款': { icon: '❌', color: '#909399' },
     '费用': { icon: '📄', color: '#e6a23c' },
+    '冲销': { icon: '🔄', color: '#c0c4cc' },
   }
-  const order = ['销售', '退货', '费用']
+  const order = ['销售', '退货', '取消退款', '费用', '冲销']
   return {
     orderOps: order
       .filter(c => map.has(c))
@@ -350,8 +382,8 @@ onMounted(() => {
               </template>
               <ReturnAnalysis
                 :products="productSummary"
+                :summary-rows="summaryRows"
                 :active-tab="activeTab"
-                @row-click="openProductDetail"
               />
             </el-tab-pane>
           </el-tabs>
@@ -363,7 +395,7 @@ onMounted(() => {
     <el-dialog
       v-model="detailVisible"
       :title="detailProduct?.name || '商品详情'"
-      width="1000px"
+      width="1200px"
       top="5vh"
       destroy-on-close
     >
@@ -381,7 +413,7 @@ onMounted(() => {
             </template>
           </el-image>
 
-          <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 24px; font-size: 14px;">
+          <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px 24px; font-size: 14px;">
             <div>
               <span style="color: #909399; margin-right: 4px;">SKU</span>
               <span style="font-family: monospace;">{{ detailProduct.sku_id }}</span>
@@ -401,10 +433,28 @@ onMounted(() => {
               </el-tag>
             </div>
             <div>
-              <span style="color: #909399; margin-right: 4px;">可用库存</span>
-              <span :style="{ color: detailProduct.stock_present - detailProduct.stock_reserved > 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
-                {{ Math.max(0, detailProduct.stock_present - detailProduct.stock_reserved) }}
+              <span style="color: #909399; margin-right: 4px;">预留库存</span>
+              <span :style="{ color: detailProduct.stock_reserved > 0 ? '#e6a23c' : '#909399' }">
+                {{ detailProduct.stock_reserved }}
               </span>
+            </div>
+            <div>
+              <span style="color: #909399; margin-right: 4px;">下单件数</span>
+              <span style="font-weight: 600;">{{ detailProduct.ordered_units }}</span>
+            </div>
+            <div>
+              <span style="color: #909399; margin-right: 4px;">送达件数</span>
+              <span style="font-weight: 600; color: #409eff;">{{ detailProduct.delivered_units }}</span>
+            </div>
+            <div>
+              <span style="color: #909399; margin-right: 4px;">退货件数</span>
+              <span :style="{ color: detailProduct.returns_units > 0 ? '#f56c6c' : '#909399', fontWeight: 600 }">
+                {{ detailProduct.returns_units }}
+              </span>
+            </div>
+            <div>
+              <span style="color: #909399; margin-right: 4px;">佣金率</span>
+              <span>{{ detailProduct.commission_rate != null ? detailProduct.commission_rate.toFixed(1) + '%' : '—' }}</span>
             </div>
             <div>
               <span style="color: #909399; margin-right: 4px;">总收入</span>
@@ -417,13 +467,19 @@ onMounted(() => {
               </span>
             </div>
             <div>
-              <span style="color: #909399; margin-right: 4px;">利润率</span>
+              <span style="color: #909399; margin-right: 4px;">净利润率</span>
               <el-tag
                 :type="detailProduct.profit_margin >= 20 ? 'success' : detailProduct.profit_margin >= 0 ? 'warning' : 'danger'"
                 size="small"
               >
                 {{ detailProduct.profit_margin.toFixed(1) }}%
               </el-tag>
+            </div>
+            <div>
+              <span style="color: #909399; margin-right: 4px;">总费用</span>
+              <span style="color: #f56c6c; font-weight: 600;">
+                ₽ {{ formatMoney(Math.abs(detailProduct.net_profit - detailProduct.revenue)) }}
+              </span>
             </div>
           </div>
         </div>
@@ -481,7 +537,14 @@ onMounted(() => {
                                 fontWeight: 600,
                                 color: grp.color,
                               }">
-                                <span>{{ grp.icon }} {{ grp.category }}</span>
+                                <span>
+                                  {{ grp.icon }} {{ grp.category }}
+                                  <template v-if="grp.category === '退货' && grp.operations.length">
+                                    <span style="font-size:11px;color:#909399;margin-left:4px">
+                                      ({{ [...new Set(grp.operations.map((o: any) => o.operation_date))].sort().join(', ') }})
+                                    </span>
+                                  </template>
+                                </span>
                                 <span :style="{ fontFamily: 'monospace' }">
                                   合计 ₽ {{ formatMoney(grp.subtotal) }}
                                 </span>
@@ -562,14 +625,28 @@ onMounted(() => {
                       </template>
                     </el-table-column>
 
-                    <el-table-column label="订单号" min-width="180">
+                    <el-table-column label="订单号" min-width="200">
                       <template #default="{ row: order }">
-                        <span style="font-family: monospace; font-size: 13px; font-weight: 600; color: #303133;">
-                          {{ order.posting_number }}
-                        </span>
+                        <div style="display:flex;align-items:center;gap:6px">
+                          <span style="font-family: monospace; font-size: 13px; font-weight: 600; color: #303133;">
+                            {{ order.posting_number }}
+                          </span>
+                          <el-tag
+                            v-if="order.operations.some(op => categorizeOperation(op) === '退货')"
+                            type="danger"
+                            size="small"
+                            effect="plain"
+                          >有退货</el-tag>
+                          <el-tag
+                            v-if="order.operations.some(op => categorizeOperation(op) === '取消退款') && !order.operations.some(op => categorizeOperation(op) === '退货')"
+                            type="info"
+                            size="small"
+                            effect="plain"
+                          >已取消</el-tag>
+                        </div>
                       </template>
                     </el-table-column>
-                    <el-table-column label="配送" width="70" align="center">
+                    <el-table-column label="配送" width="65" align="center">
                       <template #default="{ row: order }">
                         <el-tag size="small" effect="plain" :type="order.delivery_schema === 'FBO' ? 'primary' : 'warning'">
                           {{ order.delivery_schema || '—' }}
@@ -623,36 +700,89 @@ onMounted(() => {
             </template>
           </el-table-column>
 
-          <el-table-column prop="date" label="日期" width="100" sortable />
-          <el-table-column prop="ordered_units" label="销量" width="70" align="right" sortable />
-          <el-table-column prop="revenue" label="收入" width="110" align="right" sortable>
+          <el-table-column prop="date" label="日期" width="90" sortable />
+          <el-table-column label="质量" width="70" align="center">
             <template #default="{ row }">
-              ₽ {{ row.revenue.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              <el-tag
+                :type="row.data_quality === 'complete' ? 'success' : 'warning'"
+                size="small"
+                effect="plain"
+              >
+                {{ row.data_quality === 'complete' ? '完整' : '部分' }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="commissions" label="佣金" width="100" align="right" sortable>
+          <el-table-column prop="ordered_units" label="下单" width="50" align="right" sortable />
+          <el-table-column prop="delivered_units" label="送达" width="50" align="right" sortable>
             <template #default="{ row }">
-              {{ row.commissions !== 0 ? row.commissions.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="logistics_costs" label="物流" width="100" align="right" sortable>
-            <template #default="{ row }">
-              {{ row.logistics_costs !== 0 ? row.logistics_costs.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="returns_amount" label="退货" width="90" align="right" sortable>
-            <template #default="{ row }">
-              {{ row.returns_amount !== 0 ? row.returns_amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="net_profit" label="净利润" width="120" align="right" sortable>
-            <template #default="{ row }">
-              <span :style="{ color: row.net_profit >= 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
-                ₽ {{ row.net_profit.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+              <span :style="{ color: row.delivered_units > 0 ? '#409eff' : '#c0c4cc', fontWeight: row.delivered_units > 0 ? 600 : 400 }">
+                {{ row.delivered_units }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="profit_margin" label="利润率" width="90" align="right" sortable>
+          <el-table-column prop="returns_units" label="退货" width="50" align="right" sortable>
+            <template #default="{ row }">
+              <span :style="{ color: row.returns_units > 0 ? '#f56c6c' : '#c0c4cc' }">
+                {{ row.returns_units }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="returns_amount" label="退货金额" width="100" align="right" sortable>
+            <template #default="{ row }">
+              <span :style="{ color: row.returns_amount !== 0 ? '#f56c6c' : '#c0c4cc' }">
+                {{ row.returns_amount !== 0 ? '₽ ' + formatMoney(row.returns_amount) : '—' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="revenue" label="收入" width="100" align="right" sortable>
+            <template #default="{ row }">
+              ₽ {{ formatMoney(row.revenue) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="commissions" label="佣金" width="90" align="right" sortable>
+            <template #default="{ row }">
+              <span :style="{ color: row.commissions !== 0 ? '#f56c6c' : '#c0c4cc' }">
+                {{ row.commissions !== 0 ? '₽ ' + formatMoney(row.commissions) : '—' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="logistics_costs" label="物流" width="90" align="right" sortable>
+            <template #default="{ row }">
+              <span :style="{ color: row.logistics_costs !== 0 ? '#f56c6c' : '#c0c4cc' }">
+                {{ row.logistics_costs !== 0 ? '₽ ' + formatMoney(row.logistics_costs) : '—' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="费用" width="100" align="right" sortable>
+            <template #default="{ row }">
+              <el-popover
+                v-if="(row.storage_fees + row.advertising + row.other_costs) !== 0"
+                placement="top"
+                :width="180"
+                trigger="hover"
+              >
+                <template #reference>
+                  <span style="color: #f56c6c; cursor: pointer; border-bottom: 1px dashed #c0c4cc;">
+                    ₽ {{ formatMoney(row.storage_fees + row.advertising + row.other_costs) }}
+                  </span>
+                </template>
+                <div style="font-family:monospace;font-size:12px;line-height:2">
+                  <div>仓储: <span style="color:#f56c6c">₽ {{ formatMoney(row.storage_fees) }}</span></div>
+                  <div>广告: <span style="color:#f56c6c">₽ {{ formatMoney(row.advertising) }}</span></div>
+                  <div>其他: <span style="color:#f56c6c">₽ {{ formatMoney(row.other_costs) }}</span></div>
+                </div>
+              </el-popover>
+              <span v-else style="color: #c0c4cc;">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="net_profit" label="净利" width="100" align="right" sortable>
+            <template #default="{ row }">
+              <span :style="{ color: row.net_profit >= 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
+                ₽ {{ formatMoney(row.net_profit) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="profit_margin" label="利润率" width="75" align="right" sortable>
             <template #default="{ row }">
               <el-tag
                 :type="row.profit_margin >= 20 ? 'success' : row.profit_margin >= 0 ? 'warning' : 'danger'"

@@ -78,8 +78,13 @@ class SkuDailySummary(Base):
     stock_present: Mapped[int] = mapped_column(Integer, default=0, comment="现有库存件数")
     stock_reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留件数")
 
+    # 履约指标（来源：posting API，按 created_at + sku 聚合）
+    delivered_units: Mapped[int] = mapped_column(Integer, default=0, comment="实际送达件数（posting delivered）")
+    cancelled_units: Mapped[int] = mapped_column(Integer, default=0, comment="取消件数（posting cancelled）")
+
     # 财务指标（来源：finance API，按 sku + date 聚合）
     returns_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="退货退款金额 RUB（负数）")
+    returns_units: Mapped[int] = mapped_column(Integer, default=0, comment="退货件数（已按 posting_number 归因到原销售日期）")
     commissions: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="佣金总额 RUB（负数）")
     logistics_costs: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="物流费 RUB（负数）")
     storage_fees: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="仓储费 RUB（负数）")
@@ -90,6 +95,29 @@ class SkuDailySummary(Base):
 
     # 元数据
     data_quality: Mapped[str] = mapped_column(String(20), default="partial", comment="数据质量: partial(仅有销售) / complete(含财务)")
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="最后同步时间")
+
+
+class Posting(Base):
+    """订单履约数据 — 来源 /v2/posting/fbo/list + /v3/posting/fbs/list
+
+    记录每笔订单的完整生命周期：下单 → 配送 → 签收 / 取消
+    核心用途：
+      1. 退货归因 — posting_number → created_at 找到原销售日期
+      2. 漏斗分析 — ordered_units vs delivered vs cancelled
+    """
+    __tablename__ = "postings"
+    __table_args__ = {"schema": "ozon"}
+
+    posting_number: Mapped[str] = mapped_column(String(255), primary_key=True, comment="发货单号（Ozon 唯一标识）")
+    order_number: Mapped[Optional[str]] = mapped_column(String(255), comment="订单号（一个订单可拆多个 posting）")
+    delivery_schema: Mapped[Optional[str]] = mapped_column(String(20), comment="配送方案: FBO / FBS")
+    status: Mapped[Optional[str]] = mapped_column(String(50), comment="状态: awaiting_deliver / delivering / delivered / cancelled")
+    cancel_reason_id: Mapped[int] = mapped_column(Integer, default=0, comment="取消原因 ID（0 = 未取消）")
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="下单时间（即原销售日期）")
+    in_process_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="开始处理时间")
+    delivered_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="实际送达时间")
+    products: Mapped[Optional[dict]] = mapped_column(JSON, comment="商品明细 [{sku, name, quantity, offer_id, price}]")
     synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="最后同步时间")
 
 
