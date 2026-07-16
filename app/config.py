@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # ── Ozon Performance API（广告）──
     ozon_perf_client_id: str = ""
     ozon_perf_client_secret: str = ""
+    ad_sync_days: int = 3  # 每次同步拉取最近N天的广告SKU明细
+
+    # ── 定时任务 ──
+    sync_cron_hours: str = "5,16"  # 每天几点执行同步（逗号分隔）
 
     @property
     def database_url(self) -> str:

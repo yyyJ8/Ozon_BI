@@ -11,7 +11,10 @@ from loguru import logger
 from sqlalchemy import inspect, text
 
 from app.database import Base, engine
-from app.models import Product, Stock, SkuDailySummary, FinanceTransaction, SyncLog
+from app.models import (
+    Product, Stock, SkuDailySummary, FinanceTransaction, SyncLog,
+    AdCampaign, AdDailyStats, AdCampaignSkuMap, AdSkuDailyStats, Posting,
+)
 
 
 def reset_tables():
@@ -20,9 +23,14 @@ def reset_tables():
     # 1. 删除所有表（先删有外键依赖的，CASCADE 兜底）
     with engine.connect() as conn:
         conn.execute(text("""
+            DROP TABLE IF EXISTS ozon.ad_sku_daily_stats CASCADE;
+            DROP TABLE IF EXISTS ozon.ad_campaign_sku_map CASCADE;
+            DROP TABLE IF EXISTS ozon.ad_daily_stats CASCADE;
+            DROP TABLE IF EXISTS ozon.ad_campaigns CASCADE;
             DROP TABLE IF EXISTS ozon.stocks CASCADE;
             DROP TABLE IF EXISTS ozon.sku_daily_summary CASCADE;
             DROP TABLE IF EXISTS ozon.finance_transactions CASCADE;
+            DROP TABLE IF EXISTS ozon.postings CASCADE;
             DROP TABLE IF EXISTS ozon.sync_log CASCADE;
             DROP TABLE IF EXISTS ozon.products CASCADE;
         """))
@@ -35,7 +43,11 @@ def reset_tables():
 
     # 3. 验证表结构
     inspector = inspect(engine)
-    tables = ["products", "stocks", "sku_daily_summary", "finance_transactions", "sync_log"]
+    tables = [
+        "products", "stocks", "sku_daily_summary", "finance_transactions",
+        "postings", "sync_log",
+        "ad_campaigns", "ad_daily_stats", "ad_campaign_sku_map", "ad_sku_daily_stats",
+    ]
     for tname in tables:
         columns = inspector.get_columns(tname, schema="ozon")
         print(f"\n--- {tname} ({len(columns)} 字段) ---")

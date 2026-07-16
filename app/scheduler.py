@@ -1,5 +1,5 @@
 """
-定时同步调度 — 每天 5:00 和 16:00 自动同步最近 3 天数据
+定时同步调度 — 每天按 .env 配置的时间自动同步最近数据
 """
 from datetime import date, timedelta
 
@@ -7,6 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
 from app.clients.ozon import get_ozon_client
+from app.config import settings
 from app.database import SessionLocal
 from app.services.sync_service import run_full_sync
 
@@ -30,27 +31,24 @@ def sync_recent_data():
 
 
 def start_scheduler():
-    """启动定时调度，每天 5:00 和 16:00 执行同步"""
-    scheduler.add_job(
-        sync_recent_data,
-        trigger="cron",
-        hour=5,
-        minute=0,
-        id="daily_sync_at_5am",
-        replace_existing=True,
-        misfire_grace_time=600,
-    )
-    scheduler.add_job(
-        sync_recent_data,
-        trigger="cron",
-        hour=16,
-        minute=0,
-        id="daily_sync_at_4pm",
-        replace_existing=True,
-        misfire_grace_time=600,
-    )
+    """启动定时调度，从 .env 的 SYNC_CRON_HOURS 读取执行时间"""
+    hours = [int(h.strip()) for h in settings.sync_cron_hours.split(",") if h.strip().isdigit()]
+    if not hours:
+        hours = [5, 16]
+
+    for hour in hours:
+        scheduler.add_job(
+            sync_recent_data,
+            trigger="cron",
+            hour=hour,
+            minute=0,
+            id=f"daily_sync_at_{hour:02d}h",
+            replace_existing=True,
+            misfire_grace_time=600,
+        )
+
     scheduler.start()
-    logger.info("定时调度已启动: 每天 5:00、16:00 同步最近数据")
+    logger.info(f"定时调度已启动: 每天 {hours} 点同步最近数据")
 
 
 def stop_scheduler():

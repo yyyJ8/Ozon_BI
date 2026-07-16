@@ -143,11 +143,6 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             g = _get(key)
             g["storage_fees"] += amt
 
-        elif optype == "OperationMarketplaceCostPerClick":
-            key = (tx.operation_date, tx.sku_id)
-            g = _get(key)
-            g["advertising"] += amt
-
         elif optype == "OperationPromotionWithCostPerOrder":
             key = (tx.operation_date, tx.sku_id)
             g = _get(key)
@@ -194,6 +189,23 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         g["cancelled_units"] = agg["cancelled_units"]
 
     logger.info(f"posting 聚合: {len(posting_agg)} 个 (date, sku) 组合")
+
+    # 3.5b 从 Performance API 聚合广告费（替代 Finance API OperationMarketplaceCostPerClick）
+    #      因为 Finance API 的广告记录全部 sku_id=None，无法关联到 SKU
+    ad_rows = db.execute(text("""
+        SELECT m.sku_id, ds.stat_date, SUM(ds.spend) AS total_spend
+        FROM ozon.ad_daily_stats ds
+        JOIN ozon.ad_campaign_sku_map m ON ds.campaign_id = m.campaign_id
+        WHERE ds.stat_date BETWEEN :from_date AND :to_date
+        GROUP BY m.sku_id, ds.stat_date
+    """), {"from_date": start_date, "to_date": end_date}).fetchall()
+
+    for sku_id, stat_date, total_spend in ad_rows:
+        key = (stat_date, sku_id)
+        g = _get(key)
+        g["advertising"] = Decimal(str(total_spend)) * -1  # 取负：spend 为正数，费用需为负数
+
+    logger.info(f"Performance API 广告费聚合: {len(ad_rows)} 个 (date, sku) 组合")
 
     # 4. 预加载库存（所有涉及 SKU 的当前库存）
     all_sku_ids = list(set(sid for _, sid in groups.keys()))

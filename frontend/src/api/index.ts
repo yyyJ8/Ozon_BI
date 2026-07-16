@@ -1,4 +1,7 @@
-import type { Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction } from '@/types'
+import type {
+  Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction,
+  AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary,
+} from '@/types'
 
 const BASE = '/api/v1'
 
@@ -78,4 +81,43 @@ export async function getTransactionsByPostings(
   return fetchJson<FinanceTransaction[]>(
     `${BASE}/finance/by-postings?posting_numbers=${postingNumbers.join(',')}`,
   )
+}
+
+// ── 广告 API ──
+
+function adParams(dateFrom?: string, dateTo?: string, extra?: Record<string, string>): string {
+  const p = new URLSearchParams(extra)
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  const qs = p.toString()
+  return qs ? '?' + qs : ''
+}
+
+export async function getAdCampaigns(
+  dateFrom?: string, dateTo?: string, type?: string, state?: string,
+): Promise<AdCampaignSummary[]> {
+  const extra: Record<string, string> = {}
+  if (type) extra['campaign_type'] = type
+  if (state) extra['state'] = state
+  return fetchJson<AdCampaignSummary[]>(`${BASE}/advertising/campaigns${adParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getAdCampaignDaily(
+  campaignId: string, dateFrom?: string, dateTo?: string,
+): Promise<AdDailyStat[]> {
+  return fetchJson<AdDailyStat[]>(
+    `${BASE}/advertising/campaigns/${campaignId}/daily${adParams(dateFrom, dateTo)}`)
+}
+
+export async function getAdSkuDetail(
+  skuId: number, dateFrom?: string, dateTo?: string,
+): Promise<AdSkuDetail[]> {
+  return fetchJson<AdSkuDetail[]>(
+    `${BASE}/advertising/sku/${skuId}/detail${adParams(dateFrom, dateTo)}`)
+}
+
+export async function getAdSummary(
+  dateFrom?: string, dateTo?: string,
+): Promise<AdSummary> {
+  return fetchJson<AdSummary>(`${BASE}/advertising/summary${adParams(dateFrom, dateTo)}`)
 }

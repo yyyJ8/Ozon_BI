@@ -48,6 +48,10 @@ export function useDashboard() {
       returns_amount: number
       returns_units: number
       commissions: number
+      logistics_costs: number
+      storage_fees: number
+      advertising: number
+      other_costs: number
       commission_rate: number | null
       stock_present: number
       stock_reserved: number
@@ -70,6 +74,10 @@ export function useDashboard() {
         returns_amount: 0,
         returns_units: 0,
         commissions: 0,
+        logistics_costs: 0,
+        storage_fees: 0,
+        advertising: 0,
+        other_costs: 0,
         commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
         stock_present: 0,
         stock_reserved: 0,
@@ -89,6 +97,10 @@ export function useDashboard() {
         d.returns_amount += row.returns_amount
         d.returns_units += row.returns_units
         d.commissions += row.commissions
+        d.logistics_costs += row.logistics_costs
+        d.storage_fees += row.storage_fees
+        d.advertising += row.advertising
+        d.other_costs += row.other_costs
         d.day_count += 1
         if (row.primary_image) d.primary_image = row.primary_image
         if (row.stock_present !== 0 || d.stock_present === 0) {

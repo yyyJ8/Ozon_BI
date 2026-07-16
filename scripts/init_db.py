@@ -11,7 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import inspect, text
 
 from app.database import Base, engine
-from app.models import Product, Stock, SkuDailySummary, FinanceTransaction, SyncLog
+from app.models import (
+    Product, Stock, SkuDailySummary, FinanceTransaction, SyncLog,
+    AdCampaign, AdDailyStats, AdCampaignSkuMap, AdSkuDailyStats, Posting,
+)
 
 
 def create_tables():
@@ -34,7 +37,11 @@ def create_tables():
 
     # 打印 ozon 下的表结构
     print("\n=== ozon 表结构 ===")
-    for table_name in ["products", "stocks", "sku_daily_summary", "finance_transactions", "sync_log"]:
+    for table_name in [
+        "products", "stocks", "sku_daily_summary", "finance_transactions",
+        "postings", "sync_log",
+        "ad_campaigns", "ad_daily_stats", "ad_campaign_sku_map", "ad_sku_daily_stats",
+    ]:
         columns = inspector.get_columns(table_name, schema="ozon")
         print(f"\n--- {table_name} ---")
         for col in columns:

@@ -1,8 +1,9 @@
 """
-SQLAlchemy ORM 模型 — 5 张表，每字段带中文注释
+SQLAlchemy ORM 模型 — 8 张表，每字段带中文注释
 
 主键设计：
-  products, stocks, sku_daily_summary, finance_transactions
+  products, stocks, sku_daily_summary, finance_transactions, postings,
+  ad_campaigns, ad_daily_stats, ad_campaign_sku_map
      → 自然主键（业务上就是唯一的）
   sync_log → 自增 id（纯审计，顺序递增更直观）
 
@@ -161,3 +162,135 @@ class SyncLog(Base):
     date_to: Mapped[Optional[date]] = mapped_column(Date, comment="查询截止日期")
     error_message: Mapped[Optional[str]] = mapped_column(Text, comment="错误信息（失败时记录）")
     batch_id: Mapped[Optional[str]] = mapped_column(String(100), comment="同步批次 ID，用于关联多次操作")
+
+
+class AdCampaign(Base):
+    """广告活动主数据 — 来源 Performance API GET /api/client/campaign"""
+    __tablename__ = "ad_campaigns"
+    __table_args__ = {"schema": "ozon"}
+
+    campaign_id: Mapped[str] = mapped_column(
+        String(20), primary_key=True,
+        comment="广告活动 ID（Ozon Performance 唯一标识）")
+    title: Mapped[Optional[str]] = mapped_column(
+        Text, comment="活动标题（SKU 类型含 offer_id 前缀，如 33367-亚克力仓鼠笼）")
+    campaign_type: Mapped[str] = mapped_column(
+        String(50), nullable=False,
+        comment="活动类型: SKU / SEARCH_PROMO / ALL_SKU_PROMO / REF_VK / REF_BLOGGER")
+    state: Mapped[str] = mapped_column(
+        String(50), nullable=False,
+        comment="活动状态: CAMPAIGN_STATE_RUNNING / CAMPAIGN_STATE_ARCHIVED / CAMPAIGN_STATE_INACTIVE")
+    budget: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), default=0,
+        comment="活动预算 RUB（部分活动 budget=0 表示无上限）")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now,
+        comment="记录创建时间")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now,
+        comment="记录更新时间")
+
+
+class AdDailyStats(Base):
+    """广告每日统计 — 来源 GET /api/client/statistics/daily (CSV)"""
+    __tablename__ = "ad_daily_stats"
+    __table_args__ = {"schema": "ozon"}
+
+    campaign_id: Mapped[str] = mapped_column(
+        String(20), primary_key=True,
+        comment="广告活动 ID，关联 ad_campaigns.campaign_id")
+    stat_date: Mapped[date] = mapped_column(
+        Date, primary_key=True,
+        comment="统计日期（CSV 字段: Дата）")
+    impressions: Mapped[int] = mapped_column(
+        Integer, default=0,
+        comment="展示量（CSV 字段: Показы）")
+    clicks: Mapped[int] = mapped_column(
+        Integer, default=0,
+        comment="点击量（CSV 字段: Клики）")
+    spend: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0,
+        comment="广告花费 RUB，正数（CSV 字段: Расход, %s）。聚合到 sku_daily_summary 时需取负" % chr(8381))
+    orders_count: Mapped[int] = mapped_column(
+        Integer, default=0,
+        comment="广告带来的订单数（CSV 字段: Заказы, шт.）")
+    orders_sum: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0,
+        comment="广告带来的订单金额 RUB（CSV 字段: Заказы, %s）" % chr(8381))
+    synced_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now,
+        comment="最后同步时间")
+
+
+class AdCampaignSkuMap(Base):
+    """广告活动 → SKU 映射表（自动/手动建立关联）"""
+    __tablename__ = "ad_campaign_sku_map"
+    __table_args__ = {"schema": "ozon"}
+
+    campaign_id: Mapped[str] = mapped_column(
+        String(20), primary_key=True,
+        comment="广告活动 ID，关联 ad_campaigns.campaign_id")
+    sku_id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True,
+        comment="SKU 编号，关联 products.sku_id")
+    offer_id: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        comment="商家自定义商品编码（反范式冗余，便于查询）")
+    mapping_method: Mapped[str] = mapped_column(
+        String(20), default="auto",
+        comment="映射方式: auto（offer_id 前缀自动匹配）/ manual（人工指定）")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now,
+        comment="映射创建时间")
+
+
+class AdSkuDailyStats(Base):
+    """广告 SKU 日明细 — 来源 POST /api/client/statistics 异步报告 (ZIP CSV)
+
+    报告内每个活动含 1~N 个 SKU，一个 SKU 一行。
+    日常同步: dateFrom=dateTo=昨天 → stat_date=昨天。
+    字段来源于异步报告 CSV 的俄文表头。
+    """
+    __tablename__ = "ad_sku_daily_stats"
+    __table_args__ = {"schema": "ozon"}
+
+    campaign_id: Mapped[str] = mapped_column(
+        String(20), primary_key=True,
+        comment="广告活动 ID")
+    sku_id: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True,
+        comment="SKU 编号（SEARCH_PROMO 等全店活动记为 0）")
+    stat_date: Mapped[date] = mapped_column(
+        Date, primary_key=True,
+        comment="统计日期（当天 report 的 dateFrom=dateTo）")
+    sku_name: Mapped[Optional[str]] = mapped_column(
+        Text, comment="SKU 名称（CSV 字段: Название товара）")
+    sku_price: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), comment="SKU 单价 RUB（CSV 字段: Цена товара, %s）" % chr(8381))
+    impressions: Mapped[int] = mapped_column(
+        Integer, default=0, comment="展示量（CSV 字段: Показы）")
+    clicks: Mapped[int] = mapped_column(
+        Integer, default=0, comment="点击量（CSV 字段: Клики）")
+    ctr: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(8, 4), comment="点击率 %（CSV 字段: CTR, %%）")
+    add_to_cart: Mapped[int] = mapped_column(
+        Integer, default=0, comment="加入购物车次数（CSV 字段: Добавления в корзину）")
+    avg_cpc: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), comment="平均单次点击费用 RUB（CSV 字段: Средняя стоимость клика, %s）" % chr(8381))
+    spend: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0, comment="广告花费 RUB（CSV 字段: Расход, %s, с НДС）" % chr(8381))
+    sold_units: Mapped[int] = mapped_column(
+        Integer, default=0, comment="推广直接售出件数（CSV 字段: Продано товаров）")
+    sales_promotion: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), comment="推广直接销售额 RUB（CSV 字段: Продажи в продвижении, %s）" % chr(8381))
+    total_ordered: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), comment="该SKU总订单金额 RUB（CSV 字段: Заказано на сумму, %s）" % chr(8381))
+    drr_promotion: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(8, 4), comment="推广花费占推广收入比 %%（CSV 字段: ДРР в продвижении, %%）")
+    drr_total: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(8, 4), comment="推广花费占总收入比 %%（CSV 字段: ДРР (общий), %%）")
+    date_added: Mapped[Optional[date]] = mapped_column(
+        Date, comment="SKU 加入活动的日期（CSV 字段: Дата добавления）")
+    synced_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now,
+        comment="最后同步时间")

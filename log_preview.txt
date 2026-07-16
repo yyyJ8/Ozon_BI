@@ -1,0 +1,10 @@
+[32m2026-07-16 16:21:33.746[0m | [1mINFO    [0m | [36m__main__[0m:[36mmain[0m:[36m52[0m - [1m=== ������ SKU ��ϸ: 2026-07-14 ~ 2026-07-15 (2 ��) ===[0m
+[32m2026-07-16 16:21:33.746[0m | [1mINFO    [0m | [36m__main__[0m:[36mmain[0m:[36m53[0m - [1mԤ�ƺ�ʱ: ~2 ����[0m
+[32m2026-07-16 16:21:33.918[0m | [1mINFO    [0m | [36mapp.services.advertising_sync[0m:[36msync_sku_advertising[0m:[36m246[0m - [1m=== ��ʼͬ����� SKU ��ϸ: 2026-07-14 ~ 2026-07-15 ===[0m
+[32m2026-07-16 16:21:33.918[0m | [1mINFO    [0m | [36mapp.clients.perf[0m:[36m_ensure_token[0m:[36m45[0m - [1m��ȡ Performance API OAuth token ...[0m
+[32m2026-07-16 16:21:35.005[0m | [1mINFO    [0m | [36mapp.clients.perf[0m:[36m_ensure_token[0m:[36m61[0m - [1mToken ��ȡ�ɹ�����Ч�� 1800s[0m
+[32m2026-07-16 16:21:35.894[0m | [1mINFO    [0m | [36mapp.clients.perf[0m:[36mget_sku_daily_stats[0m:[36m198[0m - [1mSKU ����: �Զ�ѡ�� 23 ���[0m
+[32m2026-07-16 16:21:35.895[0m | [1mINFO    [0m | [36mapp.clients.perf[0m:[36mget_sku_daily_stats[0m:[36m207[0m - [1mSKU ����: 23 ��� �� 3 ��[0m
+[32m2026-07-16 16:21:35.895[0m | [1mINFO    [0m | [36mapp.clients.perf[0m:[36mget_sku_daily_stats[0m:[36m212[0m - [1m  ���� 1/3: 10 ���[0m
+[32m2026-07-16 16:21:36.219[0m | [33m[1mWARNING [0m | [36mapp.clients.perf[0m:[36m_request_async_report[0m:[36m242[0m - [33m[1m429 �������ȴ����б������...[0m
+

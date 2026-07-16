@@ -79,6 +79,10 @@ export interface ProductSummary {
   returns_amount: number
   returns_units: number
   commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  other_costs: number
   commission_rate: number | null
   stock_present: number
   stock_reserved: number
@@ -97,4 +101,57 @@ export interface FinanceTransaction {
   sale_commission: number
   delivery_charge: number
   return_delivery_charge: number
+}
+
+// ── 广告 API 类型 ──
+
+export interface AdCampaignSummary {
+  campaign_id: string
+  title: string | null
+  campaign_type: string
+  state: string
+  budget: number
+  total_spend: number
+  total_orders: number
+  total_orders_sum: number
+  mapped_sku_id: number | null
+  mapped_offer_id: string | null
+}
+
+export interface AdDailyStat {
+  stat_date: string
+  impressions: number
+  clicks: number
+  spend: number
+  orders_count: number
+  orders_sum: number
+}
+
+export interface AdSkuDetail {
+  stat_date: string
+  campaign_id: string
+  sku_name: string | null
+  sku_price: number | null
+  impressions: number
+  clicks: number
+  ctr: number | null
+  add_to_cart: number
+  avg_cpc: number | null
+  spend: number
+  sold_units: number
+  sales_promotion: number | null
+  drr_promotion: number | null
+  drr_total: number | null
+}
+
+export interface AdSummary {
+  total_spend: number
+  total_orders_count: number
+  total_orders_sum: number
+  by_type: Record<string, { spend: number; count: number; orders_sum: number }>
+  unmapped_spend: number
+  mapped_spend: number
+  campaign_count: number
+  active_campaign_count: number
+  mapped_sku_count: number
 }

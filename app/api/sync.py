@@ -33,7 +33,7 @@ def sync_status(db: Session = Depends(get_db)):
 
     # 每个 sync_type 的最新一条
     latest_per_type = {}
-    for st in ["products", "analytics", "finance", "summary"]:
+    for st in ["products", "analytics", "finance", "postings", "advertising", "ad_sku_daily", "summary"]:
         row = db.query(SyncLog).filter(
             SyncLog.sync_type == st,
         ).order_by(SyncLog.started_at.desc()).first()

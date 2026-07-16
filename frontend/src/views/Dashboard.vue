@@ -10,6 +10,8 @@ import TrendChart from '@/components/TrendChart.vue'
 import TopProducts from '@/components/TopProducts.vue'
 import InventoryHealth from '@/components/InventoryHealth.vue'
 import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
+import AdvertisingAnalysis from '@/components/AdvertisingAnalysis.vue'
+import CostAnalysis from '@/components/CostAnalysis.vue'
 
 const {
   dateRange,
@@ -383,6 +385,24 @@ onMounted(() => {
               <ReturnAnalysis
                 :products="productSummary"
                 :summary-rows="summaryRows"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="广告分析" name="advertising">
+              <template #label>
+                <span><el-icon><TrendCharts /></el-icon> 广告分析</span>
+              </template>
+              <AdvertisingAnalysis :date-range="dateRange" :products="products" />
+            </el-tab-pane>
+            <el-tab-pane label="成本分析" name="costs">
+              <template #label>
+                <span><el-icon><Coin /></el-icon> 成本分析</span>
+              </template>
+              <CostAnalysis
+                :stats="stats"
+                :product-summary="productSummary"
+                :date-range="dateRange"
+                :loading="loading"
                 :active-tab="activeTab"
               />
             </el-tab-pane>
