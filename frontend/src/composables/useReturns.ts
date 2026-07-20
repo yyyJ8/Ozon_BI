@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import type { ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem } from '@/types'
 import { getReturnsOverview, getReturnsTrend, getSkuReturnStats, getReturnsReasons } from '@/api'
 
-export function useReturns(dateRange: Ref<[string, string] | null>) {
+export function useReturns(dateRange: Ref<[string, string] | null>, skuId: Ref<number | undefined> = ref(undefined)) {
   const loading = ref(false)
   const overview = ref<ReturnsOverview | null>(null)
   const trend = ref<ReturnsTrendItem[]>([])
@@ -15,11 +15,12 @@ export function useReturns(dateRange: Ref<[string, string] | null>) {
     loading.value = true
     try {
       const [d1, d2] = dateRange.value
+      const sid = skuId.value
       const [ov, tr, sk, rs] = await Promise.all([
-        getReturnsOverview(d1, d2),
-        getReturnsTrend(d1, d2),
-        getSkuReturnStats(d1, d2),
-        getReturnsReasons(d1, d2),
+        getReturnsOverview(d1, d2, sid),
+        getReturnsTrend(d1, d2, sid),
+        getSkuReturnStats(d1, d2),           // 明细表始终全量
+        getReturnsReasons(d1, d2, undefined, sid),
       ])
       overview.value = ov
       trend.value = tr
@@ -33,7 +34,7 @@ export function useReturns(dateRange: Ref<[string, string] | null>) {
     }
   }
 
-  watch(dateRange, () => { fetchAll() }, { immediate: true })
+  watch([dateRange, skuId], () => { fetchAll() }, { immediate: true })
 
   return { loading, overview, trend, skuStats, reasons, fetchAll }
 }

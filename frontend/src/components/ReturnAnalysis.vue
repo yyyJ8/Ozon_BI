@@ -12,7 +12,26 @@ const props = defineProps<{
 }>()
 
 const dr = toRef(props, 'dateRange')
-const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(dr)
+const selectedSkuId = ref<number>()
+const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(dr, selectedSkuId)
+
+function onSkuRowClick(row: any) {
+  if (selectedSkuId.value === row.sku_id) {
+    selectedSkuId.value = undefined  // 取消选中
+  } else {
+    selectedSkuId.value = row.sku_id
+  }
+}
+function clearSkuFilter() {
+  selectedSkuId.value = undefined
+}
+
+// 选中 SKU 的名称
+const selectedSkuName = computed(() => {
+  if (!selectedSkuId.value) return ''
+  const s = skuStats.value.find(s => s.sku_id === selectedSkuId.value)
+  return s ? (s.offer_id || `SKU ${s.sku_id}`) : ''
+})
 
 // ── 状态标签中文 ──────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
@@ -190,7 +209,12 @@ const minReturnOptions = [1, 2, 3, 5]
     <el-card shadow="hover" style="margin-top: 16px;">
       <template #header>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <span style="font-weight:600;">SKU 退货明细</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-weight:600;">SKU 退货明细</span>
+            <el-tag v-if="selectedSkuId" type="warning" closable size="small" @close="clearSkuFilter">
+              {{ selectedSkuName }}
+            </el-tag>
+          </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-size:12px;color:#909399;">最小订单</span>
             <el-select v-model="minOrdered" size="small" style="width:80px;">
@@ -207,7 +231,9 @@ const minReturnOptions = [1, 2, 3, 5]
           </div>
         </div>
       </template>
-      <el-table :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500">
+      <el-table :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500"
+        :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
+        @row-click="onSkuRowClick">
         <el-table-column type="index" label="#" width="40" />
         <el-table-column label="图片" width="50">
           <template #default="{ row }">
@@ -287,3 +313,9 @@ const minReturnOptions = [1, 2, 3, 5]
     </el-card>
   </div>
 </template>
+
+<style scoped>
+:deep(.el-table .selected-sku-row > td) {
+  background-color: #ecf5ff !important;
+}
+</style>

@@ -159,10 +159,11 @@ export async function getSkuReturnStats(
 }
 
 export async function getReturnsReasons(
-  dateFrom?: string, dateTo?: string, type?: string,
+  dateFrom?: string, dateTo?: string, type?: string, skuId?: number,
 ): Promise<ReasonItem[]> {
   const extra: Record<string, string> = {}
   if (type) extra['type'] = type
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
   return fetchJson<ReasonItem[]>(
     `${BASE}/returns/reasons${returnsParams(dateFrom, dateTo, extra)}`)
 }

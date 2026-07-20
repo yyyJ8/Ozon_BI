@@ -65,7 +65,7 @@ def returns_overview(
     sku_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """退货总览：总数、type 分布、状态分布、退货率、平均处理天数"""
+    """退货总览：总数、type 分布、状态分布、退货率、平均处理天数（cohort 口径：按 p.created_at 筛选）"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
@@ -76,9 +76,17 @@ def returns_overview(
     if sku_id:
         params["sku_id"] = sku_id
 
+    # 退货统计 cohort base — 按订单创建时间筛选
+    _COHORT_BASE = """
+        FROM ozon.returns r
+        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+    """
+
     # 总数 + type 分布
     type_rows = db.execute(text(f"""
-        SELECT r.type, COUNT(*) {_RETURN_BASE} {sku_clause} GROUP BY r.type
+        SELECT r.type, COUNT(*) {_COHORT_BASE} {sku_clause} GROUP BY r.type
     """), params).fetchall()
 
     total = sum(int(c) for _, c in type_rows)
@@ -87,39 +95,36 @@ def returns_overview(
 
     # 状态分布
     status_rows = db.execute(text(f"""
-        SELECT r.visual_status, COUNT(*) {_RETURN_BASE} {sku_clause}
+        SELECT r.visual_status, COUNT(*) {_COHORT_BASE} {sku_clause}
         GROUP BY r.visual_status ORDER BY COUNT(*) DESC
     """), params).fetchall()
     by_status = {row[0]: int(row[1]) for row in status_rows}
 
-    # 退货率 = 退货件数 / 送达件数（同期 posting delivered）
-    delivered = 0
+    # 退货率 = 退货件数 / 下单总件数（同 cohort）
+    ordered = 0
     if not sku_id:
-        # 全量：直接 count postings 中 delivered 的 quantity
-        del_row = db.execute(text("""
+        ordered_row = db.execute(text("""
             SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
             WHERE created_at >= :date_from AND created_at < :date_to_excl
-              AND status = 'delivered'
         """), params).fetchone()
-        delivered = int(del_row[0]) if del_row and del_row[0] else 0
+        ordered = int(ordered_row[0]) if ordered_row and ordered_row[0] else 0
     else:
-        del_row = db.execute(text("""
+        ordered_row = db.execute(text("""
             SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
             WHERE created_at >= :date_from AND created_at < :date_to_excl
-              AND status = 'delivered'
               AND (prod->>'sku')::bigint = :sku_id
         """), params).fetchone()
-        delivered = int(del_row[0]) if del_row and del_row[0] else 0
-    return_rate = round(total / delivered * 100, 2) if delivered > 0 else 0.0
+        ordered = int(ordered_row[0]) if ordered_row and ordered_row[0] else 0
+    return_rate = round(total / ordered * 100, 2) if ordered > 0 else 0.0
 
     # 平均处理天数
     avg_days_row = db.execute(text(f"""
         SELECT AVG(EXTRACT(EPOCH FROM (r.finished_at - r.returned_at)) / 86400.0)
-        {_RETURN_BASE} {sku_clause}
+        {_COHORT_BASE} {sku_clause}
           AND r.finished_at IS NOT NULL AND r.returned_at IS NOT NULL
     """), params).fetchone()
     avg_days = round(float(avg_days_row[0]), 1) if avg_days_row and avg_days_row[0] else None
@@ -283,6 +288,7 @@ def returns_reasons(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     type: Optional[str] = Query(default=None, description="过滤: Cancellation / ClientReturn"),
+    sku_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     """退货原因分布"""
@@ -295,10 +301,13 @@ def returns_reasons(
     type_clause = "AND r.type = :rtype" if type else ""
     if type:
         params["rtype"] = type
+    sku_clause = "AND r.sku = :sku_id" if sku_id else ""
+    if sku_id:
+        params["sku_id"] = sku_id
 
     rows = db.execute(text(f"""
         SELECT r.return_reason_name, r.type, COUNT(*)
-        {_RETURN_BASE} {type_clause}
+        {_RETURN_BASE} {type_clause} {sku_clause}
         GROUP BY r.return_reason_name, r.type
         ORDER BY COUNT(*) DESC
     """), params).fetchall()
