@@ -3,3 +3,6 @@ node_modules/
 *.pyc
 __pycache__/
 .env
+*.log
+frontend/dist/
+sandbox/output/
