@@ -155,3 +155,48 @@ export interface AdSummary {
   active_campaign_count: number
   mapped_sku_count: number
 }
+
+// ── 退货 API 类型 ──
+
+export interface ReturnsOverview {
+  total_returns: number
+  cancellation_count: number
+  client_return_count: number
+  by_status: Record<string, number>
+  return_rate: number
+  avg_processing_days: number | null
+  unmatched_count: number
+}
+
+export interface ReturnsTrendItem {
+  date: string
+  cancellation: number
+  client_return: number
+  total: number
+}
+
+export interface SkuReturnStats {
+  sku_id: number
+  offer_id: string | null
+  name: string | null
+  primary_image: string | null
+  total_returns: number
+  cancellation_count: number
+  client_return_count: number
+  fbo_count: number
+  fbs_count: number
+  completed_count: number
+  pending_count: number
+  total_return_price: number
+  ordered_units: number
+  return_rate: number
+  main_reason: string | null
+  avg_processing_days: number | null
+}
+
+export interface ReasonItem {
+  reason_name: string
+  reason_cn: string
+  type: string
+  count: number
+}

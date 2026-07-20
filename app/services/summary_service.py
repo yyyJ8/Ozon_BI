@@ -89,8 +89,9 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
 
     # 3. 按 (date, sku_id) 分组，逐条分类
     #    退货使用 sale_date（原订单日期），其他费用使用 operation_date
+    #    注：returns_units 不再从 finance 取（仅覆盖 ClientReturn），
+    #        改由第 3.5c 步从 returns 表聚合（覆盖 Cancellation + ClientReturn）
     groups: dict[tuple, dict] = {}
-    counted_returns: set[tuple] = set()
 
     def _get(key):
         if key not in groups:
@@ -129,14 +130,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             # 标记此 group 的退货是否来自其他日期（跨期归因）
             if sale_date != tx.operation_date and (sale_date < start_date or sale_date > end_date):
                 g["is_return_only"] = True
-            # returns_units：只有 posting 状态为 delivered 才算真退货
-            # 取消订单（cancelled）的退款不是退货，不应计入退货件数
-            pstatus = posting_status.get(tx.posting_number, "")
-            if pstatus == "delivered":
-                rkey = (sale_date, tx.sku_id, tx.posting_number or str(tx.operation_id))
-                if rkey not in counted_returns:
-                    counted_returns.add(rkey)
-                    g["returns_units"] += 1
+            # returns_units 改由第 3.5c 步从 returns 表聚合（覆盖全部 363 条）
 
         elif "TemporaryStorage" in optype:
             key = (tx.operation_date, tx.sku_id)
@@ -190,7 +184,30 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
 
     logger.info(f"posting 聚合: {len(posting_agg)} 个 (date, sku) 组合")
 
-    # 3.5b 从 Performance API 聚合广告费（替代 Finance API OperationMarketplaceCostPerClick）
+    # 3.5b 从 returns 表聚合退货件数（替代 finance 的 returns_units）
+    #      覆盖 Cancellation + ClientReturn（finance 只能覆盖 delivered posting 的 ClientReturn）
+    return_rows = db.execute(text("""
+        SELECT
+            p.created_at::date AS sale_date,
+            r.sku,
+            COUNT(*) AS total_returns
+        FROM ozon.returns r
+        JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE p.created_at >= :date_from
+          AND p.created_at  < :date_to
+        GROUP BY p.created_at::date, r.sku
+    """), {"date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
+
+    for sale_date, sku_id, total_returns in return_rows:
+        if sku_id is None:
+            continue
+        g = _get((sale_date, sku_id))
+        g["returns_units"] = int(total_returns)
+
+    logger.info(f"returns 表退货件数: {len(return_rows)} 个 (date, sku) 组合"
+                 + f"（覆盖全部 Cancellation + ClientReturn）")
+
+    # 3.5c 从 Performance API 聚合广告费（替代 Finance API OperationMarketplaceCostPerClick）
     #      因为 Finance API 的广告记录全部 sku_id=None，无法关联到 SKU
     ad_rows = db.execute(text("""
         SELECT m.sku_id, ds.stat_date, SUM(ds.spend) AS total_spend

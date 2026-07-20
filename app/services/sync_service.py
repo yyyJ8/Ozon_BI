@@ -13,6 +13,7 @@ from app.services.product_sync import sync_products
 from app.services.analytics_sync import sync_analytics
 from app.services.finance_sync import sync_finance
 from app.services.posting_sync import sync_postings
+from app.services.returns_sync import sync_returns
 from app.services.summary_service import build_summary
 
 
@@ -104,6 +105,20 @@ def run_full_sync(db: Session, client: OzonClient,
         logger.error(f"订单履约同步失败: {e}")
         _log_sync(db, "postings", "failed", error=str(e), batch_id=batch_id)
         results["postings"] = {"error": str(e)}
+
+    # ── 4.5. 退货数据同步（最近 90 天，退货状态变化周期较长）──
+    try:
+        _log_sync(db, "returns", "running", batch_id=batch_id)
+        rr = sync_returns(db, client,
+                          date_from=(yesterday - timedelta(days=90)).isoformat(),
+                          date_to=yesterday.isoformat())
+        results["returns"] = rr
+        _log_sync(db, "returns", "success",
+                  records=rr.get("returns_processed", 0), batch_id=batch_id)
+    except Exception as e:
+        logger.error(f"退货同步失败: {e}")
+        _log_sync(db, "returns", "failed", error=str(e), batch_id=batch_id)
+        results["returns"] = {"error": str(e)}
 
     # ── 5. 广告数据同步 ──
     from app.clients.perf import get_perf_client

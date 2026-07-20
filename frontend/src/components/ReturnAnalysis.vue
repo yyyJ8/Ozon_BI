@@ -1,269 +1,287 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import * as echarts from 'echarts'
-import type { ProductSummary, SummaryRow } from '@/types'
+import { Failed, Remove, CircleCloseFilled, TrendCharts, Timer, InfoFilled } from '@element-plus/icons-vue'
+import type { Product } from '@/types'
+import { useReturns } from '@/composables/useReturns'
 
 const props = defineProps<{
-  products: ProductSummary[]
-  summaryRows: SummaryRow[]
+  dateRange: [string, string] | null
+  products: Product[]
   activeTab: string
 }>()
 
-const selectedSkuId = ref<number | null>(null)
-const selectedSkuLabel = computed(() => {
-  if (selectedSkuId.value === null) return '全部商品'
-  const p = props.products.find(x => x.sku_id === selectedSkuId.value)
-  return `SKU ${selectedSkuId.value} / ${p?.offer_id || '—'}`
-})
-function selectSku(skuId: number) {
-  selectedSkuId.value = selectedSkuId.value === skuId ? null : skuId
+const dr = toRef(props, 'dateRange')
+const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(dr)
+
+// ── 状态标签中文 ──────────────────────────────────────
+const STATUS_LABELS: Record<string, string> = {
+  ReturnedToOzon: '已退回Ozon',
+  Utilized: '已销毁/利用',
+  ArrivedAtReturnPlace: '已到退货点',
+  MovingToOzon: '退回Ozon途中',
+  ReceivedBySeller: '卖家已收货',
+  MovingToSeller: '退回卖家途中',
+  WaitingShipment: '等待发货',
+  Utilizing: '销毁中',
+  WriteOff: '已核销',
+}
+function statusLabel(st: string) { return STATUS_LABELS[st] || st }
+
+// ── 趋势图：堆叠柱状（按 returned_at 日期）─────────────
+const trendChartRef = ref<HTMLDivElement>()
+let trendChart: echarts.ECharts | null = null
+
+function renderTrendChart() {
+  if (!trendChart || !trend.value.length) return
+  const dates = trend.value.map(d => d.date.slice(5))
+  trendChart.setOption({
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const items = Array.isArray(params) ? params : [params]
+        let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
+        let sum = 0
+        for (const p of items) { sum += Number(p.value)
+          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 件</strong>` }
+        return h + `<br/>合计: <strong>${sum.toLocaleString()} 件</strong></div>`
+      },
+    },
+    legend: { data: ['取消退回', '签收后退货'], bottom: 0 },
+    grid: { left: 50, right: 20, top: 20, bottom: 35 },
+    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      { name: '取消退回', type: 'bar', stack: 'total', data: trend.value.map(d => d.cancellation),
+        itemStyle: { color: '#e6a23c' }, emphasis: { focus: 'series' }, barMaxWidth: 24 },
+      { name: '签收后退货', type: 'bar', stack: 'total', data: trend.value.map(d => d.client_return),
+        itemStyle: { color: '#f56c6c' }, emphasis: { focus: 'series' }, barMaxWidth: 24 },
+    ],
+  }, true)
 }
 
-// ─── 三条线 ──────────────────────────────────────────
-const dailyOrders = computed(() => {
-  const rows = selectedSkuId.value === null ? props.summaryRows : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
-  const map = new Map<string, number>()
-  for (const row of rows) map.set(row.date, (map.get(row.date) || 0) + row.ordered_units)
-  return Array.from(map.entries()).map(([date, units]) => ({ date, units })).sort((a, b) => a.date.localeCompare(b.date))
-})
-
-const dailyDelivered = computed(() => {
-  const rows = selectedSkuId.value === null ? props.summaryRows : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
-  const map = new Map<string, number>()
-  for (const row of rows) map.set(row.date, (map.get(row.date) || 0) + row.delivered_units)
-  return Array.from(map.entries()).map(([date, units]) => ({ date, units })).sort((a, b) => a.date.localeCompare(b.date))
-})
-
-const dailyReturns = computed(() => {
-  const rows = selectedSkuId.value === null ? props.summaryRows : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
-  const map = new Map<string, number>()
-  for (const row of rows) map.set(row.date, (map.get(row.date) || 0) + row.returns_units)
-  return Array.from(map.entries()).map(([date, units]) => ({ date, units })).sort((a, b) => a.date.localeCompare(b.date))
-})
-
-// ─── 表格 ─────────────────────────────────────────────
-interface ReturnItem {
-  sku_id: number; offer_id: string; name: string; primary_image: string | null
-  ordered_units: number; delivered_units: number; returns_units: number
-  revenue: number; returns_amount: number
-  return_rate: number; severity: 'danger' | 'warning' | 'success'
+// ── 生命周期（图表懒初始化）────────────────────────────
+let chartReady = false
+function initChart() {
+  if (chartReady) return
+  if (trendChartRef.value) trendChart = echarts.init(trendChartRef.value)
+  chartReady = true
+  renderTrendChart()
 }
+onMounted(() => { if (props.activeTab === 'returns') nextTick(() => initChart()) })
+watch(() => props.activeTab, (tab) => { if (tab === 'returns') nextTick(() => { initChart(); trendChart?.resize() }) })
+watch(trend, () => { if (chartReady) renderTrendChart() })
+onUnmounted(() => { trendChart?.dispose() })
 
-const items = computed<ReturnItem[]>(() => {
-  return props.products
-    .filter(p => p.delivered_units > 0 || p.returns_units > 0)
-    .map(p => {
-      const return_rate = p.delivered_units > 0 ? (p.returns_units / p.delivered_units) * 100 : 0
-      let severity: 'danger' | 'warning' | 'success'
-      if (return_rate > 20) severity = 'danger'
-      else if (return_rate > 10) severity = 'warning'
-      else severity = 'success'
-      return { sku_id: p.sku_id, offer_id: p.offer_id, name: p.name, primary_image: p.primary_image,
-        ordered_units: p.ordered_units, delivered_units: p.delivered_units, returns_units: p.returns_units,
-        revenue: p.revenue, returns_amount: p.returns_amount, return_rate, severity }
-    })
-    .sort((a, b) => b.return_rate - a.return_rate)
-})
-
-const minUnits = ref(3)
+// ── SKU 表筛选 ────────────────────────────────────────
+const minOrdered = ref(3)
+const minReturns = ref(1)
 const severityFilter = ref('')
-const filteredItems = computed(() => {
-  return items.value.filter(i => {
-    if (i.delivered_units < minUnits.value) return false
-    if (severityFilter.value && i.severity !== severityFilter.value) return false
+
+function severityTagType(rate: number) {
+  return rate > 20 ? 'danger' : rate > 10 ? 'warning' : 'success'
+}
+function severityLabel(rate: number) {
+  return rate > 20 ? '高' : rate > 10 ? '中' : '低'
+}
+function formatMoney(v: number) {
+  return v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function fmtInt(v: number) { return v.toLocaleString('ru-RU') }
+
+const filteredSkuStats = computed(() => {
+  return skuStats.value.filter(s => {
+    if ((s.ordered_units ?? 0) < minOrdered.value) return false
+    if (s.total_returns < minReturns.value) return false
+    if (severityFilter.value && severityTagType(s.return_rate) !== severityFilter.value) return false
     return true
   })
 })
 
-const overview = computed(() => {
-  const total_returns_units = items.value.reduce((s, i) => s + i.returns_units, 0)
-  const total_delivered_units = items.value.reduce((s, i) => s + i.delivered_units, 0)
-  const overall_return_rate = total_delivered_units > 0 ? (total_returns_units / total_delivered_units) * 100 : 0
-  return { total_returns_units, overall_return_rate, danger_count: items.value.filter(i => i.severity === 'danger').length, warning_count: items.value.filter(i => i.severity === 'warning').length }
-})
-
-// ─── 折线图 ──────────────────────────────────────────
-const chartRef = ref<HTMLDivElement>()
-let chart: echarts.ECharts | null = null
-
-// ─── 点击图表日期 → 筛选下方表格 ───────────────────────
-const selectedDate = ref<string | null>(null)
-const selectedDateLabel = computed(() => selectedDate.value || null)
-
-function onChartClick(params: any) {
-  // 点击 series 或 xAxis 都能触发
-  const idx = params.dataIndex
-  if (idx == null) return
-  const date = dailyOrders.value[idx]?.date
-  if (date) {
-    selectedDate.value = selectedDate.value === date ? null : date
-  }
-}
-
-// 按选中日期过滤退货明细（日期筛选时忽略 minUnits/severity）
-const dateFilteredItems = computed(() => {
-  if (!selectedDate.value) return filteredItems.value
-  const skusWithReturns = new Set<number>()
-  for (const row of props.summaryRows) {
-    if (row.date === selectedDate.value && row.returns_units > 0) {
-      skusWithReturns.add(row.sku_id)
-    }
-  }
-  return items.value.filter(i => skusWithReturns.has(i.sku_id))
-})
-
-const COLOR: Record<string, string> = { '下单': '#e6a23c', '送达': '#409eff', '退货': '#f56c6c' }
-
-function renderChart() {
-  if (!chart) return
-  const dates = dailyOrders.value.map(d => d.date.slice(5))
-  if (!dates.length) {
-    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { fontSize: 14, color: '#c0c4cc' } } }, true)
-    return
-  }
-  chart.setOption({
-    tooltip: {
-      trigger: 'axis',
-      formatter: (params: any) => {
-        const items = Array.isArray(params) ? params : [params]
-        let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
-        for (const p of items) {
-          const c = COLOR[p.seriesName] || '#909399'
-          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 件</strong>`
-        }
-        return h + '</div>'
-      },
-    },
-    grid: { left: 55, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11 } },
-    yAxis: { type: 'value', axisLabel: { fontSize: 11 }, minInterval: 1 },
-    legend: { data: ['下单', '送达', '退货'], bottom: 0 },
-    series: [
-      { name: '下单', type: 'line', data: dailyOrders.value.map(d => d.units), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 1.5, color: '#e6a23c', type: 'dashed' }, itemStyle: { color: '#e6a23c' } },
-      { name: '送达', type: 'line', data: dailyDelivered.value.map(d => d.units), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#409eff' }, itemStyle: { color: '#409eff' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(64,158,255,0.2)' }, { offset: 1, color: 'rgba(64,158,255,0.02)' }]) } },
-      { name: '退货', type: 'line', data: dailyReturns.value.map(d => d.units), smooth: true, symbol: 'diamond', symbolSize: 8, lineStyle: { width: 2.5, color: '#f56c6c' }, itemStyle: { color: '#f56c6c' }, emphasis: { scale: 2 } },
-    ],
-  }, true)
-  chart.off('click')
-  chart.on('click', onChartClick)
-}
-
-let initialized = false
-function initIfNeeded() { if (initialized) return; chart = echarts.init(chartRef.value!); initialized = true; renderChart() }
-onMounted(() => { if (props.activeTab === 'returns') initIfNeeded() })
-watch(() => props.activeTab, (tab) => { if (tab === 'returns') { nextTick(() => { initIfNeeded(); chart?.resize() }) } })
-watch(() => [dailyOrders.value, dailyDelivered.value, dailyReturns.value], () => { if (initialized) renderChart() })
-onUnmounted(() => { chart?.dispose() })
-
-function formatMoney(v: number) { return v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
-function severityTagType(s: string) { return s === 'danger' ? 'danger' : s === 'warning' ? 'warning' : 'success' }
-function severityColor(s: string) { return s === 'danger' ? '#f56c6c' : s === 'warning' ? '#e6a23c' : '#67c23a' }
-function severityLabel(s: string) { return s === 'danger' ? '高' : s === 'warning' ? '中' : '低' }
 const unitOptions = [0, 3, 5, 10]
+const minReturnOptions = [1, 2, 3, 5]
 </script>
 
 <template>
-  <div>
-    <el-row :gutter="16">
-      <el-col :span="16">
-        <el-card shadow="hover">
-          <template #header>
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-weight: 600">
-                📈 {{ selectedSkuId === null ? '销量 & 退货趋势' : selectedSkuLabel + ' 退货趋势' }}
-              </span>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; color: #c0c4cc;">退货已归因到原销售日期 · 点击数据点筛选</span>
-                <el-button v-if="selectedSkuId !== null" size="small" @click="selectSku(selectedSkuId!)">显示全部</el-button>
-                <el-tag type="info" size="small">{{ dailyOrders.length }} 天</el-tag>
-              </div>
+  <div v-loading="loading" style="min-height: 300px;">
+    <!-- 概览卡片 5 张 -->
+    <el-row :gutter="16" v-if="overview">
+      <el-col :span="4">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#f56c6c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#f56c6c;"><el-icon><Failed /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">退货总数</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.total_returns) }} 件</div>
             </div>
-          </template>
-          <div ref="chartRef" style="width: 100%; height: 360px" />
+          </div>
         </el-card>
       </el-col>
-      <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header><span style="font-weight: 600">📋 退货概况</span></template>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #909399;">退货件数总计</span><span style="font-weight: 600; color: #f56c6c;">{{ overview.total_returns_units.toLocaleString() }} 件</span>
+      <el-col :span="5">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><Remove /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">取消退回（未签收）</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.cancellation_count) }} 件</div>
             </div>
-            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #909399;">整体退货率</span><span style="font-weight: 600;">{{ overview.overall_return_rate.toFixed(2) }}%</span>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="5">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#f56c6c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#f56c6c;"><el-icon><CircleCloseFilled /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">签收后退货</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.client_return_count) }} 件</div>
             </div>
-            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="color: #909399;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #f56c6c; margin-right: 4px;" />高退货率</span>
-              <el-tag size="small" :type="overview.danger_count > 0 ? 'danger' : 'info'">{{ overview.danger_count }}</el-tag>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="5">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><TrendCharts /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">退货率</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">{{ overview.return_rate.toFixed(2) }}%</div>
             </div>
-            <div style="display: flex; justify-content: space-between; padding: 6px 0;">
-              <span style="color: #909399;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e6a23c; margin-right: 4px;" />中退货率</span>
-              <el-tag size="small" :type="overview.warning_count > 0 ? 'warning' : 'info'">{{ overview.warning_count }}</el-tag>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="5">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><Timer /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">平均处理天数</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">
+                {{ overview.avg_processing_days != null ? overview.avg_processing_days.toFixed(1) + ' 天' : '—' }}
+              </div>
             </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
+    <!-- 状态分布标签 -->
+    <div v-if="overview && Object.keys(overview.by_status).length" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+      <span style="font-size:12px;color:#909399;margin-right:4px;">状态分布:</span>
+      <el-tag v-for="(count, st) in overview.by_status" :key="st" size="small" effect="plain"
+        :type="count > 50 ? 'danger' : count > 10 ? 'warning' : 'info'">
+        {{ statusLabel(st) }}: {{ count }}
+      </el-tag>
+    </div>
+
+    <!-- 退货趋势图 -->
     <el-card shadow="hover" style="margin-top: 16px;">
       <template #header>
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-weight: 600; white-space: nowrap;">退货明细</span>
-            <el-tag v-if="selectedDate" type="warning" size="small" closable @close="selectedDate = null">
-              {{ selectedDate }}
-            </el-tag>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 13px; color: #909399; white-space: nowrap;">最小送达</span>
-            <el-select v-model="minUnits" size="small" style="width: 80px;">
-              <el-option v-for="n in unitOptions" :key="n" :label="n === 0 ? '全部' : `≥ ${n}`" :value="n" />
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:600;">退货趋势（按下单日期）</span>
+          <el-tag type="info" size="small">{{ trend.length }} 天</el-tag>
+        </div>
+      </template>
+      <div v-if="trend.length" ref="trendChartRef" style="width:100%;height:320px;" />
+      <div v-else style="text-align:center;color:#c0c4cc;padding:40px;">暂无退货数据</div>
+    </el-card>
+
+    <!-- SKU 退货明细表（全宽） -->
+    <el-card shadow="hover" style="margin-top: 16px;">
+      <template #header>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span style="font-weight:600;">SKU 退货明细</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:#909399;">最小订单</span>
+            <el-select v-model="minOrdered" size="small" style="width:80px;">
+              <el-option v-for="n in unitOptions" :key="n" :label="n===0?'全部':`≥ ${n}`" :value="n" />
             </el-select>
-            <el-select v-model="severityFilter" placeholder="风险等级" clearable size="small" style="width: 100px;">
+            <span style="font-size:12px;color:#909399;">最小退货</span>
+            <el-select v-model="minReturns" size="small" style="width:80px;">
+              <el-option v-for="n in minReturnOptions" :key="n" :label="`≥ ${n}`" :value="n" />
+            </el-select>
+            <el-select v-model="severityFilter" placeholder="退货率" clearable size="small" style="width:90px;">
               <el-option label="全部" value="" /><el-option label="高" value="danger" /><el-option label="中" value="warning" /><el-option label="低" value="success" />
             </el-select>
-            <el-tag type="info" size="small">{{ dateFilteredItems.length }} / {{ items.length }}</el-tag>
+            <el-tag type="info" size="small">{{ filteredSkuStats.length }} / {{ skuStats.length }}</el-tag>
           </div>
         </div>
       </template>
-      <el-table :data="dateFilteredItems" stripe size="small" style="width: 100%" max-height="480" highlight-current-row @row-click="(row: ReturnItem) => selectSku(row.sku_id)">
-        <el-table-column type="index" label="#" width="45" />
-        <el-table-column prop="sku_id" label="SKU" width="85" sortable>
-          <template #default="{ row }"><span style="font-family: monospace; font-size: 12px;">{{ row.sku_id }}</span></template>
-        </el-table-column>
-        <el-table-column prop="offer_id" label="货号" width="80" show-overflow-tooltip>
-          <template #default="{ row }"><span style="font-family: monospace; font-size: 11px; color: #909399;">{{ row.offer_id }}</span></template>
-        </el-table-column>
-        <el-table-column label="商品" min-width="130" show-overflow-tooltip>
+      <el-table :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500">
+        <el-table-column type="index" label="#" width="40" />
+        <el-table-column label="图片" width="50">
           <template #default="{ row }">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <el-image v-if="row.primary_image" :src="row.primary_image" style="width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0;" fit="cover" lazy>
-                <template #error><div style="width: 28px; height: 28px; background: #f5f7fa; border-radius: 4px;" /></template>
-              </el-image>
-              <span>{{ row.name }}</span>
+            <el-image v-if="row.primary_image" :src="row.primary_image" style="width:28px;height:28px;border-radius:4px;" fit="cover" lazy>
+              <template #error><div style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" /></template>
+            </el-image>
+            <div v-else style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="sku_id" label="SKU" width="95" sortable>
+          <template #default="{ row }"><span style="font-family:monospace;font-size:12px;">{{ row.sku_id }}</span></template>
+        </el-table-column>
+        <el-table-column prop="offer_id" label="货号" min-width="110">
+          <template #default="{ row }">
+            <span style="font-size:12px;">{{ row.offer_id || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="退货类型" width="120" align="center">
+          <template #default="{ row }">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <el-tag size="small" type="warning" effect="plain">取消 {{ row.cancellation_count }}</el-tag>
+              <el-tag size="small" type="danger" effect="plain">签收 {{ row.client_return_count }}</el-tag>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="ordered_units" label="下单" width="55" align="right" sortable />
-        <el-table-column prop="delivered_units" label="送达" width="55" align="right" sortable>
-          <template #default="{ row }"><span :style="{ color: row.delivered_units > 0 ? '#409eff' : '#c0c4cc' }">{{ row.delivered_units }}</span></template>
+        <el-table-column prop="total_returns" label="合计" width="55" align="right" sortable>
+          <template #default="{ row }"><span style="font-weight:600;">{{ row.total_returns }}</span></template>
         </el-table-column>
-        <el-table-column prop="returns_units" label="退货" width="55" align="right" sortable>
-          <template #default="{ row }"><span :style="{ color: row.returns_units > 0 ? '#f56c6c' : '#c0c4cc' }">{{ row.returns_units }}</span></template>
-        </el-table-column>
-        <el-table-column prop="returns_amount" label="退货金额" width="100" align="right" sortable>
-          <template #default="{ row }"><span style="color: #f56c6c;">₽ {{ formatMoney(row.returns_amount) }}</span></template>
-        </el-table-column>
-        <el-table-column prop="return_rate" label="退货率" width="200" sortable>
+        <el-table-column label="配送" width="75" align="center">
           <template #default="{ row }">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <el-progress :percentage="Math.min(row.return_rate, 100)" :color="severityColor(row.severity)" :stroke-width="6" :show-text="false" style="flex: 1;" />
-              <span style="font-size: 13px; font-weight: 600; min-width: 48px; text-align: right;">{{ row.return_rate.toFixed(1) }}%</span>
+            <span style="font-size:12px;" v-if="row.fbo_count || row.fbs_count">
+              <span v-if="row.fbo_count" style="color:#409eff;">FBO {{ row.fbo_count }}</span>
+              <span v-if="row.fbo_count && row.fbs_count" style="color:#c0c4cc;"> / </span>
+              <span v-if="row.fbs_count" style="color:#e6a23c;">FBS {{ row.fbs_count }}</span>
+            </span>
+            <span v-else style="color:#c0c4cc;">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="完结状态" min-width="115" align="center">
+          <template #default="{ row }">
+            <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+              <el-tag size="small" type="success" effect="plain">已完结 {{ row.completed_count }}</el-tag>
+              <el-tag v-if="row.pending_count" size="small" type="info" effect="plain">处理中 {{ row.pending_count }}</el-tag>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="程度" width="70" align="center">
-          <template #default="{ row }"><el-tag :type="severityTagType(row.severity)" size="small" effect="dark">{{ severityLabel(row.severity) }}</el-tag></template>
+        <el-table-column prop="total_return_price" label="退货估值" width="100" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.total_return_price > 0 ? '#f56c6c' : '#c0c4cc' }">
+              {{ row.total_return_price > 0 ? '₽ ' + formatMoney(row.total_return_price) : '—' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="退货率" width="130" sortable :sort-method="(a:any,b:any) => a.return_rate - b.return_rate">
+          <template #default="{ row }">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <el-progress :percentage="Math.min(row.return_rate, 100)"
+                :color="severityTagType(row.return_rate)==='danger'?'#f56c6c':severityTagType(row.return_rate)==='warning'?'#e6a23c':'#67c23a'"
+                :stroke-width="5" :show-text="false" style="flex:1;min-width:40px;" />
+              <span style="font-size:12px;font-weight:600;min-width:42px;text-align:right;">{{ row.return_rate.toFixed(1) }}%</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="main_reason" label="主要原因" min-width="110" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span :style="{ color: row.main_reason ? '#303133' : '#c0c4cc' }">{{ row.main_reason || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="avg_processing_days" label="处理天数" width="80" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.avg_processing_days != null ? '#303133' : '#c0c4cc' }">
+              {{ row.avg_processing_days != null ? row.avg_processing_days.toFixed(0)+'天' : '—' }}
+            </span>
+          </template>
         </el-table-column>
       </el-table>
     </el-card>

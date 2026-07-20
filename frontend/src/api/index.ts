@@ -1,6 +1,7 @@
 import type {
   Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction,
   AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary,
+  ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -120,4 +121,48 @@ export async function getAdSummary(
   dateFrom?: string, dateTo?: string,
 ): Promise<AdSummary> {
   return fetchJson<AdSummary>(`${BASE}/advertising/summary${adParams(dateFrom, dateTo)}`)
+}
+
+// ── 退货 API ──
+
+function returnsParams(dateFrom?: string, dateTo?: string, extra?: Record<string, string>): string {
+  const p = new URLSearchParams(extra)
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  const qs = p.toString()
+  return qs ? '?' + qs : ''
+}
+
+export async function getReturnsOverview(
+  dateFrom?: string, dateTo?: string, skuId?: number,
+): Promise<ReturnsOverview> {
+  const extra: Record<string, string> = {}
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  return fetchJson<ReturnsOverview>(
+    `${BASE}/returns/overview${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getReturnsTrend(
+  dateFrom?: string, dateTo?: string, skuId?: number,
+): Promise<ReturnsTrendItem[]> {
+  const extra: Record<string, string> = {}
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  return fetchJson<ReturnsTrendItem[]>(
+    `${BASE}/returns/trend${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getSkuReturnStats(
+  dateFrom?: string, dateTo?: string,
+): Promise<SkuReturnStats[]> {
+  return fetchJson<SkuReturnStats[]>(
+    `${BASE}/returns/sku-stats${returnsParams(dateFrom, dateTo)}`)
+}
+
+export async function getReturnsReasons(
+  dateFrom?: string, dateTo?: string, type?: string,
+): Promise<ReasonItem[]> {
+  const extra: Record<string, string> = {}
+  if (type) extra['type'] = type
+  return fetchJson<ReasonItem[]>(
+    `${BASE}/returns/reasons${returnsParams(dateFrom, dateTo, extra)}`)
 }

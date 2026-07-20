@@ -1,5 +1,5 @@
 """
-SQLAlchemy ORM 模型 — 8 张表，每字段带中文注释
+SQLAlchemy ORM 模型 — 9 张表，每字段带中文注释
 
 主键设计：
   products, stocks, sku_daily_summary, finance_transactions, postings,
@@ -242,6 +242,33 @@ class AdCampaignSkuMap(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now,
         comment="映射创建时间")
+
+
+class Return(Base):
+    """退货数据 — 来源 /v1/returns/list
+
+    记录每笔退货的完整信息，按 posting_number + sku 定位。
+    核心用途：
+      1. 区分 Cancellation（未签收退回）vs ClientReturn（签收后退回）
+      2. 退货原因归因（return_reason_name → category）
+      3. 退货时效：returned_at → finished_at
+    """
+    __tablename__ = "returns"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="退货 ID（Ozon 唯一标识）")
+    posting_number: Mapped[str] = mapped_column(String(255), nullable=False, comment="发货单号，关联 postings.posting_number")
+    sku: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="SKU 编号，关联 products.sku_id")
+    type: Mapped[str] = mapped_column(String(20), nullable=False, comment="退货类型: Cancellation(未签收就退) / ClientReturn(签收后退货)")
+    return_reason_name: Mapped[Optional[str]] = mapped_column(Text, comment="退货原因（俄文原文，如 Покупатель передумал = 改变主意）")
+    quantity: Mapped[int] = mapped_column(Integer, default=0, comment="退货件数")
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="退货时售价 RUB")
+    visual_status: Mapped[str] = mapped_column(String(50), nullable=False, comment="退货当前状态: ReturnedToOzon/Utilized/WriteOff/ReceivedBySeller 等")
+    status_changed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="最后状态变更时间（visual.change_moment）")
+    returned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="退货发起时间（logistic.return_date，客户交退货快递/退货点的时间）")
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="退货完结时间（终态取 logistic.final_moment，无则用 status_changed_at 兜底，中间态为 NULL）")
+    schema: Mapped[str] = mapped_column(String(10), nullable=False, comment="配送方案: Fbo / Fbs")
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="最后同步时间")
 
 
 class AdSkuDailyStats(Base):

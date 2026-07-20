@@ -216,7 +216,8 @@ class OzonPerfClient:
                 all_rows.extend(rows)
                 logger.info(f"    获取 {len(rows)} 行 SKU 数据")
             except Exception as e:
-                logger.error(f"  批次 {bi} 失败: {e}")
+                logger.error(f"  批次 {bi} 失败: {e}，跳过当天剩余批次")
+                break
 
         return all_rows
 
@@ -262,6 +263,7 @@ class OzonPerfClient:
         url = f"/api/client/statistics/{uuid_val}"
         last_state = ""
 
+        last_log = 0
         while time.time() < deadline:
             resp = self._http.get(url, headers=self._auth_headers)
             resp.raise_for_status()
@@ -269,8 +271,11 @@ class OzonPerfClient:
             state = data.get("state", "")
 
             if state != last_state:
-                logger.info(f"    报告 {uuid_val[:8]}...: {last_state} → {state}")
+                logger.info(f"    报告 {uuid_val[:8]}...: {last_state} → {state} ({time.time() - deadline + self.REPORT_POLL_TIMEOUT:.0f}s)")
                 last_state = state
+            elif time.time() - last_log > 30:
+                logger.info(f"    报告 {uuid_val[:8]}...: 仍在 {state} ({time.time() - deadline + self.REPORT_POLL_TIMEOUT:.0f}s)")
+                last_log = time.time()
 
             if state == "OK":
                 link = data.get("link", "")

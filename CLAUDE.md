@@ -30,6 +30,7 @@
 - 后端: Python + PostgreSQL
 - 前端: Vue 3 + Element Plus + Vite
 - .env 已经配置了 Ozon Seller API 和数据库连接
+- 运行 Python 脚本前需先激活虚拟环境
 
 ---
 

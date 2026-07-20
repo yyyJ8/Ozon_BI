@@ -383,8 +383,8 @@ onMounted(() => {
                 <span><el-icon><Failed /></el-icon> 退货分析</span>
               </template>
               <ReturnAnalysis
-                :products="productSummary"
-                :summary-rows="summaryRows"
+                :date-range="dateRange"
+                :products="products"
                 :active-tab="activeTab"
               />
             </el-tab-pane>

@@ -60,6 +60,14 @@ const cards = [
     display: props.stats.total_ordered_units.toLocaleString('ru-RU') + ' 件',
   },
   {
+    label: '退货件数',
+    value: props.stats.total_returns_units,
+    suffix: '件',
+    color: '#f56c6c',
+    icon: Failed,
+    display: props.stats.total_returns_units.toLocaleString('ru-RU') + ' 件',
+  },
+  {
     label: '总费用',
     value: totalCosts,
     prefix: '₽',
@@ -83,7 +91,7 @@ const cards = [
   <div
     style="
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(7, 1fr);
       gap: 16px;
     "
   >

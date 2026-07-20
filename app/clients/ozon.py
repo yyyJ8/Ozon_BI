@@ -199,6 +199,41 @@ class OzonClient:
                 continue
         return None
 
+    # ── 退货接口 ──────────────────────────────────────────
+
+    def get_returns_page(self, date_from: str, date_to: str,
+                         schema: str = "FBO",
+                         last_id: int = 0, limit: int = 500) -> dict:
+        """获取一页退货数据（游标分页）"""
+        return self._request("/v1/returns/list", {
+            "filter": {
+                "return_schema": schema.lower(),
+                "logistic_return_date": {
+                    "time_from": date_from + "T00:00:00Z",
+                    "time_to": date_to + "T23:59:59Z",
+                },
+            },
+            "last_id": last_id,
+            "limit": limit,
+        })
+
+    def get_all_returns(self, date_from: str, date_to: str,
+                        schema: str = "FBO") -> list[dict]:
+        """全量拉取退货数据（处理游标分页）"""
+        all_returns: list[dict] = []
+        last_id = 0
+        while True:
+            data = self.get_returns_page(date_from, date_to,
+                                         schema=schema, last_id=last_id)
+            batch = data.get("returns", [])
+            if not batch:
+                break
+            all_returns.extend(batch)
+            if not data.get("has_next", False):
+                break
+            last_id = batch[-1]["id"]
+        return all_returns
+
     def close(self):
         self._client.close()
 
