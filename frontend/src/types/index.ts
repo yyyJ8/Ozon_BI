@@ -200,3 +200,89 @@ export interface ReasonItem {
   type: string
   count: number
 }
+
+// ── 订单 API 类型 ──
+
+export interface OrderOverview {
+  total_orders: number
+  fbo_count: number
+  fbs_count: number
+  delivered_count: number
+  cancelled_count: number
+  in_progress_count: number
+  total_ordered_units: number
+  cancellation_rate: number
+  avg_items_per_order: number | null
+}
+
+export interface OrderTrendItem {
+  date: string
+  ordered: number
+  delivered: number
+  cancelled: number
+}
+
+export interface OrderListItem {
+  posting_number: string
+  order_number: string | null
+  delivery_schema: string | null
+  status: string | null
+  created_at: string | null
+  delivered_at: string | null
+  in_process_at: string | null
+  product_count: number
+  total_quantity: number
+  total_price: number
+}
+
+export interface OrderListResponse {
+  items: OrderListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface OrderProduct {
+  sku: number | null
+  name: string | null
+  quantity: number
+  offer_id: string | null
+  price: number
+}
+
+export interface OrderReturn {
+  id: number
+  sku: number
+  type: string
+  return_reason_name: string | null
+  quantity: number
+  visual_status: string
+  returned_at: string | null
+  finished_at: string | null
+}
+
+export interface OrderFinance {
+  operation_id: number
+  operation_type_name: string | null
+  type: string | null
+  operation_date: string
+  amount: number
+  accruals_for_sale: number
+  sale_commission: number
+  delivery_charge: number
+  return_delivery_charge: number
+}
+
+export interface OrderDetail {
+  posting_number: string
+  order_number: string | null
+  delivery_schema: string | null
+  status: string | null
+  cancel_reason_id: number
+  created_at: string | null
+  in_process_at: string | null
+  delivered_at: string | null
+  products: OrderProduct[]
+  returns: OrderReturn[]
+  finance_transactions: OrderFinance[]
+}

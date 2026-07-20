@@ -1,21 +1,21 @@
 {
   "endpoint": "POST /v1/returns/list",
-  "total_records": 363,
+  "total_records": 372,
   "has_next": false,
   "visual_status_sys_name_distribution": {
-    "ReturnedToOzon": 310,
+    "ReturnedToOzon": 316,
     "ReceivedBySeller": 5,
-    "Utilized": 26,
+    "Utilized": 28,
     "WriteOff": 1,
-    "Utilizing": 2,
+    "Utilizing": 4,
     "ArrivedAtReturnPlace": 8,
-    "MovingToSeller": 3,
-    "MovingToOzon": 5,
-    "WaitingShipment": 3
+    "MovingToOzon": 7,
+    "WaitingShipment": 1,
+    "MovingToSeller": 2
   },
   "type_distribution": {
-    "Cancellation": 304,
-    "ClientReturn": 59
+    "Cancellation": 311,
+    "ClientReturn": 61
   },
   "all_leaf_field_paths": [
     "additional_info.is_opened",
@@ -25566,9 +25566,9 @@
       "order_id": 36862290809,
       "order_number": "67896105-0517",
       "place": {
-        "id": 1020000498774000,
-        "name": "МОСКВА_3317",
-        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+        "id": 1020000871997000,
+        "name": "СЦ_КАВКАЗСКИЙ_ВОЗВРАТЫ",
+        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -25622,7 +25622,7 @@
           "display_name": "На утилизации",
           "sys_name": "Utilizing"
         },
-        "change_moment": "2026-07-16T07:51:29.632066Z"
+        "change_moment": "2026-07-17T19:43:34.598912Z"
       },
       "exemplars": [
         {
@@ -25732,9 +25732,9 @@
       "order_id": 37276132683,
       "order_number": "0166161019-0268",
       "place": {
-        "id": 1020000498774000,
-        "name": "МОСКВА_3317",
-        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+        "id": 1020000871997000,
+        "name": "СЦ_КАВКАЗСКИЙ_ВОЗВРАТЫ",
+        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -25744,12 +25744,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 84
+          "price": 108
         },
         "tariffication_first_date": "2026-07-10T08:47:49.123262Z",
         "tariffication_start_date": "2026-07-09T08:47:49.123262Z",
         "arrived_moment": "2026-07-08T08:47:51.443011Z",
-        "days": 8,
+        "days": 9,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -25784,11 +25784,11 @@
       },
       "visual": {
         "status": {
-          "id": 3,
-          "display_name": "В пункте выдачи",
-          "sys_name": "ArrivedAtReturnPlace"
+          "id": 20,
+          "display_name": "На утилизации",
+          "sys_name": "Utilizing"
         },
-        "change_moment": "2026-07-08T08:47:46.260Z"
+        "change_moment": "2026-07-18T18:54:32.429539Z"
       },
       "exemplars": [
         {
@@ -26230,9 +26230,9 @@
       "order_id": 37941733518,
       "order_number": "05434814-0128",
       "place": {
-        "id": 1020000871997000,
-        "name": "СЦ_КАВКАЗСКИЙ_ВОЗВРАТЫ",
-        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
+        "id": 20541497697000,
+        "name": "FRESH_NGR_МСК_КАШИРСКИЙ_ДВОР",
+        "address": "Россия, г. Москва, ш. Каширское, д. 19, корп. 1"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -26250,7 +26250,7 @@
         "days": 9,
         "utilization_sum": {
           "currency_code": "",
-          "price": 0
+          "price": 127.5
         },
         "utilization_forecast_date": "2026-07-15T11:03:34.671664Z"
       },
@@ -26282,11 +26282,11 @@
       },
       "visual": {
         "status": {
-          "id": 20,
-          "display_name": "На утилизации",
-          "sys_name": "Utilizing"
+          "id": 21,
+          "display_name": "Утилизирован",
+          "sys_name": "Utilized"
         },
-        "change_moment": "2026-07-16T20:11:44.805034Z"
+        "change_moment": "2026-07-17T13:13:39.843Z"
       },
       "exemplars": [
         {
@@ -26728,9 +26728,9 @@
       "order_id": 37335835287,
       "order_number": "0130602151-0069",
       "place": {
-        "id": 1020000498774000,
-        "name": "МОСКВА_3317",
-        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+        "id": 1020000871997000,
+        "name": "СЦ_КАВКАЗСКИЙ_ВОЗВРАТЫ",
+        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -26740,12 +26740,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 450
+          "price": 675
         },
         "tariffication_first_date": "2026-07-11T08:30:42.479808Z",
         "tariffication_start_date": "2026-07-10T08:30:42.479808Z",
         "arrived_moment": "2026-07-09T08:30:50.152711Z",
-        "days": 7,
+        "days": 9,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -26780,11 +26780,11 @@
       },
       "visual": {
         "status": {
-          "id": 3,
-          "display_name": "В пункте выдачи",
-          "sys_name": "ArrivedAtReturnPlace"
+          "id": 20,
+          "display_name": "На утилизации",
+          "sys_name": "Utilizing"
         },
-        "change_moment": "2026-07-09T08:30:40.090Z"
+        "change_moment": "2026-07-20T01:20:08.666458Z"
       },
       "exemplars": [
         {
@@ -26811,9 +26811,9 @@
       "order_id": 37148680728,
       "order_number": "30163672-0904",
       "place": {
-        "id": 1020000498774000,
-        "name": "МОСКВА_3317",
-        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+        "id": 1020000871997000,
+        "name": "СЦ_КАВКАЗСКИЙ_ВОЗВРАТЫ",
+        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -26823,12 +26823,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 84
+          "price": 108
         },
         "tariffication_first_date": "2026-07-10T09:05:34.221226Z",
         "tariffication_start_date": "2026-07-09T09:05:34.221226Z",
         "arrived_moment": "2026-07-08T09:05:34.932588Z",
-        "days": 8,
+        "days": 9,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -26863,11 +26863,11 @@
       },
       "visual": {
         "status": {
-          "id": 3,
-          "display_name": "В пункте выдачи",
-          "sys_name": "ArrivedAtReturnPlace"
+          "id": 20,
+          "display_name": "На утилизации",
+          "sys_name": "Utilizing"
         },
-        "change_moment": "2026-07-08T09:05:20.326Z"
+        "change_moment": "2026-07-18T18:54:32.429539Z"
       },
       "exemplars": [
         {
@@ -28483,12 +28483,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 36
+          "price": 72
         },
         "tariffication_first_date": "2026-07-14T06:53:55.208859Z",
         "tariffication_start_date": "2026-07-13T06:53:55.208859Z",
         "arrived_moment": "2026-07-12T06:53:57.794157Z",
-        "days": 4,
+        "days": 7,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -29230,12 +29230,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 30
+          "price": 120
         },
         "tariffication_first_date": "2026-07-16T08:33:27.166205Z",
         "tariffication_start_date": "2026-07-15T08:33:27.166205Z",
         "arrived_moment": "2026-07-14T08:33:33.828762Z",
-        "days": 2,
+        "days": 5,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -29396,12 +29396,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 12
+          "price": 48
         },
         "tariffication_first_date": "2026-07-16T08:48:21.998645Z",
         "tariffication_start_date": "2026-07-15T08:48:21.998645Z",
         "arrived_moment": "2026-07-14T08:48:24.940532Z",
-        "days": 2,
+        "days": 5,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -29479,12 +29479,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 12
+          "price": 48
         },
         "tariffication_first_date": "2026-07-16T06:53:34.318727Z",
         "tariffication_start_date": "2026-07-15T06:53:34.318727Z",
         "arrived_moment": "2026-07-14T06:53:35.068257Z",
-        "days": 2,
+        "days": 5,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -29799,9 +29799,9 @@
       "order_id": 37070314887,
       "order_number": "33993495-0291",
       "place": {
-        "id": 1020000746232000,
-        "name": "МСК_КАВКАЗСКИЙ_ХАБ",
-        "address": "Россия, г. Москва, ул. Кавказский бульвар, д. 57, стр. 4"
+        "id": 1020000498774000,
+        "name": "МОСКВА_3317",
+        "address": "Россия, Москва, улица Академика Пилюгина, 18"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -29811,17 +29811,17 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 0
+          "price": 18
         },
-        "tariffication_first_date": null,
-        "tariffication_start_date": null,
-        "arrived_moment": null,
-        "days": 0,
+        "tariffication_first_date": "2026-07-19T12:16:12.563458Z",
+        "tariffication_start_date": "2026-07-18T12:16:12.563458Z",
+        "arrived_moment": "2026-07-17T12:16:16.503283Z",
+        "days": 2,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
         },
-        "utilization_forecast_date": null
+        "utilization_forecast_date": "2026-07-27T12:16:12.563458Z"
       },
       "product": {
         "sku": 3647432444,
@@ -29851,11 +29851,11 @@
       },
       "visual": {
         "status": {
-          "id": 17,
-          "display_name": "Едет к вам",
-          "sys_name": "MovingToSeller"
+          "id": 3,
+          "display_name": "В пункте выдачи",
+          "sys_name": "ArrivedAtReturnPlace"
         },
-        "change_moment": "2026-07-16T20:30:06.263964Z"
+        "change_moment": "2026-07-17T12:16:11.117Z"
       },
       "exemplars": [
         {
@@ -30143,12 +30143,12 @@
       "storage": {
         "sum": {
           "currency_code": "",
-          "price": 0
+          "price": 42
         },
         "tariffication_first_date": "2026-07-18T08:49:19.897961Z",
         "tariffication_start_date": "2026-07-17T08:49:19.897961Z",
         "arrived_moment": "2026-07-16T08:49:24.036994Z",
-        "days": 0,
+        "days": 3,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
@@ -30297,9 +30297,9 @@
       "order_id": 37912885699,
       "order_number": "24958531-1147",
       "place": {
-        "id": 1020003228013000,
-        "name": "МО_СЦ_КУПАВНА",
-        "address": "Россия, обл. Московская, Богородский, М-7 Волга, 35-й, д. 4, стр. 1"
+        "id": 1020000498774000,
+        "name": "МОСКВА_3317",
+        "address": "Россия, Москва, улица Академика Пилюгина, 18"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -30311,15 +30311,15 @@
           "currency_code": "",
           "price": 0
         },
-        "tariffication_first_date": null,
-        "tariffication_start_date": null,
-        "arrived_moment": null,
-        "days": 0,
+        "tariffication_first_date": "2026-07-20T11:57:44.493210Z",
+        "tariffication_start_date": "2026-07-19T11:57:44.493210Z",
+        "arrived_moment": "2026-07-18T11:57:45.303205Z",
+        "days": 1,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
         },
-        "utilization_forecast_date": null
+        "utilization_forecast_date": "2026-07-28T11:57:44.493210Z"
       },
       "product": {
         "sku": 3667565377,
@@ -30349,11 +30349,11 @@
       },
       "visual": {
         "status": {
-          "id": 17,
-          "display_name": "Едет к вам",
-          "sys_name": "MovingToSeller"
+          "id": 3,
+          "display_name": "В пункте выдачи",
+          "sys_name": "ArrivedAtReturnPlace"
         },
-        "change_moment": "2026-07-16T20:23:21.590637Z"
+        "change_moment": "2026-07-18T11:57:41.843Z"
       },
       "exemplars": [
         {
@@ -30380,9 +30380,9 @@
       "order_id": 36772140045,
       "order_number": "57630765-0435",
       "place": {
-        "id": 18044341087000,
-        "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ",
-        "address": "Россия, 630301, обл. Новосибирская, г. Обь, населенный пункт 3307 км, дом 16, корпус 8"
+        "id": 1020000498774000,
+        "name": "МОСКВА_3317",
+        "address": "Россия, Москва, улица Академика Пилюгина, 18"
       },
       "target_place": {
         "id": 1020000498774000,
@@ -30394,15 +30394,15 @@
           "currency_code": "",
           "price": 0
         },
-        "tariffication_first_date": null,
-        "tariffication_start_date": null,
-        "arrived_moment": null,
+        "tariffication_first_date": "2026-07-21T07:23:40.362820Z",
+        "tariffication_start_date": "2026-07-20T07:23:40.362820Z",
+        "arrived_moment": "2026-07-19T07:23:44.589840Z",
         "days": 0,
         "utilization_sum": {
           "currency_code": "",
           "price": 0
         },
-        "utilization_forecast_date": null
+        "utilization_forecast_date": "2026-07-29T07:23:40.362820Z"
       },
       "product": {
         "sku": 3638915082,
@@ -30432,11 +30432,11 @@
       },
       "visual": {
         "status": {
-          "id": 17,
-          "display_name": "Едет к вам",
-          "sys_name": "MovingToSeller"
+          "id": 3,
+          "display_name": "В пункте выдачи",
+          "sys_name": "ArrivedAtReturnPlace"
         },
-        "change_moment": "2026-07-16T03:24:12.975112Z"
+        "change_moment": "2026-07-19T07:23:26.593Z"
       },
       "exemplars": [
         {
@@ -30463,9 +30463,9 @@
       "order_id": 36042370804,
       "order_number": "0217006884-0049",
       "place": {
-        "id": 1020001358330000,
-        "name": "СЦ_ФФ_ГРИВНО_ВОЗВРАТЫ",
-        "address": "Россия, 140961, обл. Московская, г. Подольск, д. Гривно, промышленная зона промышленного парка Гривно, д. 1, корп. 13"
+        "id": 20541497697000,
+        "name": "FRESH_NGR_МСК_КАШИРСКИЙ_ДВОР",
+        "address": "Россия, г. Москва, ш. Каширское, д. 19, корп. 1"
       },
       "target_place": {
         "id": 1020000435326000,
@@ -30483,7 +30483,7 @@
         "days": 0,
         "utilization_sum": {
           "currency_code": "",
-          "price": 0
+          "price": 172.5
         },
         "utilization_forecast_date": null
       },
@@ -30515,11 +30515,11 @@
       },
       "visual": {
         "status": {
-          "id": 33,
-          "display_name": "Едет на склад Ozon",
-          "sys_name": "MovingToOzon"
+          "id": 21,
+          "display_name": "Утилизирован",
+          "sys_name": "Utilized"
         },
-        "change_moment": "2026-07-16T07:07:32.799059Z"
+        "change_moment": "2026-07-17T07:48:21.093908Z"
       },
       "exemplars": [
         {
@@ -30546,14 +30546,14 @@
       "order_id": 37370933403,
       "order_number": "82218315-0055",
       "place": {
-        "id": 1020000950141000,
-        "name": "СЦ_Армавир_Лавриенко_Возвраты",
-        "address": "Россия, край Краснодарский, г. Армавир, Лавриненко, дом 1, стр. 6,7,8"
+        "id": 1020001351253000,
+        "name": "НЕВИННОМЫССК_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, край Ставропольский, г. Невинномысск, Россия, Ставропольский край, Невинномысск, Приозёрная улица, 25с1к1"
       },
       "target_place": {
-        "id": 1020000268700000,
-        "name": "АДЫГЕЙСК_РФЦ_ВОЗВРАТЫ",
-        "address": "Россия, 350961, Респ. Адыгея, р-н Теучежский, хутор Кочкин, ул. Логистическая, д. 3, стр. 1"
+        "id": 1020005014195400,
+        "name": "МАЙКОП_165",
+        "address": "Россия, Адыгея Республика, Майкоп, Михайлова, 12а"
       },
       "storage": {
         "sum": {
@@ -30591,18 +30591,18 @@
       },
       "logistic": {
         "technical_return_moment": null,
-        "final_moment": null,
+        "final_moment": "2026-07-18T05:43:40.452902Z",
         "cancelled_with_compensation_moment": null,
         "return_date": "2026-07-14T17:55:15.210Z",
         "barcode": "ii16001710417"
       },
       "visual": {
         "status": {
-          "id": 33,
-          "display_name": "Едет на склад Ozon",
-          "sys_name": "MovingToOzon"
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
         },
-        "change_moment": "2026-07-16T12:29:48.454060Z"
+        "change_moment": "2026-07-18T05:43:40.452902Z"
       },
       "exemplars": [
         {
@@ -30634,9 +30634,9 @@
         "address": "Россия, г. Санкт-Петербург, пос. Шушары, ш. Московское, д. 143, стр. 1"
       },
       "target_place": {
-        "id": 1020001649201000,
-        "name": "СПБ_КОЛПИНО_РФЦ_ВОЗВРАТЫ",
-        "address": "Россия, 917669, г. Санкт-Петербург, пос. Шушары, Россия, Санкт-Петербург, Пушкинский район, посёлок Шушары, Колпинское шоссе, 135 к.2, стр.1"
+        "id": 1020002478375000,
+        "name": "САНКТ-ПЕТЕРБУРГ_3307",
+        "address": "Россия, Санкт-Петербург, Пулковское шоссе, 95к3"
       },
       "storage": {
         "sum": {
@@ -30674,18 +30674,18 @@
       },
       "logistic": {
         "technical_return_moment": null,
-        "final_moment": null,
+        "final_moment": "2026-07-17T05:25:31.768554Z",
         "cancelled_with_compensation_moment": null,
         "return_date": "2026-07-15T16:28:20.750Z",
         "barcode": "ii16360467256"
       },
       "visual": {
         "status": {
-          "id": 33,
-          "display_name": "Едет на склад Ozon",
-          "sys_name": "MovingToOzon"
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
         },
-        "change_moment": "2026-07-16T13:02:09.976395Z"
+        "change_moment": "2026-07-17T05:25:31.768554Z"
       },
       "exemplars": [
         {
@@ -30712,14 +30712,14 @@
       "order_id": 37095353610,
       "order_number": "59469338-2061",
       "place": {
-        "id": 1020000613861000,
-        "name": "СПБ_ШУШАРЫ_РФЦ",
+        "id": 1020000613917000,
+        "name": "СПБ_ШУШАРЫ_РФЦ_ВОЗВРАТЫ",
         "address": "Россия, г. Санкт-Петербург, пос. Шушары, ш. Московское, д. 143, стр. 1"
       },
       "target_place": {
-        "id": 1020001649201000,
-        "name": "СПБ_КОЛПИНО_РФЦ_ВОЗВРАТЫ",
-        "address": "Россия, 917669, г. Санкт-Петербург, пос. Шушары, Россия, Санкт-Петербург, Пушкинский район, посёлок Шушары, Колпинское шоссе, 135 к.2, стр.1"
+        "id": 1020002478375000,
+        "name": "САНКТ-ПЕТЕРБУРГ_3307",
+        "address": "Россия, Санкт-Петербург, Пулковское шоссе, 95к3"
       },
       "storage": {
         "sum": {
@@ -30757,18 +30757,18 @@
       },
       "logistic": {
         "technical_return_moment": null,
-        "final_moment": null,
+        "final_moment": "2026-07-17T14:37:07.092576Z",
         "cancelled_with_compensation_moment": null,
         "return_date": "2026-07-15T16:28:20.750Z",
         "barcode": "ii12297400761"
       },
       "visual": {
         "status": {
-          "id": 33,
-          "display_name": "Едет на склад Ozon",
-          "sys_name": "MovingToOzon"
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
         },
-        "change_moment": "2026-07-16T14:15:57.415742Z"
+        "change_moment": "2026-07-17T14:37:07.092576Z"
       },
       "exemplars": [
         {
@@ -30878,14 +30878,14 @@
       "order_id": 37680223278,
       "order_number": "63679694-0335",
       "place": {
+        "id": 19250021896000,
+        "name": "НОВОСИБИРСК_РФЦ_НОВЫЙ_ВОЗВРАТЫ",
+        "address": "Россия, 630301, обл. Новосибирская, г. Обь, населенный пункт 3307 км, дом 16, корпус 8"
+      },
+      "target_place": {
         "id": 1020000264444000,
         "name": "БАРНАУЛ_167",
         "address": "Россия, Алтайский, Барнаул, улица Малахова, 62"
-      },
-      "target_place": {
-        "id": 15825401566000,
-        "name": "ЧЕРНАЯ_ГРЯЗЬ_ВОЗВРАТЫ",
-        "address": "Россия, 140961, обл. Московская, р-н Солнечногорский, д. Черная Грязь, ул. Сходненская, стр. 1"
       },
       "storage": {
         "sum": {
@@ -30923,18 +30923,18 @@
       },
       "logistic": {
         "technical_return_moment": null,
-        "final_moment": null,
+        "final_moment": "2026-07-18T03:22:43.872115Z",
         "cancelled_with_compensation_moment": null,
         "return_date": "2026-07-16T11:23:52.630Z",
         "barcode": "ii12298546015"
       },
       "visual": {
         "status": {
-          "id": 36,
-          "display_name": "Ожидает отправки",
-          "sys_name": "WaitingShipment"
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
         },
-        "change_moment": "2026-07-16T11:23:52.630Z"
+        "change_moment": "2026-07-18T03:22:43.872115Z"
       },
       "exemplars": [
         {
@@ -30961,14 +30961,14 @@
       "order_id": 37453755948,
       "order_number": "0161183548-0094",
       "place": {
+        "id": 1020003112037000,
+        "name": "МАХАЧКАЛА_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, Респ. Дагестан, р-н Кумторкалинский, Коркмаскалинский, улица Заводская, здание 11, стр 1"
+      },
+      "target_place": {
         "id": 1020005000495844,
         "name": "ЛЕВАШИ_5",
         "address": "Россия, Дагестан Республика, Леваши, улица Ленина, 12"
-      },
-      "target_place": {
-        "id": 15825401566000,
-        "name": "ЧЕРНАЯ_ГРЯЗЬ_ВОЗВРАТЫ",
-        "address": "Россия, 140961, обл. Московская, р-н Солнечногорский, д. Черная Грязь, ул. Сходненская, стр. 1"
       },
       "storage": {
         "sum": {
@@ -31006,18 +31006,18 @@
       },
       "logistic": {
         "technical_return_moment": null,
-        "final_moment": null,
+        "final_moment": "2026-07-20T02:04:13.966287Z",
         "cancelled_with_compensation_moment": null,
         "return_date": "2026-07-16T17:15:24.037Z",
         "barcode": "ii17147000883"
       },
       "visual": {
         "status": {
-          "id": 36,
-          "display_name": "Ожидает отправки",
-          "sys_name": "WaitingShipment"
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
         },
-        "change_moment": "2026-07-16T17:15:24.037Z"
+        "change_moment": "2026-07-20T02:04:13.966287Z"
       },
       "exemplars": [
         {
@@ -31033,6 +31033,753 @@
       "posting_number": "0161183548-0094-1",
       "return_clearing_id": 0,
       "source_id": 21001899630,
+      "compensation_status": null
+    },
+    {
+      "id": 1001923683,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель отказался при вручении: товар не подошел",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37624684422,
+      "order_number": "30650694-0710",
+      "place": {
+        "id": 1020005000277867,
+        "name": "КОНАКОВО_37",
+        "address": "Россия, Тверская, Конаковский, Конаково, улица Баскакова, 11а"
+      },
+      "target_place": {
+        "id": 23021318601000,
+        "name": "ТВЕРЬ_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 170044, обл. Тверская, г. Тверь, промышленная зона Боровлево-2, стр. 1 А"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 4525296761,
+        "offer_id": "40218-Y07U0001-C02",
+        "name": "Настольная полка-органайзер для чайных пакетиков, 8 отсеков, для кухни и гостиной",
+        "price": {
+          "currency_code": "RUB",
+          "price": 3950
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 3950
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-17T14:47:02.277Z",
+        "barcode": "ii16020959726"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-18T12:32:31.126Z"
+      },
+      "exemplars": [
+        {
+          "id": 501803008353000,
+          "exemplar_id": 35477713046
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 601806612158000,
+      "posting_number": "30650694-0710-1",
+      "return_clearing_id": 0,
+      "source_id": 21001902548,
+      "compensation_status": null
+    },
+    {
+      "id": 1001924943,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель не забрал заказ",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37747223553,
+      "order_number": "0221466081-0207",
+      "place": {
+        "id": 1020001853788000,
+        "name": "ДОМОДЕДОВО_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 142000, обл. Московская, г. Домодедово, д. Кучино, Россия, Московская область, городской округ Домодедово, деревня Кучино, территория ПНК Парк Домодедово-2"
+      },
+      "target_place": {
+        "id": 1020001853788000,
+        "name": "ДОМОДЕДОВО_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 142000, обл. Московская, г. Домодедово, д. Кучино, Россия, Московская область, городской округ Домодедово, деревня Кучино, территория ПНК Парк Домодедово-2"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3667366626,
+        "offer_id": "37808-Y07U0001-B02",
+        "name": "Акриловая панорамная клетка для хомяка с колесом и прозрачной крышкой фиолетовый 37* 33*28cm",
+        "price": {
+          "currency_code": "RUB",
+          "price": 5800
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 5800
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": "2026-07-19T02:16:54.380133Z",
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-17T21:12:09.220Z",
+        "barcode": "ii17147000886"
+      },
+      "visual": {
+        "status": {
+          "id": 34,
+          "display_name": "На складе Ozon",
+          "sys_name": "ReturnedToOzon"
+        },
+        "change_moment": "2026-07-19T02:16:54.380133Z"
+      },
+      "exemplars": [
+        {
+          "id": 201987814785000,
+          "exemplar_id": 32989225282
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 551255932101000,
+      "posting_number": "0221466081-0207-1",
+      "return_clearing_id": 0,
+      "source_id": 21001903808,
+      "compensation_status": null
+    },
+    {
+      "id": 1001925235,
+      "company_id": 4162868,
+      "return_reason_name": "Не удалось доставить заказ",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37391866240,
+      "order_number": "01628256-1705",
+      "place": {
+        "id": 1020000032914000,
+        "name": "МО_ИСТРА_ДО",
+        "address": "Россия, 141020, обл. Московская, р-н Истринский, д. Давыдовское, ул. Дачная, строение 3, ИНДУСТРИАЛЬНЫЙ ПАРК КУЛОН"
+      },
+      "target_place": {
+        "id": 1020000498774000,
+        "name": "МОСКВА_3317",
+        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3659186043,
+        "offer_id": "29714-Y07U0008-B02",
+        "name": "Коврик-стол для сборки пазлов до 1500 деталей с ящиками для хранения, Удобный столик для пазлов, Легко перемещать",
+        "price": {
+          "currency_code": "RUB",
+          "price": 6500
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 6500
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T01:07:43.910Z",
+        "barcode": "ii12297400763"
+      },
+      "visual": {
+        "status": {
+          "id": 17,
+          "display_name": "Едет к вам",
+          "sys_name": "MovingToSeller"
+        },
+        "change_moment": "2026-07-19T04:34:27.456009Z"
+      },
+      "exemplars": [
+        {
+          "id": 851297926417000,
+          "exemplar_id": 29922638883
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 951300503488000,
+      "posting_number": "01628256-1705-1",
+      "return_clearing_id": 0,
+      "source_id": 21001904100,
+      "compensation_status": null
+    },
+    {
+      "id": 1001926746,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель отменил заказ",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37211861761,
+      "order_number": "14821089-0752",
+      "place": {
+        "id": 1020002860092000,
+        "name": "АЛФИМОВО_2",
+        "address": "Россия, Московская Область, Ступино, Алфимово, улица Новосёлов, 25/2"
+      },
+      "target_place": {
+        "id": 1020000435326000,
+        "name": "ГРИВНО_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 140961, обл. Московская, г. Подольск, д. Гривно, промышленная зона промышленного парка Гривно, д. 1, корп. 13"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3828309212,
+        "offer_id": "33386-Y07U0001-B02",
+        "name": "Металлическая трехэтажная клетка для хомяков, мышей и грызунов с легким съемом поддона, синяя",
+        "price": {
+          "currency_code": "RUB",
+          "price": 3126
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 3126
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T13:28:51.650Z",
+        "barcode": "ii5273382740"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-19T14:27:09.955Z"
+      },
+      "exemplars": [
+        {
+          "id": 501804219022000,
+          "exemplar_id": 33413277928
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 501803700820000,
+      "posting_number": "14821089-0752-2",
+      "return_clearing_id": 0,
+      "source_id": 21001905611,
+      "compensation_status": null
+    },
+    {
+      "id": 1001927025,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель передумал",
+      "type": "ClientReturn",
+      "schema": "Fbo",
+      "order_id": 37379104355,
+      "order_number": "10080515-0088",
+      "place": {
+        "id": 1020001836347000,
+        "name": "УФА_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, Респ. Башкортостан, р-н Благовещенский, г. Благовещенск, Россия, Республика Башкортостан, Благовещенск, Социалистическая улица, 43с1"
+      },
+      "target_place": {
+        "id": 1020001836347000,
+        "name": "УФА_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, Респ. Башкортостан, р-н Благовещенский, г. Благовещенск, Россия, Республика Башкортостан, Благовещенск, Социалистическая улица, 43с1"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3646802847,
+        "offer_id": "37248-Y07U0001-B01",
+        "name": "Витрина для фигурок Парящая Селия (дисплейбокс) Прозрачный складной органайзер",
+        "price": {
+          "currency_code": "RUB",
+          "price": 2700
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 1458
+        },
+        "commission_percent": 46,
+        "commission": {
+          "currency_code": "RUB",
+          "price": 1242
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T14:36:19.870Z",
+        "barcode": "ii15858302471"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-19T19:38:39.461027Z"
+      },
+      "exemplars": [
+        {
+          "id": 851219176411000,
+          "exemplar_id": 32489413506
+        }
+      ],
+      "additional_info": {
+        "is_opened": true,
+        "is_super_econom": false
+      },
+      "clearing_id": 451218035810000,
+      "posting_number": "10080515-0088-1",
+      "return_clearing_id": 601814066054000,
+      "source_id": 21001905890,
+      "compensation_status": null
+    },
+    {
+      "id": 1001927253,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель отказался при вручении: товар не подошел",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 36384534118,
+      "order_number": "64180246-0077",
+      "place": {
+        "id": 1020000435326000,
+        "name": "ГРИВНО_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 140961, обл. Московская, г. Подольск, д. Гривно, промышленная зона промышленного парка Гривно, д. 1, корп. 13"
+      },
+      "target_place": {
+        "id": 1020000435326000,
+        "name": "ГРИВНО_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, 140961, обл. Московская, г. Подольск, д. Гривно, промышленная зона промышленного парка Гривно, д. 1, корп. 13"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3645735675,
+        "offer_id": "28180-Y07U0006-B02",
+        "name": "Коврик-стол для пазлов 1000 деталей с 6 ящиками для хранения,77X54 см, Удобный коврик для сборки пазлов",
+        "price": {
+          "currency_code": "RUB",
+          "price": 3700
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 3700
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T15:46:54.770Z",
+        "barcode": "ii16359362600"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-19T22:56:45.586119Z"
+      },
+      "exemplars": [
+        {
+          "id": 851287235678000,
+          "exemplar_id": 29787511478
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 251280326422000,
+      "posting_number": "64180246-0077-2",
+      "return_clearing_id": 0,
+      "source_id": 21001906118,
+      "compensation_status": null
+    },
+    {
+      "id": 1001927294,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель отказался при вручении: товар не подошел",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37222727117,
+      "order_number": "41810893-2144",
+      "place": {
+        "id": 23568832656000,
+        "name": "ЮККИ_2",
+        "address": "Россия, Ленинградская область, Всеволожский район, деревня Юкки, Ленинградское шоссе, 22"
+      },
+      "target_place": {
+        "id": 23903602966000,
+        "name": "СПБ_БУГРЫ_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, обл. Ленинградская, р-н Всеволожский, промышленная зона Бугры массив, ул. Шоссейная, д. 50, корп. 1"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3645735675,
+        "offer_id": "28180-Y07U0006-B02",
+        "name": "Коврик-стол для пазлов 1000 деталей с 6 ящиками для хранения,77X54 см, Удобный коврик для сборки пазлов",
+        "price": {
+          "currency_code": "RUB",
+          "price": 3700
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 3700
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T15:54:51.693Z",
+        "barcode": "ii18465173939"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-19T05:54:19.691Z"
+      },
+      "exemplars": [
+        {
+          "id": 851272994506000,
+          "exemplar_id": 29787707385
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 851272520952000,
+      "posting_number": "41810893-2144-1",
+      "return_clearing_id": 0,
+      "source_id": 21001906159,
+      "compensation_status": null
+    },
+    {
+      "id": 1001928314,
+      "company_id": 4162868,
+      "return_reason_name": "Покупатель отменил заказ: нашел дешевле",
+      "type": "Cancellation",
+      "schema": "Fbo",
+      "order_id": 37398606240,
+      "order_number": "01628256-1706",
+      "place": {
+        "id": 1020002498196000,
+        "name": "МО_ИСТРА_3_ХАБ",
+        "address": "Россия, 141020, обл. Московская, р-н Истринский, д. Давыдовское, ул. Дачная, строение 3, ИНДУСТРИАЛЬНЫЙ ПАРК КУЛОН"
+      },
+      "target_place": {
+        "id": 1020000759224000,
+        "name": "НОГИНСК_РФЦ_ВОЗВРАТЫ",
+        "address": "Россия, обл. Московская, р-н Ногинский, пос. Обухово, территория Обухово-Парк, 2 строение 1"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3659186043,
+        "offer_id": "29714-Y07U0008-B02",
+        "name": "Коврик-стол для сборки пазлов до 1500 деталей с ящиками для хранения, Удобный столик для пазлов, Легко перемещать",
+        "price": {
+          "currency_code": "RUB",
+          "price": 6500
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 6500
+        },
+        "commission_percent": 0,
+        "commission": {
+          "currency_code": "",
+          "price": 0
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-18T10:05:41.150Z",
+        "barcode": "ii12297400764"
+      },
+      "visual": {
+        "status": {
+          "id": 33,
+          "display_name": "Едет на склад Ozon",
+          "sys_name": "MovingToOzon"
+        },
+        "change_moment": "2026-07-18T23:17:48.685832Z"
+      },
+      "exemplars": [
+        {
+          "id": 901810384365000,
+          "exemplar_id": 29922638823
+        }
+      ],
+      "additional_info": {
+        "is_opened": false,
+        "is_super_econom": false
+      },
+      "clearing_id": 851298181888000,
+      "posting_number": "01628256-1706-1",
+      "return_clearing_id": 0,
+      "source_id": 21001907179,
+      "compensation_status": null
+    },
+    {
+      "id": 1001929261,
+      "company_id": 4162868,
+      "return_reason_name": "Упаковка и товар повреждены",
+      "type": "ClientReturn",
+      "schema": "Fbo",
+      "order_id": 36799690172,
+      "order_number": "22397100-1063",
+      "place": {
+        "id": 23928141946000,
+        "name": "СЦ_СПБ_Московское_Возвраты",
+        "address": "Россия, 200961, г. Санкт-Петербург, пос. Шушары, ш. Московское, д. 145, стр. 10"
+      },
+      "target_place": {
+        "id": 1020000498774000,
+        "name": "МОСКВА_3317",
+        "address": "Россия, Москва, улица Академика Пилюгина, 18"
+      },
+      "storage": {
+        "sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "tariffication_first_date": null,
+        "tariffication_start_date": null,
+        "arrived_moment": null,
+        "days": 0,
+        "utilization_sum": {
+          "currency_code": "",
+          "price": 0
+        },
+        "utilization_forecast_date": null
+      },
+      "product": {
+        "sku": 3646802847,
+        "offer_id": "37248-Y07U0001-B01",
+        "name": "Витрина для фигурок Парящая Селия (дисплейбокс) Прозрачный складной органайзер",
+        "price": {
+          "currency_code": "RUB",
+          "price": 2650
+        },
+        "price_without_commission": {
+          "currency_code": "RUB",
+          "price": 1404.5
+        },
+        "commission_percent": 47,
+        "commission": {
+          "currency_code": "RUB",
+          "price": 1245.5
+        },
+        "quantity": 1
+      },
+      "logistic": {
+        "technical_return_moment": null,
+        "final_moment": null,
+        "cancelled_with_compensation_moment": null,
+        "return_date": "2026-07-19T09:55:54.610Z",
+        "barcode": "ii18461055883"
+      },
+      "visual": {
+        "status": {
+          "id": 17,
+          "display_name": "Едет к вам",
+          "sys_name": "MovingToSeller"
+        },
+        "change_moment": "2026-07-19T23:39:32.732954Z"
+      },
+      "exemplars": [
+        {
+          "id": 351292931661000,
+          "exemplar_id": 35348636106
+        }
+      ],
+      "additional_info": {
+        "is_opened": true,
+        "is_super_econom": false
+      },
+      "clearing_id": 351292684545000,
+      "posting_number": "22397100-1063-1",
+      "return_clearing_id": 401809000859000,
+      "source_id": 21001908126,
       "compensation_status": null
     }
   ]

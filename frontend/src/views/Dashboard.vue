@@ -12,6 +12,7 @@ import InventoryHealth from '@/components/InventoryHealth.vue'
 import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
 import AdvertisingAnalysis from '@/components/AdvertisingAnalysis.vue'
 import CostAnalysis from '@/components/CostAnalysis.vue'
+import OrderAnalysis from '@/components/OrderAnalysis.vue'
 
 const {
   dateRange,
@@ -403,6 +404,16 @@ onMounted(() => {
                 :product-summary="productSummary"
                 :date-range="dateRange"
                 :loading="loading"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="订单分析" name="orders">
+              <template #label>
+                <span><el-icon><Document /></el-icon> 订单分析</span>
+              </template>
+              <OrderAnalysis
+                :date-range="dateRange"
+                :products="products"
                 :active-tab="activeTab"
               />
             </el-tab-pane>

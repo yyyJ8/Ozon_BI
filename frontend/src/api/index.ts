@@ -2,6 +2,7 @@ import type {
   Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction,
   AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary,
   ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem,
+  OrderOverview, OrderTrendItem, OrderListResponse, OrderDetail,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -166,4 +167,44 @@ export async function getReturnsReasons(
   if (skuId !== undefined) extra['sku_id'] = String(skuId)
   return fetchJson<ReasonItem[]>(
     `${BASE}/returns/reasons${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+// ── 订单 API ──
+
+export async function getOrdersOverview(
+  dateFrom?: string, dateTo?: string, skuId?: number,
+): Promise<OrderOverview> {
+  const extra: Record<string, string> = {}
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  return fetchJson<OrderOverview>(
+    `${BASE}/orders/overview${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getOrdersTrend(
+  dateFrom?: string, dateTo?: string, skuId?: number,
+): Promise<OrderTrendItem[]> {
+  const extra: Record<string, string> = {}
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  return fetchJson<OrderTrendItem[]>(
+    `${BASE}/orders/trend${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getOrdersList(
+  dateFrom?: string, dateTo?: string, status?: string,
+  schema?: string, skuId?: number, page?: number, pageSize?: number,
+): Promise<OrderListResponse> {
+  const extra: Record<string, string> = {}
+  if (status) extra['status'] = status
+  if (schema) extra['schema'] = schema
+  if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  if (page !== undefined) extra['page'] = String(page)
+  if (pageSize !== undefined) extra['page_size'] = String(pageSize)
+  return fetchJson<OrderListResponse>(
+    `${BASE}/orders/list${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getOrderDetail(
+  postingNumber: string,
+): Promise<OrderDetail> {
+  return fetchJson<OrderDetail>(`${BASE}/orders/${encodeURIComponent(postingNumber)}`)
 }

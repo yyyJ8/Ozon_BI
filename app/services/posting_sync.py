@@ -138,14 +138,39 @@ def sync_postings(db: Session, client: OzonClient,
                 logger.info(f"    补齐进度: {i + 1}/{len(missing)}")
         db.commit()
 
+    # ── Phase 3: 补全 delivered_at（从 finance_transactions）──
+    # list API 不返回 fact_delivery_date，用 OperationAgentDeliveredToCustomer 的
+    # operation_date 兜底填补
+    filled = db.execute(text("""
+        UPDATE ozon.postings p
+        SET delivered_at = (
+            SELECT MIN(ft.operation_date)::timestamp
+            FROM ozon.finance_transactions ft
+            WHERE ft.posting_number = p.posting_number
+              AND ft.operation_type = 'OperationAgentDeliveredToCustomer'
+        ),
+        synced_at = NOW()
+        WHERE p.status = 'delivered'
+          AND p.delivered_at IS NULL
+          AND EXISTS (
+            SELECT 1 FROM ozon.finance_transactions ft
+            WHERE ft.posting_number = p.posting_number
+              AND ft.operation_type = 'OperationAgentDeliveredToCustomer'
+          )
+    """)).rowcount
+    if filled:
+        db.commit()
+        logger.info(f"  补全签收日期: {filled} 条")
+
     total = list_inserted + list_updated + get_inserted
     logger.info(
         f"订单履约同步完成: list={list_inserted}+{list_updated}, "
-        f"补齐={get_inserted}(失败{get_failed}), 合计={total}"
+        f"补齐={get_inserted}(失败{get_failed}), 日期补全={filled}, 合计={total}"
     )
     return {
         "posting_list_inserted": list_inserted,
         "posting_list_updated": list_updated,
         "posting_get_inserted": get_inserted,
         "posting_get_failed": get_failed,
+        "posting_delivered_at_filled": filled,
     }
