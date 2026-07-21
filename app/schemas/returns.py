@@ -1,5 +1,5 @@
 """退货分析 API 响应模型"""
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -51,3 +51,26 @@ class ReasonItem(BaseModel):
     reason_cn: str
     type: str
     count: int
+
+
+class ReturnDetailItem(BaseModel):
+    """单条退货记录 — 用于 SKU 明细表的行展开"""
+    model_config = ConfigDict(ser_json_decimal='number')
+
+    id: int                              # 退货 ID
+    posting_number: str                  # 订单号
+    sku: int                             # SKU
+    product_name: str | None = None      # 商品名（JOIN products）
+    offer_id: str | None = None          # offer_id（JOIN products）
+    primary_image: str | None = None     # 商品图（JOIN products）
+    type: str                            # Cancellation / ClientReturn
+    return_reason_name: str | None = None   # 俄文原因原文
+    reason_cn: str | None = None         # 中文翻译
+    quantity: int = 0                    # 退货件数
+    price: float | None = None           # 退货金额 RUB
+    visual_status: str                   # 状态
+    delivery_schema: str                          # Fbo / Fbs
+    returned_at: datetime | None = None  # 退货发起时间
+    finished_at: datetime | None = None  # 完结时间
+    status_changed_at: datetime | None = None  # 最后状态变更时间
+    processing_days: float | None = None # 处理天数

@@ -114,6 +114,8 @@ export interface AdCampaignSummary {
   total_spend: number
   total_orders: number
   total_orders_sum: number
+  total_impressions: number
+  total_clicks: number
   mapped_sku_id: number | null
   mapped_offer_id: string | null
 }
@@ -144,10 +146,22 @@ export interface AdSkuDetail {
   drr_total: number | null
 }
 
+export interface AdTrendItem {
+  date: string
+  spend: number
+  impressions: number
+  clicks: number
+  orders_count: number
+  orders_sum: number
+  mapped_spend: number
+}
+
 export interface AdSummary {
   total_spend: number
   total_orders_count: number
   total_orders_sum: number
+  total_impressions: number
+  total_clicks: number
   by_type: Record<string, { spend: number; count: number; orders_sum: number }>
   unmapped_spend: number
   mapped_spend: number
@@ -199,6 +213,26 @@ export interface ReasonItem {
   reason_cn: string
   type: string
   count: number
+}
+
+export interface ReturnDetailItem {
+  id: number
+  posting_number: string
+  sku: number
+  product_name: string | null
+  offer_id: string | null
+  primary_image: string | null
+  type: string
+  return_reason_name: string | null
+  reason_cn: string | null
+  quantity: number
+  price: number | null
+  visual_status: string
+  delivery_schema: string
+  returned_at: string | null
+  finished_at: string | null
+  status_changed_at: string | null
+  processing_days: number | null
 }
 
 // ── 订单 API 类型 ──

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import * as echarts from 'echarts'
-import { Failed, Remove, CircleCloseFilled, TrendCharts, Timer, InfoFilled } from '@element-plus/icons-vue'
-import type { Product } from '@/types'
+import { Failed, Remove, CircleCloseFilled, TrendCharts, Timer } from '@element-plus/icons-vue'
+import type { Product, ReturnDetailItem } from '@/types'
 import { useReturns } from '@/composables/useReturns'
+import { getReturnsDetails } from '@/api'
 
 const props = defineProps<{
   dateRange: [string, string] | null
@@ -24,6 +25,30 @@ function onSkuRowClick(row: any) {
 }
 function clearSkuFilter() {
   selectedSkuId.value = undefined
+}
+
+// ── SKU 行展开：逐条退货明细 ────────────────────────────
+const detailsMap = ref<Record<number, ReturnDetailItem[]>>({})
+const detailsLoading = ref<Record<number, boolean>>({})
+
+async function onExpandChange(row: any, expandedRowsList: any) {
+  // el-table expand-change 第二个参数是当前所有展开行的数组
+  const sku: number = row.sku_id
+  const isExpanding = expandedRowsList.some((r: any) => r.sku_id === sku)
+
+  if (isExpanding && !detailsMap.value[sku]) {
+    detailsLoading.value[sku] = true
+    try {
+      const data = await getReturnsDetails(
+        sku,
+        props.dateRange?.[0],
+        props.dateRange?.[1],
+      )
+      detailsMap.value[sku] = data
+    } finally {
+      detailsLoading.value[sku] = false
+    }
+  }
 }
 
 // 选中 SKU 的名称
@@ -232,8 +257,65 @@ const minReturnOptions = [1, 2, 3, 5]
         </div>
       </template>
       <el-table :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500"
+        row-key="sku_id"
         :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
-        @row-click="onSkuRowClick">
+        @row-click="onSkuRowClick" @expand-change="onExpandChange">
+        <el-table-column type="expand">
+          <template #default="{ row: skuRow }">
+            <div v-loading="detailsLoading[skuRow.sku_id]" style="padding:4px 12px 8px;">
+              <el-table v-if="detailsMap[skuRow.sku_id]?.length"
+                :data="detailsMap[skuRow.sku_id]" size="small" border style="width:100%">
+                <el-table-column prop="id" label="退货ID" width="100" />
+                <el-table-column prop="posting_number" label="订单号" width="130" />
+                <el-table-column label="类型" width="75" align="center">
+                  <template #default="{ row: d }">
+                    <el-tag size="small" :type="d.type === 'Cancellation' ? 'warning' : 'danger'" effect="plain">
+                      {{ d.type === 'Cancellation' ? '取消退回' : '签收后退' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="reason_cn" label="退货原因" min-width="110" show-overflow-tooltip>
+                  <template #default="{ row: d }">
+                    <span :style="{ color: d.reason_cn ? '#303133' : '#c0c4cc' }">{{ d.reason_cn || d.return_reason_name || '—' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="quantity" label="件数" width="50" align="right" />
+                <el-table-column label="金额" width="90" align="right">
+                  <template #default="{ row: d }">
+                    <span :style="{ color: d.price ? '#f56c6c' : '#c0c4cc' }">
+                      {{ d.price != null ? '₽ ' + d.price.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) : '—' }}
+                    </span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="状态" width="95" align="center">
+                  <template #default="{ row: d }">
+                    <el-tag size="small" effect="plain">{{ statusLabel(d.visual_status) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="发货模式" width="70" align="center">
+                  <template #default="{ row: d }">
+                    <el-tag size="small" :type="d.delivery_schema === 'Fbo' ? '' : 'warning'" effect="plain">{{ d.delivery_schema }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="退货时间" width="100" align="center">
+                  <template #default="{ row: d }">
+                    <span style="font-size:12px;white-space:nowrap;">{{ d.returned_at ? d.returned_at.slice(0, 10) : '—' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="处理天数" width="75" align="right">
+                  <template #default="{ row: d }">
+                    <span :style="{ color: d.processing_days != null ? '#303133' : '#c0c4cc' }">
+                      {{ d.processing_days != null ? d.processing_days.toFixed(0) + '天' : '—' }}
+                    </span>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div v-else-if="!detailsLoading[skuRow.sku_id]" style="text-align:center;color:#c0c4cc;padding:12px;">
+                暂无退货明细
+              </div>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column type="index" label="#" width="40" />
         <el-table-column label="图片" width="50">
           <template #default="{ row }">

@@ -1,9 +1,9 @@
 import { ref, computed, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary } from '@/types'
-import { getAdCampaigns, getAdSummary, getAdCampaignDaily, getAdSkuDetail } from '@/api'
+import type { AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary, AdTrendItem } from '@/types'
+import { getAdCampaigns, getAdSummary, getAdCampaignDaily, getAdSkuDetail, getAdTrend } from '@/api'
 
-/** 安全转数字：API 可能返回 Decimal 字符串或数字 */
+/** 安全转数字 */
 function n(v: unknown): number {
   return typeof v === 'number' ? v : Number(v ?? 0)
 }
@@ -13,28 +13,31 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
 
   const campaigns = ref<AdCampaignSummary[]>([])
   const adSummary = ref<AdSummary | null>(null)
+  const trend = ref<AdTrendItem[]>([])
 
   // 缓存
   const campaignDaily = ref<Record<string, AdDailyStat[]>>({})
   const loadingDaily = ref<Record<string, boolean>>({})
   const skuDetails = ref<Record<number, AdSkuDetail[]>>({})
 
-  // ── 汇总卡 ──────────────────────────────────────
+  // ── 汇总卡（字段直接来自 AdSummary）────────────────────
   const summaryCards = computed(() => {
     if (!adSummary.value) return []
-    const c = campaigns.value.filter(x => n(x.total_spend) > 0)
-    const totalImpressions = c.reduce((s, x) => s + n((x as any).total_impressions), 0)
-    const totalClicks = c.reduce((s, x) => s + n((x as any).total_clicks), 0)
-    const ts = n(adSummary.value.total_spend)
-    const tc = totalClicks
-    const ti = totalImpressions
+    const s = adSummary.value
+    const ti = s.total_impressions
+    const tc = s.total_clicks
+    const ts = n(s.total_spend)
+    const to = s.total_orders_count
+    const tos = n(s.total_orders_sum)
+    const roas = ts > 0 ? (tos / ts) : 0
     return [
       { label: '总花费', value: ts, prefix: '₽', color: '#f56c6c' },
       { label: '展示量', value: ti, prefix: '', color: '#409eff' },
       { label: '点击量', value: tc, prefix: '', color: '#67c23a' },
       { label: 'CTR', value: ti > 0 ? (tc / ti * 100) : 0, prefix: '', suffix: '%', color: '#e6a23c', decimals: 2 },
-      { label: '广告订单', value: adSummary.value.total_orders_count, prefix: '', color: '#909399' },
-      { label: '广告收入', value: adSummary.value.total_orders_sum, prefix: '₽', color: '#67c23a' },
+      { label: 'ROAS', value: roas, prefix: '', suffix: 'x', color: '#67c23a', decimals: 2 },
+      { label: '广告订单', value: to, prefix: '', color: '#909399' },
+      { label: '广告收入', value: tos, prefix: '₽', color: '#67c23a' },
     ]
   })
 
@@ -46,11 +49,14 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
         campaign_id: c.campaign_id,
         title: c.title || c.campaign_id,
         campaign_type: c.campaign_type,
+        state: c.state,
+        budget: n(c.budget),
         spend: n(c.total_spend),
-        impressions: n((c as any).total_impressions),
-        clicks: n((c as any).total_clicks),
+        impressions: c.total_impressions,
+        clicks: c.total_clicks,
         orders: n(c.total_orders),
         orders_sum: n(c.total_orders_sum),
+        roas: n(c.total_spend) > 0 ? n(c.total_orders_sum) / n(c.total_spend) : 0,
         sku_id: c.mapped_sku_id,
         offer_id: c.mapped_offer_id,
       }))
@@ -107,12 +113,22 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
         sold_units: a.sold_units,
         sales_promotion: a.sales_promotion,
         drr_total: a.day_count > 0 ? a.drr_sum / a.day_count : null,
+        roas: a.spend > 0 ? a.sales_promotion / a.spend : 0,
       }))
       .sort((a, b) => b.spend - a.spend)
   })
 
-  // ── 折线图数据：CTR / 加购率 / CVR (%) ──────────
-  const chartData = computed(() => {
+  // ── 花费趋势图数据：每日花费 + 广告收入 ──────────
+  const spendTrend = computed(() => {
+    return trend.value.map(t => ({
+      date: t.date,
+      spend: n(t.spend),
+      orders_sum: n(t.orders_sum),
+    }))
+  })
+
+  // ── 转化率趋势图数据：CTR / 加购率 / CVR ──────────
+  const convTrend = computed(() => {
     const map = new Map<string, { impressions: number; clicks: number; add_to_cart: number; orders: number }>()
     for (const rows of Object.values(campaignDaily.value)) {
       for (const r of rows) {
@@ -123,7 +139,6 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
         map.set(r.stat_date, d)
       }
     }
-    // 叠加 SKU 明细的加购数
     for (const details of Object.values(skuDetails.value)) {
       for (const d of details) {
         const entry = map.get(d.stat_date) || { impressions: 0, clicks: 0, add_to_cart: 0, orders: 0 }
@@ -147,19 +162,21 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
     loading.value = true
     try {
       const [df, dt] = dateRange.value
-      const [camps, sum] = await Promise.all([
+      const [camps, sum, trendData] = await Promise.all([
         getAdCampaigns(df, dt),
         getAdSummary(df, dt),
+        getAdTrend(df, dt),
       ])
       campaigns.value = camps
       adSummary.value = sum
+      trend.value = trendData
 
-      // 加载活动日明细（用于 chart 的 impressions/clicks/orders）
+      // 加载活动日明细（top 15，用于转化率图）
       const topIds = camps.filter(c => c.total_spend > 0).slice(0, 15).map(c => c.campaign_id)
       for (const cid of topIds) {
         fetchCampaignDaily(cid)
       }
-      // 加载 SKU 详情（加购等）
+      // 加载 SKU 详情
       const mapped = camps.filter(c => c.mapped_sku_id)
       for (const c of mapped) {
         if (c.mapped_sku_id) fetchSkuDetail(c.mapped_sku_id)
@@ -201,16 +218,17 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
     if (dateRange.value) {
       campaignDaily.value = {}
       skuDetails.value = {}
+      trend.value = []
       fetchAll()
     }
   }, { immediate: true })
 
   return {
     loading,
-    campaigns, adSummary,
+    campaigns, adSummary, trend,
     campaignDaily, loadingDaily,
     skuDetails,
-    summaryCards, campaignTable, skuTable, chartData,
+    summaryCards, campaignTable, skuTable, spendTrend, convTrend,
     fetchAll, fetchCampaignDaily,
   }
 }

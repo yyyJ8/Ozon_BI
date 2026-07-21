@@ -32,11 +32,13 @@ class AdCampaignItem(BaseModel):
     campaign_type: str
     state: str
     budget: Money = 0.0
-    total_spend: Money = 0.0             # 期内总花费（正数）
-    total_orders: int = 0                 # 期内总订单数
-    total_orders_sum: Money = 0.0         # 期内订单总额
-    mapped_sku_id: Optional[int] = None   # 关联的 SKU（如有）
-    mapped_offer_id: Optional[str] = None # 关联的 offer_id（如有）
+    total_spend: Money = 0.0               # 期内总花费（正数）
+    total_orders: int = 0                   # 期内总订单数
+    total_orders_sum: Money = 0.0           # 期内订单总额
+    total_impressions: int = 0              # 期内总展示量
+    total_clicks: int = 0                   # 期内总点击量
+    mapped_sku_id: Optional[int] = None     # 关联的 SKU（如有）
+    mapped_offer_id: Optional[str] = None   # 关联的 offer_id（如有）
 
 
 class AdDailyStatItem(BaseModel):
@@ -67,6 +69,8 @@ class AdSummary(BaseModel):
     total_spend: Money = 0.0                  # 总花费
     total_orders_count: int = 0                # 总广告订单数
     total_orders_sum: Money = 0.0              # 总广告订单金额
+    total_impressions: int = 0                 # 总展示量
+    total_clicks: int = 0                      # 总点击量
     by_type: dict = {}                         # {"SKU": {"spend": X, "count": N, "orders_sum": Y}, ...}
     unmapped_spend: Money = 0.0                # SEARCH_PROMO 等无法关联 SKU 的花费
     mapped_spend: Money = 0.0                  # 已关联到 SKU 的花费
@@ -93,3 +97,14 @@ class AdSkuDetailItem(BaseModel):
     sales_promotion: Optional[Money] = None
     drr_promotion: Optional[float] = None
     drr_total: Optional[float] = None
+
+
+class AdTrendItem(BaseModel):
+    """广告每日趋势"""
+    date: date
+    spend: Money = 0.0
+    impressions: int = 0
+    clicks: int = 0
+    orders_count: int = 0
+    orders_sum: Money = 0.0
+    mapped_spend: Money = 0.0

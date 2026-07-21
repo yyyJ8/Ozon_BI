@@ -393,7 +393,7 @@ onMounted(() => {
               <template #label>
                 <span><el-icon><TrendCharts /></el-icon> 广告分析</span>
               </template>
-              <AdvertisingAnalysis :date-range="dateRange" :products="products" />
+              <AdvertisingAnalysis :date-range="dateRange" :products="products" :active-tab="activeTab" />
             </el-tab-pane>
             <el-tab-pane label="成本分析" name="costs">
               <template #label>

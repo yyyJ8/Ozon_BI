@@ -1,7 +1,7 @@
 import type {
   Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction,
-  AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary,
-  ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem,
+  AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary, AdTrendItem,
+  ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem, ReturnDetailItem,
   OrderOverview, OrderTrendItem, OrderListResponse, OrderDetail,
 } from '@/types'
 
@@ -118,6 +118,15 @@ export async function getAdSkuDetail(
     `${BASE}/advertising/sku/${skuId}/detail${adParams(dateFrom, dateTo)}`)
 }
 
+export async function getAdTrend(
+  dateFrom?: string, dateTo?: string, campaignType?: string,
+): Promise<AdTrendItem[]> {
+  const extra: Record<string, string> = {}
+  if (campaignType) extra['campaign_type'] = campaignType
+  return fetchJson<AdTrendItem[]>(
+    `${BASE}/advertising/trend${adParams(dateFrom, dateTo, extra)}`)
+}
+
 export async function getAdSummary(
   dateFrom?: string, dateTo?: string,
 ): Promise<AdSummary> {
@@ -167,6 +176,19 @@ export async function getReturnsReasons(
   if (skuId !== undefined) extra['sku_id'] = String(skuId)
   return fetchJson<ReasonItem[]>(
     `${BASE}/returns/reasons${returnsParams(dateFrom, dateTo, extra)}`)
+}
+
+export async function getReturnsDetails(
+  skuId: number, dateFrom?: string, dateTo?: string,
+  limit?: number, offset?: number,
+): Promise<ReturnDetailItem[]> {
+  const p = new URLSearchParams()
+  p.set('sku_id', String(skuId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (limit !== undefined) p.set('limit', String(limit))
+  if (offset !== undefined) p.set('offset', String(offset))
+  return fetchJson<ReturnDetailItem[]>(`${BASE}/returns/details?${p.toString()}`)
 }
 
 // ── 订单 API ──

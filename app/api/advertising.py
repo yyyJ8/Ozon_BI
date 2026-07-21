@@ -12,7 +12,7 @@ from app.models import (
     AdCampaign, AdDailyStats, AdCampaignSkuMap, AdSkuDailyStats, Product,
 )
 from app.schemas.advertising import (
-    AdCampaignItem, AdDailyStatItem, AdSkuDailyItem, AdSkuDetailItem, AdSummary,
+    AdCampaignItem, AdDailyStatItem, AdSkuDailyItem, AdSkuDetailItem, AdSummary, AdTrendItem,
 )
 
 router = APIRouter(prefix="/advertising", tags=["advertising"])
@@ -41,6 +41,8 @@ def list_campaigns(
             func.sum(AdDailyStats.spend).label("total_spend"),
             func.sum(AdDailyStats.orders_count).label("total_orders"),
             func.sum(AdDailyStats.orders_sum).label("total_orders_sum"),
+            func.sum(AdDailyStats.impressions).label("total_impressions"),
+            func.sum(AdDailyStats.clicks).label("total_clicks"),
         )
         .filter(AdDailyStats.stat_date.between(date_from, date_to))
         .group_by(AdDailyStats.campaign_id)
@@ -62,6 +64,8 @@ def list_campaigns(
         func.coalesce(stat_sub.c.total_spend, 0).label("total_spend"),
         func.coalesce(stat_sub.c.total_orders, 0).label("total_orders"),
         func.coalesce(stat_sub.c.total_orders_sum, 0).label("total_orders_sum"),
+        func.coalesce(stat_sub.c.total_impressions, 0).label("total_impressions"),
+        func.coalesce(stat_sub.c.total_clicks, 0).label("total_clicks"),
         map_sub.c.sku_id.label("mapped_sku_id"),
         map_sub.c.offer_id.label("mapped_offer_id"),
     ).outerjoin(
@@ -81,7 +85,7 @@ def list_campaigns(
     ).all()
 
     result = []
-    for c, tspend, torders, tsum, msku, moffer in rows:
+    for c, tspend, torders, tsum, timp, tclick, msku, moffer in rows:
         result.append(AdCampaignItem(
             campaign_id=c.campaign_id,
             title=c.title,
@@ -91,6 +95,8 @@ def list_campaigns(
             total_spend=Decimal(str(tspend or 0)),
             total_orders=int(torders or 0),
             total_orders_sum=Decimal(str(tsum or 0)),
+            total_impressions=int(timp or 0),
+            total_clicks=int(tclick or 0),
             mapped_sku_id=msku,
             mapped_offer_id=moffer,
         ))
@@ -127,6 +133,68 @@ def campaign_daily(
             orders_sum=r.orders_sum,
         )
         for r in rows
+    ]
+
+
+# ── 2.5. 每日趋势（花费/展示/点击/订单）────────────────────
+
+@router.get("/trend", response_model=list[AdTrendItem])
+def advertising_trend(
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    campaign_type: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """广告每日趋势：花费 / 展示 / 点击 / 订单 / 已归因花费"""
+    if date_to is None:
+        date_to = date.today()
+    if date_from is None:
+        date_from = date_to - timedelta(days=30)
+
+    # 每日总量
+    daily_rows = (
+        db.query(
+            AdDailyStats.stat_date,
+            func.sum(AdDailyStats.spend).label("total_spend"),
+            func.sum(AdDailyStats.impressions).label("total_impressions"),
+            func.sum(AdDailyStats.clicks).label("total_clicks"),
+            func.sum(AdDailyStats.orders_count).label("total_orders_count"),
+            func.sum(AdDailyStats.orders_sum).label("total_orders_sum"),
+        )
+    )
+    if campaign_type:
+        daily_rows = daily_rows.join(
+            AdCampaign, AdDailyStats.campaign_id == AdCampaign.campaign_id,
+        ).filter(AdCampaign.campaign_type == campaign_type)
+
+    daily_rows = daily_rows.filter(
+        AdDailyStats.stat_date.between(date_from, date_to),
+    ).group_by(AdDailyStats.stat_date).order_by(AdDailyStats.stat_date).all()
+
+    # 每日已归因花费（仅 mapped campaigns）
+    mapped_rows = (
+        db.query(
+            AdDailyStats.stat_date,
+            func.sum(AdDailyStats.spend).label("mapped_spend"),
+        )
+        .join(AdCampaignSkuMap, AdDailyStats.campaign_id == AdCampaignSkuMap.campaign_id)
+        .filter(AdDailyStats.stat_date.between(date_from, date_to))
+        .group_by(AdDailyStats.stat_date)
+        .all()
+    )
+    mapped_map = {r.stat_date: float(r.mapped_spend or 0) for r in mapped_rows}
+
+    return [
+        AdTrendItem(
+            date=r.stat_date,
+            spend=Decimal(str(r.total_spend or 0)),
+            impressions=int(r.total_impressions or 0),
+            clicks=int(r.total_clicks or 0),
+            orders_count=int(r.total_orders_count or 0),
+            orders_sum=Decimal(str(r.total_orders_sum or 0)),
+            mapped_spend=Decimal(str(mapped_map.get(r.stat_date, 0))),
+        )
+        for r in daily_rows
     ]
 
 
@@ -235,6 +303,8 @@ def advertising_summary(
         func.sum(AdDailyStats.spend).label("total_spend"),
         func.sum(AdDailyStats.orders_count).label("total_orders_count"),
         func.sum(AdDailyStats.orders_sum).label("total_orders_sum"),
+        func.sum(AdDailyStats.impressions).label("total_impressions"),
+        func.sum(AdDailyStats.clicks).label("total_clicks"),
     ).filter(
         AdDailyStats.stat_date.between(date_from, date_to),
     ).first()
@@ -290,6 +360,8 @@ def advertising_summary(
         total_spend=Decimal(str(total_spend)),
         total_orders_count=int(agg.total_orders_count or 0),
         total_orders_sum=Decimal(str(agg.total_orders_sum or 0)),
+        total_impressions=int(agg.total_impressions or 0),
+        total_clicks=int(agg.total_clicks or 0),
         by_type=by_type,
         unmapped_spend=Decimal(str(unmapped_spend)),
         mapped_spend=Decimal(str(mapped)),

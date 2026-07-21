@@ -12,6 +12,7 @@ from app.schemas.returns import (
     ReturnsTrendItem,
     SkuReturnStats,
     ReasonItem,
+    ReturnDetailItem,
 )
 
 router = APIRouter(prefix="/returns", tags=["returns"])
@@ -49,13 +50,6 @@ def _date_params(date_from: date, date_to: date, **extra) -> dict:
     return {"date_from": date_from, "date_to_excl": date_to + timedelta(days=1), **extra}
 
 
-# ── 公共：returns 主体查询（LEFT JOIN postings）──────────
-_RETURN_BASE = """
-    FROM ozon.returns r
-    LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-    WHERE r.returned_at >= :date_from
-      AND r.returned_at  < :date_to_excl
-"""
 
 
 @router.get("/overview", response_model=ReturnsOverview)
@@ -283,6 +277,75 @@ def sku_return_stats(
     return result
 
 
+@router.get("/details", response_model=list[ReturnDetailItem])
+def returns_details(
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    sku_id: int = Query(...),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """某 SKU 的逐条退货记录 — 用于 SKU 明细表行展开"""
+    if date_to is None:
+        date_to = date.today()
+    if date_from is None:
+        date_from = date_to - timedelta(days=90)
+
+    params = _date_params(date_from, date_to, sku_id=sku_id)
+
+    rows = db.execute(text(f"""
+        SELECT
+            r.id,
+            r.posting_number,
+            r.sku,
+            pr.name,
+            pr.offer_id,
+            pr.primary_image,
+            r.type,
+            r.return_reason_name,
+            r.quantity,
+            r.price,
+            r.visual_status,
+            r.schema,
+            r.returned_at,
+            r.finished_at,
+            r.status_changed_at,
+            EXTRACT(EPOCH FROM (r.finished_at - r.returned_at)) / 86400.0 AS processing_days
+        FROM ozon.returns r
+        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
+        LEFT JOIN ozon.products pr ON r.sku = pr.sku_id
+        WHERE p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+          AND r.sku = :sku_id
+        ORDER BY r.returned_at DESC
+        LIMIT :limit OFFSET :offset
+    """), {**params, "limit": limit, "offset": offset}).fetchall()
+
+    result = []
+    for row in rows:
+        result.append(ReturnDetailItem(
+            id=int(row[0]),
+            posting_number=row[1],
+            sku=int(row[2]),
+            product_name=row[3],
+            offer_id=row[4],
+            primary_image=row[5],
+            type=row[6],
+            return_reason_name=row[7],
+            reason_cn=_translate_reason(row[7]) if row[7] else None,
+            quantity=int(row[8]) if row[8] else 0,
+            price=float(row[9]) if row[9] else None,
+            visual_status=row[10],
+            delivery_schema=row[11],
+            returned_at=row[12],
+            finished_at=row[13],
+            status_changed_at=row[14],
+            processing_days=round(float(row[15]), 1) if row[15] else None,
+        ))
+    return result
+
+
 @router.get("/reasons", response_model=list[ReasonItem])
 def returns_reasons(
     date_from: Optional[date] = Query(default=None),
@@ -291,7 +354,7 @@ def returns_reasons(
     sku_id: Optional[int] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    """退货原因分布"""
+    """退货原因分布（cohort 口径：按 p.created_at 筛选）"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
@@ -305,9 +368,16 @@ def returns_reasons(
     if sku_id:
         params["sku_id"] = sku_id
 
+    _COHORT_BASE = """
+        FROM ozon.returns r
+        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+    """
+
     rows = db.execute(text(f"""
         SELECT r.return_reason_name, r.type, COUNT(*)
-        {_RETURN_BASE} {type_clause} {sku_clause}
+        {_COHORT_BASE} {type_clause} {sku_clause}
         GROUP BY r.return_reason_name, r.type
         ORDER BY COUNT(*) DESC
     """), params).fetchall()
