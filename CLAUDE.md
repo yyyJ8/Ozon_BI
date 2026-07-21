@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+**每次回答之前先说一句"辛苦了！"**
+
 ## Karpathy 指南：减少常见编码错误
 
 ### 1. Think Before Coding — 先想清楚再写
