@@ -7,6 +7,8 @@ export interface Product {
   category_id: number
   primary_image: string | null
   commission_fbo_pct: number | null
+  stock_present: number
+  stock_reserved: number
 }
 
 export interface SummaryRow {
@@ -58,6 +60,18 @@ export interface SyncStatus {
     records: number
     error: string | null
   }>
+}
+
+export interface StockStatus {
+  last_updated: string | null
+  stock_count: number
+}
+
+export interface StockRefreshResult {
+  ok: boolean
+  stock_count: number
+  last_updated: string | null
+  message: string
 }
 
 export interface DateRangeInfo {
@@ -252,6 +266,8 @@ export interface OrderOverview {
 export interface OrderTrendItem {
   date: string
   ordered: number
+  awaiting_deliver: number
+  delivering: number
   delivered: number
   cancelled: number
 }
@@ -264,6 +280,8 @@ export interface OrderListItem {
   created_at: string | null
   delivered_at: string | null
   in_process_at: string | null
+  sku: number | null
+  offer_id: string | null
   product_count: number
   total_quantity: number
   total_price: number
@@ -282,6 +300,7 @@ export interface OrderProduct {
   quantity: number
   offer_id: string | null
   price: number
+  image: string | null
 }
 
 export interface OrderReturn {

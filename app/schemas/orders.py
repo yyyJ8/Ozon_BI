@@ -24,6 +24,8 @@ class OrderTrendItem(BaseModel):
     """订单趋势 — 单日数据点"""
     date: date
     ordered: int
+    awaiting_deliver: int
+    delivering: int
     delivered: int
     cancelled: int
 
@@ -37,6 +39,8 @@ class OrderListItem(BaseModel):
     created_at: datetime | None = None
     delivered_at: datetime | None = None
     in_process_at: datetime | None = None
+    sku: int | None = None
+    offer_id: str | None = None
     product_count: int = 0
     total_quantity: int = 0
     total_price: float = 0.0
@@ -57,6 +61,7 @@ class OrderProduct(BaseModel):
     quantity: int = 0
     offer_id: str | None = None
     price: float = 0.0
+    image: str | None = None
 
 
 class OrderReturn(BaseModel):

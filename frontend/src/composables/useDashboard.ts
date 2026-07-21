@@ -58,7 +58,7 @@ export function useDashboard() {
       day_count: number
     }>()
 
-    // 先填充全量商品（兜底值）
+    // 先填充全量商品（兜底值，stock 用 products 表的真实库存）
     for (const p of products.value) {
       map.set(p.sku_id, {
         sku_id: p.sku_id,
@@ -79,13 +79,13 @@ export function useDashboard() {
         advertising: 0,
         other_costs: 0,
         commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
-        stock_present: 0,
-        stock_reserved: 0,
+        stock_present: p.stock_present,
+        stock_reserved: p.stock_reserved,
         day_count: 0,
       })
     }
 
-    // 用汇总数据覆盖
+    // 用汇总数据覆盖（不覆盖 stock，stock 始终用 products 表的真实库存）
     for (const row of summaryRows.value) {
       const d = map.get(row.sku_id)
       if (d) {
@@ -103,12 +103,6 @@ export function useDashboard() {
         d.other_costs += row.other_costs
         d.day_count += 1
         if (row.primary_image) d.primary_image = row.primary_image
-        if (row.stock_present !== 0 || d.stock_present === 0) {
-          d.stock_present = row.stock_present
-        }
-        if (row.stock_reserved !== 0 || d.stock_reserved === 0) {
-          d.stock_reserved = row.stock_reserved
-        }
       }
     }
 
@@ -124,20 +118,18 @@ export function useDashboard() {
     if (!availableRange.value) return false
     const d = time.toISOString().split('T')[0]
     const today = new Date().toISOString().split('T')[0]
-    return d < availableRange.value.min_date || d >= today  // 不能选今天及未来
+    return d < availableRange.value.min_date || d > today  // 不能选未来
   }
 
   // 获取可用日期范围
   async function fetchDateRange() {
     try {
       availableRange.value = await getDateRange()
-      // 初始化日期范围：默认到昨天（今天数据不完整）
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayStr = yesterday.toISOString().split('T')[0]
+      // 初始化日期范围：默认到今天
+      const today = new Date().toISOString().split('T')[0]
       dateRange.value = [
         availableRange.value.min_date,
-        yesterdayStr < availableRange.value.max_date ? yesterdayStr : availableRange.value.max_date,
+        availableRange.value.max_date,
       ]
     } catch {
       // 如果失败，退回到最近 30 天

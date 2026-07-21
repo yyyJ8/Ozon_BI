@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.clients.ozon import OzonClient
 from app.models import SyncLog
-from app.services.product_sync import sync_products
+from app.services.product_sync import sync_products, sync_stocks_v4
 from app.services.analytics_sync import sync_analytics
 from app.services.finance_sync import sync_finance
 from app.services.posting_sync import sync_postings
@@ -60,6 +60,14 @@ def run_full_sync(db: Session, client: OzonClient,
         _log_sync(db, "products", "failed", error=str(e), batch_id=batch_id)
         results["products"] = {"error": str(e)}
         return results  # 商品失败则中断
+
+    # ── 1.5. 库存同步 (v4 专用接口，更完整) ──
+    try:
+        sr = sync_stocks_v4(db, client)
+        results["stocks_v4"] = sr
+    except Exception as e:
+        logger.error(f"库存同步失败 (v4): {e}")
+        results["stocks_v4"] = {"error": str(e)}
 
     # ── 2. 销售分析同步 ──
     try:

@@ -16,6 +16,7 @@ export function useOrders(
   const pageSize = ref(20)
   const statusFilter = ref<string | undefined>(undefined)
   const schemaFilter = ref<string | undefined>(undefined)
+  const searchFilter = ref<string | undefined>(undefined)
 
   async function fetchAll() {
     if (!dateRange.value) return
@@ -31,6 +32,7 @@ export function useOrders(
           statusFilter.value,
           schemaFilter.value,
           sid,
+          searchFilter.value,
           currentPage.value,
           pageSize.value,
         ),
@@ -48,7 +50,7 @@ export function useOrders(
   }
 
   watch(
-    [dateRange, skuId, currentPage, pageSize, statusFilter, schemaFilter],
+    [dateRange, skuId, currentPage, pageSize, statusFilter, schemaFilter, searchFilter],
     () => { fetchAll() },
     { immediate: true },
   )
@@ -76,7 +78,7 @@ export function useOrders(
   return {
     loading, overview, trend,
     orderList, listTotal, currentPage, pageSize,
-    statusFilter, schemaFilter,
+    statusFilter, schemaFilter, searchFilter,
     fetchAll,
     detailLoading, selectedOrder, fetchDetail, clearDetail,
   }

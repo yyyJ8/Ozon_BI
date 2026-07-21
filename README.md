@@ -110,6 +110,49 @@ cd frontend && npm install && npm run dev
 | **利润率** | `profit_margin = net_profit / revenue × 100%` |
 | **数据质量** | `partial`（仅有销售数据）→ `complete`（含财务数据），逐步完善 |
 
+### 定时同步
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| **执行时间** | 每日 9:00 / 19:00（北京时间） | `SYNC_CRON_HOURS=9,19` |
+| **覆盖范围** | 近 3 天 | `days_back=3` |
+| **9:00 对应** | 莫斯科 4:00 | 拉昨天完整数据 |
+| **19:00 对应** | 莫斯科 14:00 | 拉当天半日数据 |
+
+**同步流程**（按顺序执行，任一步骤失败不影响后续）：
+
+```
+① sync_products     → 商品主数据 + 附带库存（product_info）
+② sync_stocks_v4    → 库存专用接口（/v4/product/info/stocks，upsert stocks 表）
+③ sync_analytics    → 销售分析（下单数、收入）      ← /v1/analytics/data
+④ sync_finance      → 财务流水（佣金、物流费等）    ← /v3/finance/transaction/list
+⑤ sync_postings     → 订单履约（送达、取消）        ← 最近 30 天 + 补齐缺失
+⑥ sync_returns      → 退货数据                      ← 最近 90 天
+⑦ sync_advertising  → 广告日统计 + SKU 明细         ← Performance API（异步报告）
+⑧ build_summary     → 聚合到 sku_daily_summary     ← 看板核心表
+```
+
+**各数据源时效**：
+
+| 数据 | 延迟 | 说明 |
+|------|------|------|
+| 库存 | **实时** | Ozon 不提供历史快照，每次调用返回当前仓库值。趋势靠当前库存 + 历史送达/退货往回推算 |
+| 下单/收入 | 当天逐步产生 | analytics API 随莫斯科时间累积当天数据 |
+| 财务流水 | 1-2 天 | 订单完成后 Ozon 结算入账 |
+| 订单履约 | 实时 | 状态随仓库操作更新 |
+| 退货 | 实时 | 退货状态变化周期较长（90 天覆盖） |
+| 广告 | 异步 | Performance API 需排队生成报告，最慢（每批 2-4 分钟） |
+
+**手动操作**：
+
+```bash
+# 命令行全量同步
+python scripts/sync_data.py
+
+# 前端点「刷新库存」按钮 → POST /api/v1/stocks/refresh（实时拉取 Ozon 库存）
+# 前端点「手动同步」按钮 → POST /api/v1/sync（触发全量同步）
+```
+
 ### 前端看板
 
 | 特性 | 说明 |
@@ -275,7 +318,7 @@ API_PORT=8001
 | Phase 3 | 订单追踪 + 退货分析 + 广告同步 | ✅ |
 | Phase 4 | 库存健康 + 广告 ROI + 成本构成 | ✅ |
 | Phase 5 | 订单分析 + 交付时效 + 净销量 | ✅ |
-| Phase 6 | 自动化定时同步 + 数据质量标记 | 🔜 |
+| Phase 6 | 自动化定时同步 + 数据质量标记 | ✅ |
 
 ---
 

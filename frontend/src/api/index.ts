@@ -3,6 +3,7 @@ import type {
   AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary, AdTrendItem,
   ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem, ReturnDetailItem,
   OrderOverview, OrderTrendItem, OrderListResponse, OrderDetail,
+  StockStatus, StockRefreshResult,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -213,12 +214,14 @@ export async function getOrdersTrend(
 
 export async function getOrdersList(
   dateFrom?: string, dateTo?: string, status?: string,
-  schema?: string, skuId?: number, page?: number, pageSize?: number,
+  schema?: string, skuId?: number, search?: string,
+  page?: number, pageSize?: number,
 ): Promise<OrderListResponse> {
   const extra: Record<string, string> = {}
   if (status) extra['status'] = status
   if (schema) extra['schema'] = schema
   if (skuId !== undefined) extra['sku_id'] = String(skuId)
+  if (search) extra['search'] = search
   if (page !== undefined) extra['page'] = String(page)
   if (pageSize !== undefined) extra['page_size'] = String(pageSize)
   return fetchJson<OrderListResponse>(
@@ -229,4 +232,14 @@ export async function getOrderDetail(
   postingNumber: string,
 ): Promise<OrderDetail> {
   return fetchJson<OrderDetail>(`${BASE}/orders/${encodeURIComponent(postingNumber)}`)
+}
+
+// ── 库存 API ──
+
+export async function getStockStatus(): Promise<StockStatus> {
+  return fetchJson<StockStatus>(`${BASE}/stocks/status`)
+}
+
+export async function refreshStocks(): Promise<StockRefreshResult> {
+  return fetchJson<StockRefreshResult>(`${BASE}/stocks/refresh`, { method: 'POST' })
 }

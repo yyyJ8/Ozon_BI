@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
 import type { ProductSummary, SummaryRow } from '@/types'
+import { getStockStatus, refreshStocks } from '@/api'
 
 const props = defineProps<{
   products: ProductSummary[]
@@ -11,7 +13,49 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'row-click', product: ProductSummary): void
+  (e: 'refresh-products'): void
 }>()
+
+// 库存状态
+const stockStatus = ref<{ last_updated: string | null; stock_count: number }>({ last_updated: null, stock_count: 0 })
+const refreshing = ref(false)
+
+async function fetchStockStatus() {
+  try {
+    stockStatus.value = await getStockStatus()
+  } catch { /* ignore */ }
+}
+
+async function handleRefresh() {
+  refreshing.value = true
+  try {
+    const res = await refreshStocks()
+    if (res.ok) {
+      ElMessage.success(res.message || '库存已刷新')
+      await fetchStockStatus()
+      emit('refresh-products')
+    } else {
+      ElMessage.error(res.message || '刷新失败')
+    }
+  } catch (e: unknown) {
+    ElMessage.error('刷新库存失败: ' + (e instanceof Error ? e.message : '未知错误'))
+  } finally {
+    refreshing.value = false
+  }
+}
+
+function formatUpdateTime(t: string | null): string {
+  if (!t) return '未知'
+  // t is ISO format like '2026-07-21T11:39:14'
+  const d = new Date(t + (t.endsWith('Z') ? '' : 'Z'))
+  const now = new Date()
+  const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000)
+  if (diffMin < 1) return '刚刚'
+  if (diffMin < 60) return `${diffMin} 分钟前`
+  const diffH = Math.floor(diffMin / 60)
+  if (diffH < 24) return `${diffH} 小时前`
+  return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
 
 const selectedSkuId = ref<number | null>(null)
 const selectedSkuLabel = computed(() => {
@@ -21,51 +65,74 @@ const selectedSkuLabel = computed(() => {
   return `SKU ${selectedSkuId.value} / ${oid}`
 })
 
-// ─── 三条线 ──────────────────────────────────────────
-const dailyInventory = computed(() => {
-  const rows = selectedSkuId.value === null
-    ? props.summaryRows
-    : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
-  const map = new Map<string, number>()
-  for (const row of rows) {
-    map.set(row.date, (map.get(row.date) || 0) + row.stock_present)
-  }
-  return Array.from(map.entries())
-    .map(([date, stock]) => ({ date, stock }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+// 当前真实总库存（从 products/stocks 表读取）
+const realTotalStock = computed(() =>
+  props.products.reduce((s, p) => s + p.stock_present, 0)
+)
+
+const selectedSkuStock = computed(() => {
+  if (selectedSkuId.value === null) return null
+  return props.products.find(p => p.sku_id === selectedSkuId.value)?.stock_present ?? 0
 })
 
-const dailyOrders = computed(() => {
-  const rows = selectedSkuId.value === null
-    ? props.summaryRows
-    : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
-  const map = new Map<string, number>()
-  for (const row of rows) {
-    map.set(row.date, (map.get(row.date) || 0) + row.ordered_units)
-  }
-  return Array.from(map.entries())
-    .map(([date, units]) => ({ date, units }))
-    .sort((a, b) => a.date.localeCompare(b.date))
-})
+// ─── 按日期聚合 ──────────────────────────────────────────
 
-const dailyDelivered = computed(() => {
+function dailyAgg(field: 'ordered_units' | 'delivered_units' | 'returns_units') {
   const rows = selectedSkuId.value === null
     ? props.summaryRows
     : props.summaryRows.filter(r => r.sku_id === selectedSkuId.value)
   const map = new Map<string, number>()
   for (const row of rows) {
-    map.set(row.date, (map.get(row.date) || 0) + row.delivered_units)
+    const v = Number(row[field]) || 0
+    map.set(row.date, (map.get(row.date) || 0) + v)
   }
   return Array.from(map.entries())
     .map(([date, units]) => ({ date, units }))
     .sort((a, b) => a.date.localeCompare(b.date))
-})
-
-function selectSku(skuId: number) {
-  selectedSkuId.value = selectedSkuId.value === skuId ? null : skuId
 }
 
+const dailyOrders = computed(() => dailyAgg('ordered_units'))
+const dailyDelivered = computed(() => dailyAgg('delivered_units'))
+const dailyReturns = computed(() => dailyAgg('returns_units'))
+
+// ─── 推算历史库存：从当前真实库存往回减净流出 ─────────────
+
+const estimatedStockHistory = computed(() => {
+  const byDate = new Map<string, { delivered: number; returns: number }>()
+  for (const d of dailyDelivered.value) {
+    const entry = byDate.get(d.date) || { delivered: 0, returns: 0 }
+    entry.delivered = d.units
+    byDate.set(d.date, entry)
+  }
+  for (const d of dailyReturns.value) {
+    const entry = byDate.get(d.date) || { delivered: 0, returns: 0 }
+    entry.returns = d.units
+    byDate.set(d.date, entry)
+  }
+
+  // 用 dailyOrders 的日期作为时间轴
+  const sorted = dailyOrders.value  // 已按日期升序排列
+  if (sorted.length === 0) return []
+
+  const currentStock = selectedSkuId.value === null
+    ? realTotalStock.value
+    : (selectedSkuStock.value ?? 0)
+
+  // 从最晚日期往回推算: stock[prev] = stock[cur] + delivered[prev] - returns[prev]
+  const result = new Array<{ date: string; stock: number }>(sorted.length)
+  let running = currentStock
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const d = sorted[i].date
+    const flow = byDate.get(d) || { delivered: 0, returns: 0 }
+    result[i] = { date: d, stock: Math.max(0, Math.round(running)) }
+    running = running + flow.delivered - flow.returns
+  }
+
+  return result
+})
+
 // ─── 库存列表 ─────────────────────────────────────────
+
 interface InventoryItem {
   sku_id: number
   offer_id: string
@@ -128,14 +195,20 @@ const overview = computed(() => {
   return { total, total_stock, danger, warning }
 })
 
-// ─── 折线图：库存 + 下单 + 送达 ─────────────────────────
+// ─── 图表 ──────────────────────────────────────────────
+
 const chartRef = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 
-const COLOR: Record<string, string> = { '库存': '#409eff', '下单': '#e6a23c', '送达': '#67c23a' }
+const COLOR: Record<string, string> = { '库存(推算)': '#409eff', '下单': '#e6a23c' }
 
 function renderChart() {
-  if (!chart || !dailyInventory.value.length) return
+  if (!chart || estimatedStockHistory.value.length === 0) return
+
+  const dates = estimatedStockHistory.value.map(d => d.date.slice(5))
+  const stockData = estimatedStockHistory.value.map(d => d.stock)
+  const orderData = dailyOrders.value.map(d => d.units)
+
   chart.setOption({
     tooltip: {
       trigger: 'axis',
@@ -144,19 +217,33 @@ function renderChart() {
         let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
         for (const p of items) {
           const c = COLOR[p.seriesName] || '#909399'
-          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 件</strong>`
+          const suffix = p.seriesName.startsWith('库存') ? ' 件（推算）' : ' 件'
+          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()}${suffix}</strong>`
         }
         return h + '</div>'
       },
     },
-    grid: { left: 60, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: 'category', data: dailyInventory.value.map(d => d.date.slice(5)), axisLabel: { fontSize: 11 } },
-    yAxis: { type: 'value', axisLabel: { fontSize: 11 } },
-    legend: { data: ['库存', '下单', '送达'], bottom: 0 },
+    grid: { left: 60, right: 30, top: 20, bottom: 40 },
+    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11 } },
+    yAxis: { type: 'value', axisLabel: { fontSize: 11 }, min: 0 },
+    legend: { data: ['库存(推算)', '下单'], bottom: 0 },
     series: [
-      { name: '库存', type: 'line', data: dailyInventory.value.map(d => d.stock), smooth: true, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#409eff' }, itemStyle: { color: '#409eff' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(64,158,255,0.25)' }, { offset: 1, color: 'rgba(64,158,255,0.02)' }]) } },
-      { name: '下单', type: 'line', data: dailyOrders.value.map(d => d.units), smooth: true, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#e6a23c' }, itemStyle: { color: '#e6a23c' } },
-      { name: '送达', type: 'line', data: dailyDelivered.value.map(d => d.units), smooth: true, symbol: 'diamond', symbolSize: 4, lineStyle: { width: 1.5, color: '#67c23a', type: 'dashed' }, itemStyle: { color: '#67c23a' } },
+      {
+        name: '库存(推算)', type: 'line', data: stockData,
+        smooth: true, symbol: 'circle', symbolSize: 5,
+        lineStyle: { width: 2, color: '#409eff' },
+        itemStyle: { color: '#409eff' },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: 'rgba(64,158,255,0.2)' },
+          { offset: 1, color: 'rgba(64,158,255,0.02)' },
+        ])},
+      },
+      {
+        name: '下单', type: 'line', data: orderData,
+        smooth: true, symbol: 'circle', symbolSize: 4,
+        lineStyle: { width: 2, color: '#e6a23c' },
+        itemStyle: { color: '#e6a23c' },
+      },
     ],
   }, true)
 }
@@ -169,11 +256,15 @@ function initIfNeeded() {
   renderChart()
 }
 
-onMounted(() => { if (props.activeTab === 'inventory') initIfNeeded() })
+function selectSku(skuId: number) {
+  selectedSkuId.value = selectedSkuId.value === skuId ? null : skuId
+}
+
+onMounted(() => { if (props.activeTab === 'inventory') { initIfNeeded(); fetchStockStatus() } })
 watch(() => props.activeTab, (tab) => {
   if (tab === 'inventory') { nextTick(() => { initIfNeeded(); chart?.resize() }) }
 })
-watch(() => [dailyInventory.value, dailyOrders.value, dailyDelivered.value], () => { if (initialized) renderChart() })
+watch(() => [estimatedStockHistory.value, dailyOrders.value], () => { if (initialized) renderChart() })
 onUnmounted(() => { chart?.dispose() })
 
 function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'warning' ? 'warning' : 'success' }
@@ -187,12 +278,17 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
           <template #header>
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="font-weight: 600">
-                📈 {{ selectedSkuId === null ? '总库存趋势' : selectedSkuLabel + ' 库存趋势' }}
+                📈 {{ selectedSkuId === null ? '库存趋势（推算） + 下单' : selectedSkuLabel + ' 趋势' }}
               </span>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; color: #c0c4cc;">送达 = 实际配送完成 · 近期有延迟</span>
+                <el-tooltip content="库存曲线 = 从当前实时库存往回推算：昨日库存 ≈ 今日库存 + 送达 - 退货。每日 9:00 / 19:00 自动同步" placement="top">
+                  <span style="font-size: 11px; color: #909399; cursor: help; border-bottom: 1px dashed #c0c4cc;">推算规则</span>
+                </el-tooltip>
+                <el-button size="small" :loading="refreshing" @click="handleRefresh">
+                  刷新库存 · {{ formatUpdateTime(stockStatus.last_updated) }}
+                </el-button>
                 <el-button v-if="selectedSkuId !== null" size="small" @click="selectSku(selectedSkuId!)">显示全部</el-button>
-                <el-tag type="info" size="small">{{ dailyInventory.length }} 天</el-tag>
+                <el-tag type="info" size="small">{{ estimatedStockHistory.length }} 天</el-tag>
               </div>
             </div>
           </template>

@@ -8,6 +8,7 @@ from app.api.finance import router as finance_router
 from app.api.advertising import router as advertising_router
 from app.api.returns import router as returns_router
 from app.api.orders import router as orders_router
+from app.api.stocks import router as stocks_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(products_router)
@@ -17,3 +18,4 @@ api_router.include_router(finance_router)
 api_router.include_router(advertising_router)
 api_router.include_router(returns_router)
 api_router.include_router(orders_router)
+api_router.include_router(stocks_router)

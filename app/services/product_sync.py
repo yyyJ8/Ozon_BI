@@ -104,3 +104,56 @@ def sync_products(db: Session, client: OzonClient) -> dict:
     db.commit()
     logger.info(f"商品同步完成: {products_updated} 商品, {stocks_upserted} 库存")
     return {"products_updated": products_updated, "stocks_upserted": stocks_upserted}
+
+
+def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
+    """
+    从 v4 专用库存接口全量拉取并更新 stocks 表（独立于商品同步）
+    v4 返回 type 字段(如 "fbo")，映射到 stocks.source
+    """
+    logger.info("=== 开始同步库存 (v4) ===")
+    now = datetime.now()
+
+    all_items: list[dict] = []
+    cursor = ""
+    while True:
+        resp = client._request("/v4/product/info/stocks", {
+            "filter": {"visibility": "ALL"},
+            "limit": 1000,
+            "cursor": cursor,
+        })
+        items = resp.get("items", [])
+        all_items.extend(items)
+        cursor = resp.get("cursor", "")
+        if not cursor or not items:
+            break
+    logger.info(f"v4 stocks: 拉取 {len(all_items)} 个商品")
+
+    upserted = 0
+    for item in all_items:
+        for s in item.get("stocks", []):
+            sku_id = s.get("sku")
+            if not sku_id:
+                continue
+            source = s.get("type", "fbo")
+            s_data = {
+                "sku_id": int(sku_id),
+                "source": source,
+                "present": s.get("present", 0) or 0,
+                "reserved": s.get("reserved", 0) or 0,
+                "updated_at": now,
+            }
+            stmt = pg_insert(Stock).values(**s_data).on_conflict_do_update(
+                index_elements=["sku_id", "source"],
+                set_={
+                    "present": s_data["present"],
+                    "reserved": s_data["reserved"],
+                    "updated_at": now,
+                },
+            )
+            db.execute(stmt)
+            upserted += 1
+
+    db.commit()
+    logger.info(f"库存同步完成 (v4): {upserted} 条")
+    return {"stocks_upserted": upserted}

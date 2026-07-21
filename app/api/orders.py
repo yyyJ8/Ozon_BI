@@ -143,6 +143,8 @@ def orders_trend(
         SELECT
             p.created_at::date AS order_date,
             COUNT(*) AS ordered,
+            COUNT(*) FILTER (WHERE p.status = 'awaiting_deliver') AS awaiting_deliver,
+            COUNT(*) FILTER (WHERE p.status = 'delivering') AS delivering,
             COUNT(*) FILTER (WHERE p.status = 'delivered') AS delivered,
             COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled
         FROM ozon.postings p
@@ -157,8 +159,10 @@ def orders_trend(
         OrderTrendItem(
             date=row[0],
             ordered=int(row[1]),
-            delivered=int(row[2]),
-            cancelled=int(row[3]),
+            awaiting_deliver=int(row[2]),
+            delivering=int(row[3]),
+            delivered=int(row[4]),
+            cancelled=int(row[5]),
         )
         for row in rows
     ]
@@ -171,6 +175,7 @@ def orders_list(
     status: Optional[str] = Query(default=None, description="过滤: awaiting_deliver / delivering / delivered / cancelled"),
     schema: Optional[str] = Query(default=None, description="过滤: FBO / FBS"),
     sku_id: Optional[int] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="模糊搜索: SKU / 货号"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -200,6 +205,13 @@ def orders_list(
             SELECT 1 FROM jsonb_array_elements(p.products) AS prod
             WHERE (prod->>'sku')::bigint = :sku_id
         )""")
+    if search:
+        params["search"] = f"%{search}%"
+        where_clauses.append("""EXISTS (
+            SELECT 1 FROM jsonb_array_elements(p.products) AS prod
+            WHERE (prod->>'sku')::text ILIKE :search
+               OR prod->>'offer_id' ILIKE :search
+        )""")
 
     where_sql = " AND ".join(where_clauses)
 
@@ -228,6 +240,8 @@ def orders_list(
                   AND ft.operation_type = 'OperationAgentDeliveredToCustomer'
             )) AS delivered_at,
             p.in_process_at,
+            p.products->0->>'sku' AS sku,
+            p.products->0->>'offer_id' AS offer_id,
             COALESCE(jsonb_array_length(p.products), 0) AS product_count,
             COALESCE(
                 (SELECT SUM((prod->>'quantity')::int)
@@ -252,9 +266,11 @@ def orders_list(
             created_at=row[4],
             delivered_at=row[5],
             in_process_at=row[6],
-            product_count=int(row[7]) if row[7] else 0,
-            total_quantity=int(row[8]) if row[8] else 0,
-            total_price=float(row[9]) if row[9] else 0.0,
+            sku=int(row[7]) if row[7] else None,
+            offer_id=row[8],
+            product_count=int(row[9]) if row[9] else 0,
+            total_quantity=int(row[10]) if row[10] else 0,
+            total_price=float(row[11]) if row[11] else 0.0,
         )
         for row in rows
     ]
@@ -285,6 +301,16 @@ def order_detail(
     products_raw = p[8] if p[8] else []
     if isinstance(products_raw, str):
         products_raw = json.loads(products_raw)
+
+    # 查商品图片
+    sku_ids = [prod.get("sku") for prod in (products_raw or []) if prod.get("sku")]
+    image_map: dict[int, str] = {}
+    if sku_ids:
+        img_rows = db.execute(text("""
+            SELECT sku_id, primary_image FROM ozon.products WHERE sku_id = ANY(:skus)
+        """), {"skus": sku_ids}).fetchall()
+        image_map = {int(r[0]): r[1] for r in img_rows if r[1]}
+
     products = [
         OrderProduct(
             sku=prod.get("sku"),
@@ -292,6 +318,7 @@ def order_detail(
             quantity=prod.get("quantity", 0) or 0,
             offer_id=prod.get("offer_id"),
             price=float(prod.get("price", 0) or 0),
+            image=image_map.get(prod.get("sku")) if prod.get("sku") else None,
         )
         for prod in (products_raw or [])
     ]

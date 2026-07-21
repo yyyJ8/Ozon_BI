@@ -34,7 +34,7 @@ function statusTagType(st: string | null) {
 const {
   loading, overview, trend,
   orderList, listTotal, currentPage, pageSize,
-  statusFilter, schemaFilter,
+  statusFilter, schemaFilter, searchFilter,
   selectedOrder, fetchDetail, clearDetail,
 } = useOrders(dr)
 
@@ -59,25 +59,41 @@ function renderTrendChart() {
   const dates = trend.value.map(d => d.date.slice(5))
   trendChart.setOption({
     tooltip: {
-      trigger: 'axis', axisPointer: { type: 'shadow' },
+      trigger: 'axis',
       formatter: (params: any) => {
         const items = Array.isArray(params) ? params : [params]
         let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
-        let sum = 0
-        for (const p of items) { sum += Number(p.value)
-          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 单</strong>` }
-        return h + `<br/>合计: <strong>${sum.toLocaleString()} 单</strong></div>`
+        for (const p of items) {
+          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 单</strong>` }
+        return h + '</div>'
       },
     },
-    legend: { data: ['已签收', '已取消'], bottom: 0 },
+    legend: { data: ['订单总数', '待发货', '配送中', '已签收', '已取消'], bottom: 0 },
     grid: { left: 50, right: 20, top: 20, bottom: 35 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
     yAxis: { type: 'value', minInterval: 1 },
     series: [
-      { name: '已签收', type: 'bar', stack: 'total', data: trend.value.map(d => d.delivered),
-        itemStyle: { color: '#67c23a' }, emphasis: { focus: 'series' }, barMaxWidth: 24 },
-      { name: '已取消', type: 'bar', stack: 'total', data: trend.value.map(d => d.cancelled),
-        itemStyle: { color: '#f56c6c' }, emphasis: { focus: 'series' }, barMaxWidth: 24 },
+      {
+        name: '订单总数', type: 'line', data: trend.value.map(d => d.ordered),
+        lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
+        symbol: 'circle', symbolSize: 4,
+      },
+      {
+        name: '待发货', type: 'line', data: trend.value.map(d => d.awaiting_deliver),
+        lineStyle: { width: 2 }, itemStyle: { color: '#e6a23c' }, symbolSize: 3,
+      },
+      {
+        name: '配送中', type: 'line', data: trend.value.map(d => d.delivering),
+        lineStyle: { width: 2 }, itemStyle: { color: '#909399' }, symbolSize: 3,
+      },
+      {
+        name: '已签收', type: 'line', data: trend.value.map(d => d.delivered),
+        lineStyle: { width: 2 }, itemStyle: { color: '#67c23a' }, symbolSize: 3,
+      },
+      {
+        name: '已取消', type: 'line', data: trend.value.map(d => d.cancelled),
+        lineStyle: { width: 2 }, itemStyle: { color: '#f56c6c' }, symbolSize: 3,
+      },
     ],
   }, true)
 }
@@ -235,6 +251,7 @@ const financeSummary = computed(() => {
               <el-option label="FBO" value="FBO" />
               <el-option label="FBS" value="FBS" />
             </el-select>
+            <el-input v-model="searchFilter" placeholder="搜索 SKU / 货号" clearable size="small" style="width:170px;" />
             <el-tag type="info" size="small">{{ listTotal }} 单</el-tag>
           </div>
         </div>
@@ -256,6 +273,16 @@ const financeSummary = computed(() => {
             <el-tag size="small" effect="plain" :type="row.delivery_schema === 'FBO' ? 'primary' : 'warning'">
               {{ row.delivery_schema || '—' }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sku" label="SKU" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span style="font-family:monospace;font-size:12px;color:#909399;">{{ row.sku || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="offer_id" label="货号" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span style="font-family:monospace;font-size:12px;color:#909399;">{{ row.offer_id || '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90" align="center">
@@ -374,17 +401,28 @@ const financeSummary = computed(() => {
         <el-card shadow="never" style="margin-bottom:16px;">
           <template #header><span style="font-weight:600;font-size:14px;">📦 商品清单</span></template>
           <el-table :data="selectedOrder.products" size="small" stripe style="width:100%">
+            <el-table-column label="图片" width="60">
+              <template #default="{ row }">
+                <el-image
+                  v-if="row.image"
+                  :src="row.image"
+                  style="width:40px;height:40px;"
+                  fit="contain"
+                  :preview-src-list="[row.image]"
+                />
+                <span v-else style="font-size:11px;color:#c0c4cc;">—</span>
+              </template>
+            </el-table-column>
             <el-table-column label="SKU" width="85">
               <template #default="{ row }">
                 <span style="font-family:monospace;font-size:12px;">{{ row.sku || '—' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="offer_id" label="货号" width="90">
+            <el-table-column prop="offer_id" label="货号" min-width="140" show-overflow-tooltip>
               <template #default="{ row }">
-                <span style="font-size:12px;">{{ row.offer_id || '—' }}</span>
+                <span style="font-size:11px;">{{ row.offer_id || '—' }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip />
             <el-table-column prop="quantity" label="数量" width="55" align="right">
               <template #default="{ row }">
                 <span style="font-weight:600;">{{ row.quantity }}</span>

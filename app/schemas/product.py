@@ -17,3 +17,5 @@ class ProductItem(BaseModel):
     category_id: Optional[int] = None
     primary_image: Optional[str] = None
     commission_fbo_pct: Optional[Decimal] = None
+    stock_present: int = 0
+    stock_reserved: int = 0
