@@ -167,7 +167,7 @@ class OzonPerfClient:
     # ── SKU 日报（异步报告 + ZIP 下载）─────────────────────
 
     REPORT_BATCH_SIZE = 10
-    REPORT_POLL_TIMEOUT = 300  # 5 分钟
+    REPORT_POLL_TIMEOUT = 500  # 8+ 分钟
 
     def get_sku_daily_stats(
         self,
@@ -248,9 +248,8 @@ class OzonPerfClient:
                     logger.info(f"  429 解除（等待 {(attempt+1)*10}s）")
                     break
             else:
-                # 所有重试用完仍429，跳过这批而不是崩溃
-                logger.error("  429 持续 5 分钟仍未解除，放弃本批")
-                return ""
+                # 所有重试用完仍429，抛出异常让上层决定如何处理
+                raise RuntimeError("429 限流持续 5 分钟仍未解除")
         data = resp.json()
         uuid_val = data.get("UUID", "")
         if not uuid_val:

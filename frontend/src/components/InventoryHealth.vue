@@ -95,7 +95,7 @@ const dailyOrders = computed(() => dailyAgg('ordered_units'))
 const dailyDelivered = computed(() => dailyAgg('delivered_units'))
 const dailyReturns = computed(() => dailyAgg('returns_units'))
 
-// ─── 推算历史库存：从当前真实库存往回减净流出 ─────────────
+// ─── 库存历史：从当前真实库存往回推算 ──
 
 const estimatedStockHistory = computed(() => {
   const byDate = new Map<string, { delivered: number; returns: number }>()
@@ -111,7 +111,7 @@ const estimatedStockHistory = computed(() => {
   }
 
   // 用 dailyOrders 的日期作为时间轴
-  const sorted = dailyOrders.value  // 已按日期升序排列
+  const sorted = dailyOrders.value
   if (sorted.length === 0) return []
 
   const currentStock = selectedSkuId.value === null
@@ -119,6 +119,7 @@ const estimatedStockHistory = computed(() => {
     : (selectedSkuStock.value ?? 0)
 
   // 从最晚日期往回推算: stock[prev] = stock[cur] + delivered[prev] - returns[prev]
+  // stock[t-1] = stock[t] + delivered[t] - returns[t]
   const result = new Array<{ date: string; stock: number }>(sorted.length)
   let running = currentStock
   for (let i = sorted.length - 1; i >= 0; i--) {
@@ -200,7 +201,7 @@ const overview = computed(() => {
 const chartRef = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 
-const COLOR: Record<string, string> = { '库存(推算)': '#409eff', '下单': '#e6a23c' }
+const COLOR: Record<string, string> = { '库存': '#409eff', '下单': '#e6a23c' }
 
 function renderChart() {
   if (!chart || estimatedStockHistory.value.length === 0) return
@@ -217,7 +218,7 @@ function renderChart() {
         let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
         for (const p of items) {
           const c = COLOR[p.seriesName] || '#909399'
-          const suffix = p.seriesName.startsWith('库存') ? ' 件（推算）' : ' 件'
+          const suffix = p.seriesName === '库存' ? ' 件（推算）' : ' 件'
           h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()}${suffix}</strong>`
         }
         return h + '</div>'
@@ -226,10 +227,10 @@ function renderChart() {
     grid: { left: 60, right: 30, top: 20, bottom: 40 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11 } },
     yAxis: { type: 'value', axisLabel: { fontSize: 11 }, min: 0 },
-    legend: { data: ['库存(推算)', '下单'], bottom: 0 },
+    legend: { data: ['库存', '下单'], bottom: 0 },
     series: [
       {
-        name: '库存(推算)', type: 'line', data: stockData,
+        name: '库存', type: 'line', data: stockData,
         smooth: true, symbol: 'circle', symbolSize: 5,
         lineStyle: { width: 2, color: '#409eff' },
         itemStyle: { color: '#409eff' },
@@ -278,10 +279,10 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
           <template #header>
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="font-weight: 600">
-                📈 {{ selectedSkuId === null ? '库存趋势（推算） + 下单' : selectedSkuLabel + ' 趋势' }}
+                📈 {{ selectedSkuId === null ? '库存趋势 + 下单' : selectedSkuLabel + ' 趋势' }}
               </span>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <el-tooltip content="库存曲线 = 从当前实时库存往回推算：昨日库存 ≈ 今日库存 + 送达 - 退货。每日 9:00 / 19:00 自动同步" placement="top">
+                <el-tooltip content="库存 = 从当前实时库存往回推算：stock[t-1] ≈ stock[t] + delivered[t] - returns[t]。每日 9:00 / 19:00 自动同步 stocks 表" placement="top">
                   <span style="font-size: 11px; color: #909399; cursor: help; border-bottom: 1px dashed #c0c4cc;">推算规则</span>
                 </el-tooltip>
                 <el-button size="small" :loading="refreshing" @click="handleRefresh">

@@ -27,6 +27,7 @@ class SummaryItem(BaseModel):
     logistics_costs: Decimal = Decimal("0")
     storage_fees: Decimal = Decimal("0")
     advertising: Decimal = Decimal("0")
+    promotion_costs: Decimal = Decimal("0")
     other_costs: Decimal = Decimal("0")
     net_profit: Decimal = Decimal("0")
     profit_margin: Decimal = Decimal("0")
@@ -49,6 +50,7 @@ class SummaryStats(BaseModel):
     total_returns_units: int = 0
     total_storage: Decimal = Decimal("0")
     total_advertising: Decimal = Decimal("0")
+    total_promotion: Decimal = Decimal("0")
     total_other_costs: Decimal = Decimal("0")
     day_count: int = 0
     sku_count: int = 0

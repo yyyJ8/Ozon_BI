@@ -77,7 +77,6 @@ def sync_advertising(
     daily_inserted = 0
     daily_updated = 0
     mappings_created = 0
-    summaries_updated = 0
 
     # ── 1. 拉取活动列表 ──────────────────────────────────
     try:
@@ -191,42 +190,19 @@ def sync_advertising(
         logger.error(f"SKU 映射构建失败: {e}")
         raise
 
-    # ── 4. 更新 sku_daily_summary.advertising ─────────────
-    try:
-        start_date = datetime.strptime(date_from[:10], "%Y-%m-%d").date()
-        end_date = datetime.strptime(date_to[:10], "%Y-%m-%d").date()
-
-        result = db.execute(text("""
-            UPDATE ozon.sku_daily_summary s
-            SET advertising = COALESCE(agg.total_spend, 0) * -1
-            FROM (
-                SELECT m.sku_id, ds.stat_date,
-                       COALESCE(SUM(ds.spend), 0) AS total_spend
-                FROM ozon.ad_daily_stats ds
-                JOIN ozon.ad_campaign_sku_map m ON ds.campaign_id = m.campaign_id
-                WHERE ds.stat_date BETWEEN :from_date AND :to_date
-                GROUP BY m.sku_id, ds.stat_date
-            ) agg
-            WHERE s.sku_id = agg.sku_id AND s."date" = agg.stat_date
-        """), {"from_date": start_date, "to_date": end_date})
-        summaries_updated = result.rowcount
-        db.commit()
-        logger.info(f"sku_daily_summary.advertising 更新: {summaries_updated} 行")
-    except Exception as e:
-        logger.error(f"汇总更新失败: {e}")
-        raise
+    # ── 4. 广告费汇总已移至 build_summary（从 ad_sku_daily_stats 聚合）──
+    #      此处不再直接 UPDATE sku_daily_summary，避免重复写入
 
     logger.info(
         f"广告同步完成: campaigns={campaigns_updated}, "
         f"daily_inserted={daily_inserted}, daily_updated={daily_updated}, "
-        f"mappings={mappings_created}, summaries={summaries_updated}"
+        f"mappings={mappings_created}"
     )
     return {
         "campaigns_updated": campaigns_updated,
         "daily_stats_inserted": daily_inserted,
         "daily_stats_updated": daily_updated,
         "sku_mappings_created": mappings_created,
-        "sku_summaries_updated": summaries_updated,
     }
 
 

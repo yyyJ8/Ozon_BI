@@ -90,6 +90,7 @@ class SkuDailySummary(Base):
     logistics_costs: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="物流费 RUB（负数）")
     storage_fees: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="仓储费 RUB（负数）")
     advertising: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="广告费 RUB（负数）")
+    promotion_costs: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="推广费 RUB（负数，按单付费推广）")
     other_costs: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="其他费用 RUB（负数，银行手续费/包装/销毁等）")
     net_profit: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, comment="净利润 RUB = revenue + 各项费用")
     profit_margin: Mapped[Decimal] = mapped_column(Numeric(7, 2), default=0, comment="净利润率 % = net_profit / revenue * 100")

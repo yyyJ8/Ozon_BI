@@ -15,13 +15,21 @@ scheduler = AsyncIOScheduler()
 
 
 def sync_recent_data():
-    """同步最近 3 天的数据（用于每日定时任务）"""
+    """同步最近 3 天的数据（用于每日定时任务）
+
+    上午 (9:00): 全量同步含 SKU 广告明细
+    下午 (16:00): 跳过 SKU 广告明细（数据一天内不变，异步报告极慢）
+    """
+    from datetime import datetime
     db = SessionLocal()
     client = get_ozon_client()
     try:
         today = date.today()
-        logger.info(f"[定时同步] 开始同步最近数据 ({today - timedelta(days=3)} ~ {today})")
-        results = run_full_sync(db, client, days_back=3)
+        now_hour = datetime.now().hour
+        skip_sku = now_hour >= 12  # 下午的同步跳过 SKU 明细
+        logger.info(f"[定时同步] 开始同步最近数据 ({today - timedelta(days=3)} ~ {today}), "
+                    f"skip_sku_detail={skip_sku}")
+        results = run_full_sync(db, client, days_back=3, skip_sku_detail=skip_sku)
         logger.info(f"[定时同步] 完成: {results}")
     except Exception as e:
         logger.error(f"[定时同步] 失败: {e}")

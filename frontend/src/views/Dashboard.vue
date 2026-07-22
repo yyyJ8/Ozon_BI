@@ -61,6 +61,7 @@ function daysAgoStr(n: number): string {
 
 function applyPreset(preset: string) {
   showCustomDate.value = preset === 'custom'
+  const today = daysAgoStr(0)
   switch (preset) {
     case 'yesterday': {
       const y = daysAgoStr(1)
@@ -68,18 +69,15 @@ function applyPreset(preset: string) {
       break
     }
     case '7days':
-      dateRange.value = [daysAgoStr(7), daysAgoStr(1)]
+      dateRange.value = [daysAgoStr(7), today]
       break
     case '30days':
-      dateRange.value = [daysAgoStr(30), daysAgoStr(1)]
+      dateRange.value = [daysAgoStr(30), today]
       break
     case 'all':
     default:
       if (availableRange.value) {
-        // 排除今天（T+0 数据不完整）
-        const maxDate = availableRange.value.max_date
-        const yesterday = daysAgoStr(1)
-        dateRange.value = [availableRange.value.min_date, maxDate < yesterday ? maxDate : yesterday]
+        dateRange.value = [availableRange.value.min_date, today]
       }
       break
   }
@@ -788,19 +786,20 @@ onMounted(() => {
           <el-table-column label="费用" width="100" align="right" sortable>
             <template #default="{ row }">
               <el-popover
-                v-if="(row.storage_fees + row.advertising + row.other_costs) !== 0"
+                v-if="(row.storage_fees + row.advertising + row.promotion_costs + row.other_costs) !== 0"
                 placement="top"
                 :width="180"
                 trigger="hover"
               >
                 <template #reference>
                   <span style="color: #f56c6c; cursor: pointer; border-bottom: 1px dashed #c0c4cc;">
-                    ₽ {{ formatMoney(row.storage_fees + row.advertising + row.other_costs) }}
+                    ₽ {{ formatMoney(row.storage_fees + row.advertising + row.promotion_costs + row.other_costs) }}
                   </span>
                 </template>
                 <div style="font-family:monospace;font-size:12px;line-height:2">
                   <div>仓储: <span style="color:#f56c6c">₽ {{ formatMoney(row.storage_fees) }}</span></div>
                   <div>广告: <span style="color:#f56c6c">₽ {{ formatMoney(row.advertising) }}</span></div>
+                  <div>推广: <span style="color:#f56c6c">₽ {{ formatMoney(row.promotion_costs) }}</span></div>
                   <div>其他: <span style="color:#f56c6c">₽ {{ formatMoney(row.other_costs) }}</span></div>
                 </div>
               </el-popover>

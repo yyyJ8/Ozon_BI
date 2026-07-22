@@ -18,6 +18,8 @@ const totalCosts =
   props.stats.total_logistics +
   props.stats.total_storage +
   props.stats.total_advertising +
+  props.stats.total_promotion +
+  props.stats.total_returns +
   props.stats.total_other_costs
 
 const cards = [

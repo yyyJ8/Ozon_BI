@@ -37,7 +37,7 @@ function formatMoney(v: number): string {
 
 function skuTotalCost(sku: ProductSummary): number {
   return abs(sku.commissions) + abs(sku.logistics_costs) + abs(sku.storage_fees)
-       + abs(sku.advertising) + abs(sku.returns_amount) + abs(sku.other_costs)
+       + abs(sku.advertising) + abs(sku.promotion_costs) + abs(sku.returns_amount) + abs(sku.other_costs)
 }
 
 // ─── 饼图数据 ──────────────────────────────────────────
@@ -46,6 +46,7 @@ const COST_CATEGORIES = [
   { name: '物流', color: '#e6a23c' },
   { name: '仓储', color: '#67c23a' },
   { name: '广告', color: '#f56c6c' },
+  { name: '推广', color: '#e040fb' },
   { name: '退货', color: '#909399' },
   { name: '其他', color: '#b37feb' },
 ]
@@ -58,6 +59,7 @@ const pieItems = computed(() => {
       { name: '物流', value: abs(sku.logistics_costs) },
       { name: '仓储', value: abs(sku.storage_fees) },
       { name: '广告', value: abs(sku.advertising) },
+      { name: '推广', value: abs(sku.promotion_costs) },
       { name: '退货', value: abs(sku.returns_amount) },
       { name: '其他', value: abs(sku.other_costs) },
     ]
@@ -70,6 +72,7 @@ const pieItems = computed(() => {
     { name: '物流', value: abs(props.stats.total_logistics) },
     { name: '仓储', value: abs(props.stats.total_storage) },
     { name: '广告', value: abs(props.stats.total_advertising) },
+    { name: '推广', value: abs(props.stats.total_promotion) },
     { name: '退货', value: abs(props.stats.total_returns) },
     { name: '其他', value: abs(props.stats.total_other_costs) },
   ]
@@ -383,6 +386,13 @@ onUnmounted(() => {
           <template #default="{ row }">
             <span :style="{ color: row.advertising !== 0 ? '#f56c6c' : '#c0c4cc', fontFamily: 'monospace' }">
               {{ row.advertising !== 0 ? '₽ ' + formatMoney(abs(row.advertising)) : '—' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="推广" width="95" align="right" sortable :sort-method="(a: SkuCostItem, b: SkuCostItem) => abs(a.promotion_costs) - abs(b.promotion_costs)">
+          <template #default="{ row }">
+            <span :style="{ color: row.promotion_costs !== 0 ? '#f56c6c' : '#c0c4cc', fontFamily: 'monospace' }">
+              {{ row.promotion_costs !== 0 ? '₽ ' + formatMoney(abs(row.promotion_costs)) : '—' }}
             </span>
           </template>
         </el-table-column>

@@ -77,6 +77,7 @@ export function useDashboard() {
         logistics_costs: 0,
         storage_fees: 0,
         advertising: 0,
+        promotion_costs: 0,
         other_costs: 0,
         commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
         stock_present: p.stock_present,
@@ -100,6 +101,7 @@ export function useDashboard() {
         d.logistics_costs += row.logistics_costs
         d.storage_fees += row.storage_fees
         d.advertising += row.advertising
+        d.promotion_costs += row.promotion_costs
         d.other_costs += row.other_costs
         d.day_count += 1
         if (row.primary_image) d.primary_image = row.primary_image
@@ -175,6 +177,7 @@ export function useDashboard() {
       logistics_costs: toNum(r.logistics_costs),
       storage_fees: toNum(r.storage_fees),
       advertising: toNum(r.advertising),
+      promotion_costs: toNum(r.promotion_costs),
       other_costs: toNum(r.other_costs),
       net_profit: toNum(r.net_profit),
       profit_margin: toNum(r.profit_margin),
@@ -194,6 +197,7 @@ export function useDashboard() {
       total_returns_units: toNum(s.total_returns_units),
       total_storage: toNum(s.total_storage),
       total_advertising: toNum(s.total_advertising),
+      total_promotion: toNum(s.total_promotion),
       total_other_costs: toNum(s.total_other_costs),
     }
   }

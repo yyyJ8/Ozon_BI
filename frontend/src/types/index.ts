@@ -29,6 +29,7 @@ export interface SummaryRow {
   logistics_costs: number
   storage_fees: number
   advertising: number
+  promotion_costs: number
   other_costs: number
   net_profit: number
   profit_margin: number
@@ -46,6 +47,7 @@ export interface SummaryStats {
   total_returns_units: number
   total_storage: number
   total_advertising: number
+  total_promotion: number
   total_other_costs: number
   day_count: number
   sku_count: number
@@ -96,6 +98,7 @@ export interface ProductSummary {
   logistics_costs: number
   storage_fees: number
   advertising: number
+  promotion_costs: number
   other_costs: number
   commission_rate: number | null
   stock_present: number

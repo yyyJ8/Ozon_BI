@@ -38,7 +38,8 @@ def _log_sync(db: Session, sync_type: str, status: str,
 
 
 def run_full_sync(db: Session, client: OzonClient,
-                  days_back: int = 500) -> dict:
+                  days_back: int = 500,
+                  skip_sku_detail: bool = False) -> dict:
     """
     全量同步: 按顺序 商品 → 分析 → 财务 → 汇总
     默认拉取 ~1.5 年数据（500天），覆盖所有历史
@@ -141,28 +142,29 @@ def run_full_sync(db: Session, client: OzonClient,
                               batch_id=batch_id)
         results["advertising"] = ar
         _log_sync(db, "advertising", "success",
-                  records=ar.get("daily_stats_inserted", 0), batch_id=batch_id)
+                  records=ar.get("daily_stats_inserted", 0) + ar.get("daily_stats_updated", 0), batch_id=batch_id)
     except Exception as e:
         logger.error(f"广告同步失败: {e}")
         _log_sync(db, "advertising", "failed", error=str(e), batch_id=batch_id)
         results["advertising"] = {"error": str(e)}
 
-    # ── 5.5. 广告 SKU 明细同步（仅最近N天，异步报告较慢）──
-    try:
-        _log_sync(db, "ad_sku_daily", "running", batch_id=batch_id)
-        from app.config import settings
-        sku_days = getattr(settings, 'ad_sync_days', 3)
-        sku_from = (today - timedelta(days=sku_days)).isoformat()
-        sr = sync_sku_advertising(db, perf_client,
-                                  date_from=sku_from,
-                                  date_to=today.isoformat())
-        results["ad_sku_daily"] = sr
-        _log_sync(db, "ad_sku_daily", "success",
-                  records=sr.get("sku_inserted", 0), batch_id=batch_id)
-    except Exception as e:
-        logger.error(f"广告 SKU 明细同步失败: {e}")
-        _log_sync(db, "ad_sku_daily", "failed", error=str(e), batch_id=batch_id)
-        results["ad_sku_daily"] = {"error": str(e)}
+    # ── 5.5. 广告 SKU 明细同步（仅昨天，异步报告极慢）──
+    if not skip_sku_detail:
+        try:
+            _log_sync(db, "ad_sku_daily", "running", batch_id=batch_id)
+            yesterday = today - timedelta(days=1)
+            sr = sync_sku_advertising(db, perf_client,
+                                      date_from=yesterday.isoformat(),
+                                      date_to=yesterday.isoformat())
+            results["ad_sku_daily"] = sr
+            _log_sync(db, "ad_sku_daily", "success",
+                      records=sr.get("sku_inserted", 0), batch_id=batch_id)
+        except Exception as e:
+            logger.error(f"广告 SKU 明细同步失败: {e}")
+            _log_sync(db, "ad_sku_daily", "failed", error=str(e), batch_id=batch_id)
+            results["ad_sku_daily"] = {"error": str(e)}
+    else:
+        logger.info("─ 跳过 SKU 明细 ─")
 
     # ── 6. 构建汇总 ──
     try:

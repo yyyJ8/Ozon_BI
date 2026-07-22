@@ -9,12 +9,11 @@ from decimal import Decimal
 
 import httpx
 from loguru import logger
-from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.clients.ozon import OzonClient
-from app.models import SkuDailySummary, Stock
+from app.models import SkuDailySummary
 
 
 def _date_range_chunks(date_from: str, date_to: str, max_days: int = 30):
@@ -33,7 +32,7 @@ def _date_range_chunks(date_from: str, date_to: str, max_days: int = 30):
 def sync_analytics(db: Session, client: OzonClient,
                    date_from: str, date_to: str) -> dict:
     """
-    同步销售分析数据（ordered_units, revenue）
+    同步销售分析数据（revenue，ordered_units 改由 build_summary 从 postings 聚合）
     """
     logger.info(f"=== 开始同步销售分析: {date_from} ~ {date_to} ===")
 
@@ -49,21 +48,6 @@ def sync_analytics(db: Session, client: OzonClient,
                 logger.info(f"  窗口 {i}: 无数据")
                 continue
 
-            # 预加载本窗口涉及的 SKU 库存
-            sku_ids_in_window = list(set(
-                int(r["dimensions"][0]["id"])
-                for r in rows
-                if len(r.get("dimensions", [])) >= 2
-            ))
-            stock_map: dict[int, tuple[int, int]] = {}
-            if sku_ids_in_window:
-                stock_rows = db.query(
-                    Stock.sku_id,
-                    func.coalesce(func.sum(Stock.present), 0).label("present"),
-                    func.coalesce(func.sum(Stock.reserved), 0).label("reserved"),
-                ).filter(Stock.sku_id.in_(sku_ids_in_window)).group_by(Stock.sku_id).all()
-                stock_map = {r.sku_id: (int(r.present), int(r.reserved)) for r in stock_rows}
-
             for row in rows:
                 dims = row.get("dimensions", [])
                 metrics = row.get("metrics", [])
@@ -73,23 +57,16 @@ def sync_analytics(db: Session, client: OzonClient,
 
                 sku_id = int(dims[0]["id"])
                 day_str = dims[1]["id"]  # "2026-06-21"
-                ordered_units = int(metrics[0] or 0)
                 revenue = Decimal(str(metrics[1])) if metrics[1] else Decimal("0")
-                sp, sr = stock_map.get(sku_id, (0, 0))
 
                 stmt = pg_insert(SkuDailySummary).values(
                     record_date=day_str,
                     sku_id=sku_id,
-                    ordered_units=ordered_units,
                     revenue=revenue,
-                    stock_present=sp,
-                    stock_reserved=sr,
                 ).on_conflict_do_update(
                     index_elements=["date", "sku_id"],
                     set_={
-                        "ordered_units": ordered_units,
                         "revenue": revenue,
-                        # 库存只在 INSERT 时写入（当日快照），UPDATE 不覆盖历史值
                     },
                 )
                 db.execute(stmt)

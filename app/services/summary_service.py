@@ -1,17 +1,20 @@
 """
-汇总构建服务 — 从 finance_transactions 聚合，更新 sku_daily_summary 的费用字段
+汇总构建服务 — 从多数据源聚合，更新 sku_daily_summary 的费用字段
 
 聚合逻辑:
-  commissions     ← sale_commission WHERE operation_type = 'OperationAgentDeliveredToCustomer'
-  returns_amount  ← amount WHERE operation_type IN ('OperationItemReturn', 'ClientReturnAgentOperation')
-                    **退货按 posting_number → postings.created_at 归因到原销售日期**
-  logistics_costs ← services[].price (where name contains Logistic)
-                   仅从销售单（OperationAgentDeliveredToCustomer）提取，因为 amount 是净额不包含物流
-                   其他类型的 amount 已含物流费，提取会重复计算
-  storage_fees    ← amount WHERE operation_type LIKE '%TemporaryStorage%'
-  advertising     ← amount WHERE operation_type = 'OperationMarketplaceCostPerClick'
-  promotion_costs ← amount WHERE operation_type = 'OperationPromotionWithCostPerOrder'
-  other_costs     ← 剩余所有负 amount（银行手续费、转运、包装、销毁等）
+  commissions      ← sale_commission WHERE operation_type = 'OperationAgentDeliveredToCustomer'
+  returns_amount   ← amount WHERE operation_type IN ('OperationItemReturn', 'ClientReturnAgentOperation')
+                     **退货按 posting_number → postings.created_at 归因到原销售日期**
+  logistics_costs  ← delivery_charge（Finance API 结构化字段）
+                     + return_delivery_charge（退货物流费，从退货操作提取）
+                     仅从 OperationAgentDeliveredToCustomer（销售单）取 delivery_charge，
+                     从 OperationItemReturn/ClientReturnAgentOperation（退货单）取 return_delivery_charge
+  storage_fees     ← amount WHERE operation_type LIKE '%TemporaryStorage%'
+  advertising      ← ad_sku_daily_stats.spend（Performance API SKU 级精确数据）
+                     + SEARCH_PROMO 花费按 revenue 占比分摊
+  promotion_costs  ← amount WHERE operation_type = 'OperationPromotionWithCostPerOrder'
+                     （已持久化到 sku_daily_summary.promotion_costs）
+  other_costs      ← 剩余所有负 amount（银行手续费、转运、包装、销毁等）
 
   net_profit    = revenue + commissions + returns + logistics + storage + advertising + promotion + other
   profit_margin = net_profit / revenue * 100
@@ -19,11 +22,10 @@
 关键设计:
   - 退货按 postings.created_at（原订单日期）归因，而非 finance_transactions.operation_date（退货发生日）
   - 归因到日期范围外的退货：只更新 returns_amount/returns_units/net_profit，不覆盖其他费用字段
-  - 按 posting_number 去重，每条退货单只计 1 件 returns_units
+  - returns_units 按 SUM(r.quantity) 聚合（修复了 COUNT(*) 低估多件退货的问题）
 """
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from loguru import logger
 from sqlalchemy import BigInteger, func, text
@@ -36,17 +38,6 @@ def _parse_amount(val) -> Decimal:
     if val is None:
         return Decimal("0")
     return Decimal(str(val))
-
-
-def _get_logistics_from_services(services: Optional[list]) -> Decimal:
-    """从 services JSONB 中提取物流费用（已在 API 中为负数）"""
-    if not services:
-        return Decimal("0")
-    total = Decimal("0")
-    for s in services:
-        if "Logistic" in s.get("name", ""):
-            total += _parse_amount(s.get("price"))
-    return total
 
 
 def build_summary(db: Session, start_date: date, end_date: date) -> dict:
@@ -99,6 +90,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
                 "commissions": Decimal("0"),
                 "returns_amount": Decimal("0"),
                 "returns_units": 0,
+                "ordered_units": 0,
                 "delivered_units": 0,
                 "cancelled_units": 0,
                 "logistics_costs": Decimal("0"),
@@ -118,7 +110,8 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             key = (tx.operation_date, tx.sku_id)
             g = _get(key)
             g["commissions"] += _parse_amount(tx.sale_commission)
-            g["logistics_costs"] += _get_logistics_from_services(tx.services)
+            # 物流费：优先使用 delivery_charge 结构化字段（替代原 services[] 正则匹配）
+            g["logistics_costs"] += _parse_amount(tx.delivery_charge)
 
         elif optype in ("OperationItemReturn", "ClientReturnAgentOperation"):
             # 退货归因：用 posting.created_at 作为原销售日期
@@ -127,10 +120,11 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             g = _get(key)
             # returns_amount 始终计入（取消退款也是真实财务流水）
             g["returns_amount"] += amt
+            # 退货物流费：归入 logistics_costs（退回仓库的运费）
+            g["logistics_costs"] += _parse_amount(tx.return_delivery_charge)
             # 标记此 group 的退货是否来自其他日期（跨期归因）
             if sale_date != tx.operation_date and (sale_date < start_date or sale_date > end_date):
                 g["is_return_only"] = True
-            # returns_units 改由第 3.5c 步从 returns 表聚合（覆盖全部 363 条）
 
         elif "TemporaryStorage" in optype:
             key = (tx.operation_date, tx.sku_id)
@@ -182,7 +176,29 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         g["delivered_units"] = agg["delivered_units"]
         g["cancelled_units"] = agg["cancelled_units"]
 
-    logger.info(f"posting 聚合: {len(posting_agg)} 个 (date, sku) 组合")
+    logger.info(f"posting 聚合（delivered/cancelled）: {len(posting_agg)} 个 (date, sku) 组合")
+
+    # 3.5a 从 postings 聚合 ordered_units（全部状态，替代 analytics ordered_units）
+    #       与订单分析 Tab 口径一致：按 posting.created_at + SKU 的 quantity 求和
+    ordered_rows = db.execute(text("""
+        SELECT
+            created_at::date AS pdate,
+            (prod->>'sku')::bigint AS sku_id,
+            SUM((prod->>'quantity')::int) AS ordered_units
+        FROM ozon.postings,
+             jsonb_array_elements(products) AS prod
+        WHERE created_at >= :date_from
+          AND created_at  < :date_to
+        GROUP BY created_at::date, (prod->>'sku')::bigint
+    """), {"date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
+
+    for pdate, sku_id, ordered_units in ordered_rows:
+        if sku_id is None or ordered_units is None:
+            continue
+        g = _get((pdate, sku_id))
+        g["ordered_units"] = int(ordered_units)
+
+    logger.info(f"posting 聚合（ordered_units）: {len(ordered_rows)} 个 (date, sku) 组合")
 
     # 3.5b 从 returns 表聚合退货件数（替代 finance 的 returns_units）
     #      覆盖 Cancellation + ClientReturn（finance 只能覆盖 delivered posting 的 ClientReturn）
@@ -190,7 +206,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         SELECT
             p.created_at::date AS sale_date,
             r.sku,
-            COUNT(*) AS total_returns
+            SUM(r.quantity) AS total_returns
         FROM ozon.returns r
         JOIN ozon.postings p ON r.posting_number = p.posting_number
         WHERE p.created_at >= :date_from
@@ -207,22 +223,69 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
     logger.info(f"returns 表退货件数: {len(return_rows)} 个 (date, sku) 组合"
                  + f"（覆盖全部 Cancellation + ClientReturn）")
 
-    # 3.5c 从 Performance API 聚合广告费（替代 Finance API OperationMarketplaceCostPerClick）
-    #      因为 Finance API 的广告记录全部 sku_id=None，无法关联到 SKU
+    # 3.5c 从 ad_sku_daily_stats 聚合广告费（SKU 级精确数据，替代均摊）
+    #      Performance API 异步报告已提供每个 SKU 在活动中的精确 spend
     ad_rows = db.execute(text("""
-        SELECT m.sku_id, ds.stat_date, SUM(ds.spend) AS total_spend
-        FROM ozon.ad_daily_stats ds
-        JOIN ozon.ad_campaign_sku_map m ON ds.campaign_id = m.campaign_id
-        WHERE ds.stat_date BETWEEN :from_date AND :to_date
-        GROUP BY m.sku_id, ds.stat_date
+        SELECT sku_id, stat_date, SUM(spend) AS total_spend
+        FROM ozon.ad_sku_daily_stats
+        WHERE stat_date BETWEEN :from_date AND :to_date
+          AND sku_id > 0     -- 排除 SEARCH_PROMO 全店活动（sku_id=0，另做 revenue 分摊）
+        GROUP BY sku_id, stat_date
     """), {"from_date": start_date, "to_date": end_date}).fetchall()
 
     for sku_id, stat_date, total_spend in ad_rows:
         key = (stat_date, sku_id)
         g = _get(key)
-        g["advertising"] = Decimal(str(total_spend)) * -1  # 取负：spend 为正数，费用需为负数
+        g["advertising"] += Decimal(str(total_spend)) * -1  # 取负：spend 为正数，费用需为负数
 
-    logger.info(f"Performance API 广告费聚合: {len(ad_rows)} 个 (date, sku) 组合")
+    logger.info(f"ad_sku_daily_stats 广告费聚合: {len(ad_rows)} 个 (date, sku) 组合")
+
+    # 3.5d SEARCH_PROMO 搜索推广按单付费 — 无法绑定特定 SKU，按当日 revenue 占比分摊
+    search_promo_rows = db.execute(text("""
+        SELECT ads.stat_date, SUM(ads.spend) AS total_spend
+        FROM ozon.ad_daily_stats ads
+        JOIN ozon.ad_campaigns ac ON ads.campaign_id = ac.campaign_id
+        WHERE ads.stat_date BETWEEN :from_date AND :to_date
+          AND ac.campaign_type = 'SEARCH_PROMO'
+        GROUP BY ads.stat_date
+    """), {"from_date": start_date, "to_date": end_date}).fetchall()
+
+    if search_promo_rows:
+        # 构建每日 revenue 占比映射
+        daily_spend = {r.stat_date: Decimal(str(r.total_spend or 0)) for r in search_promo_rows}
+        revenue_rows = db.execute(text("""
+            SELECT "date", sku_id, revenue
+            FROM ozon.sku_daily_summary
+            WHERE "date" BETWEEN :from_date AND :to_date
+              AND revenue > 0
+        """), {"from_date": start_date, "to_date": end_date}).fetchall()
+
+        daily_revenue: dict[date, dict[int, Decimal]] = {}
+        daily_revenue_total: dict[date, Decimal] = {}
+        for rdate, sid, rev in revenue_rows:
+            rev_d = Decimal(str(rev or 0))
+            if rdate not in daily_revenue:
+                daily_revenue[rdate] = {}
+            daily_revenue[rdate][sid] = rev_d
+            daily_revenue_total[rdate] = daily_revenue_total.get(rdate, Decimal("0")) + rev_d
+
+        promo_attributed = 0
+        for rdate, total_spend in daily_spend.items():
+            if total_spend == 0:
+                continue
+            rev_map = daily_revenue.get(rdate, {})
+            day_total_rev = daily_revenue_total.get(rdate, Decimal("0"))
+            if day_total_rev <= 0:
+                continue
+            for sid, rev in rev_map.items():
+                share = rev / day_total_rev
+                attributed = total_spend * share
+                g = _get((rdate, sid))
+                g["advertising"] += attributed * -1  # 取负
+                promo_attributed += 1
+
+        logger.info(f"SEARCH_PROMO 广告费按 revenue 分摊: {len(daily_spend)} 天, "
+                     + f"归因到 {promo_attributed} 个 (date, sku) 组合")
 
     # 4. 预加载库存（所有涉及 SKU 的当前库存）
     all_sku_ids = list(set(sid for _, sid in groups.keys()))
@@ -246,11 +309,13 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         sp, sr = stock_map.get(sku_id, (0, 0))
 
         if not summary:
+            # 只在创建当天行时写入真实库存快照，历史日期不写（否则会写入错误值）
+            is_today = (op_date == date.today())
             summary = SkuDailySummary(
                 record_date=op_date,
                 sku_id=sku_id,
-                stock_present=sp,
-                stock_reserved=sr,
+                stock_present=sp if is_today else 0,
+                stock_reserved=sr if is_today else 0,
             )
             db.add(summary)
 
@@ -259,6 +324,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         summary.returns_units = vals["returns_units"]
 
         # 履约字段：始终 SET（posting 数据不依赖 finance 范围）
+        summary.ordered_units = vals["ordered_units"]
         summary.delivered_units = vals["delivered_units"]
         summary.cancelled_units = vals["cancelled_units"]
 
@@ -270,8 +336,8 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             summary.logistics_costs = vals["logistics_costs"]
             summary.storage_fees = vals["storage_fees"]
             summary.advertising = vals["advertising"]
+            summary.promotion_costs = vals["promotion_costs"]
             summary.other_costs = vals["other_costs"]
-            # promotion_costs 在 vals 中有但模型中无单独字段，这里跳过
 
         # 净利润 = revenue + 所有费用（费用已经是负数）
         # 使用 summary 上的当前值（含跨期归因的 returns）
@@ -281,7 +347,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             + _parse_amount(summary.logistics_costs)
             + _parse_amount(summary.storage_fees)
             + _parse_amount(summary.advertising)
-            + vals["promotion_costs"]  # promotion_costs 无独立持久化，直接从本次 vals 取
+            + _parse_amount(summary.promotion_costs)
             + _parse_amount(summary.other_costs)
         )
         rev = _parse_amount(summary.revenue)
