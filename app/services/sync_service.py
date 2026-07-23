@@ -39,7 +39,7 @@ def _log_sync(db: Session, sync_type: str, status: str,
 
 def run_full_sync(db: Session, client: OzonClient,
                   days_back: int = 500,
-                  skip_sku_detail: bool = False) -> dict:
+                  skip_sku_detail: bool = True) -> dict:
     """
     全量同步: 按顺序 商品 → 分析 → 财务 → 汇总
     默认拉取 ~1.5 年数据（500天），覆盖所有历史

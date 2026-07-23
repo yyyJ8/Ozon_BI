@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     ad_sync_days: int = 3  # 每次同步拉取最近N天的广告SKU明细
 
     # ── 定时任务 ──
-    sync_cron_hours: str = "5,16"  # 每天几点执行同步（逗号分隔）
+    sync_cron_hours: str = "9,16"  # 每天几点执行全量同步（逗号分隔，SKU广告明细固定5:00）
 
     @property
     def database_url(self) -> str:

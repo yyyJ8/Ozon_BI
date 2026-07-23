@@ -18,7 +18,7 @@ def trigger_sync(db: Session = Depends(get_db)):
     """触发全量同步"""
     client = get_ozon_client()
     try:
-        results = run_full_sync(db, client)
+        results = run_full_sync(db, client, skip_sku_detail=False)
         return {"status": "completed", "results": results}
     finally:
         client.close()
