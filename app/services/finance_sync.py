@@ -43,13 +43,13 @@ def _date_range_chunks(date_from: str, date_to: str, max_days: int = 30):
 
 
 def sync_finance(db: Session, client: OzonClient,
-                 date_from: str, date_to: str,
+                 date_from: str, date_to: str, store_id: int,
                  batch_id: Optional[str] = None) -> dict:
     """
     同步财务流水
     注意: finance API 每次最多查 30 天范围，超过会自动拆分窗口
     """
-    logger.info(f"=== 开始同步财务流水: {date_from} ~ {date_to} ===")
+    logger.info(f"=== [store={store_id}] 开始同步财务流水: {date_from} ~ {date_to} ===")
 
     if not batch_id:
         batch_id = f"sync_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -58,7 +58,7 @@ def sync_finance(db: Session, client: OzonClient,
     skipped = 0
 
     chunks = _date_range_chunks(date_from, date_to)
-    logger.info(f"已拆分为 {len(chunks)} 个时间窗口")
+    logger.info(f"[store={store_id}] 已拆分为 {len(chunks)} 个时间窗口")
 
     for i, (api_from, api_to) in enumerate(chunks, 1):
         try:
@@ -81,6 +81,7 @@ def sync_finance(db: Session, client: OzonClient,
             op_date_str = op.get("operation_date", "")[:10]
 
             data = {
+                "store_id": store_id,
                 "operation_id": op.get("operation_id"),
                 "operation_type": op.get("operation_type", ""),
                 "operation_type_name": op.get("operation_type_name"),
@@ -101,7 +102,7 @@ def sync_finance(db: Session, client: OzonClient,
             }
 
             stmt = pg_insert(FinanceTransaction).values(**data).on_conflict_do_nothing(
-                index_elements=["operation_id"],
+                index_elements=["store_id", "operation_id"],
             )
             result = db.execute(stmt)
             if result.rowcount:
@@ -112,5 +113,5 @@ def sync_finance(db: Session, client: OzonClient,
         db.commit()
         logger.info(f"  窗口 {i}: {len(operations)} 条处理完成")
 
-    logger.info(f"财务同步完成: {inserted} 新增, {skipped} 跳过(重复)")
+    logger.info(f"[store={store_id}] 财务同步完成: {inserted} 新增, {skipped} 跳过(重复)")
     return {"finance_inserted": inserted, "finance_skipped": skipped}

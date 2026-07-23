@@ -1,5 +1,6 @@
 """
-应用配置 — 从 .env 读取
+应用配置 — 从 .env 读取数据库连接信息
+Ozon API 凭证已迁移到 ozon.stores 表，不再通过 .env 管理
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,17 +15,9 @@ class Settings(BaseSettings):
     db_user: str = "wensixin"
     db_password: str = ""
 
-    # ── Ozon Seller API（主账号）──
-    ozon_client_id: str = ""
-    ozon_api_key: str = ""
-
-    # ── Ozon Performance API（广告）──
-    ozon_perf_client_id: str = ""
-    ozon_perf_client_secret: str = ""
-    ad_sync_days: int = 3  # 每次同步拉取最近N天的广告SKU明细
-
     # ── 定时任务 ──
-    sync_cron_hours: str = "9,16"  # 每天几点执行全量同步（逗号分隔，SKU广告明细固定5:00）
+    sync_cron_hours: str = "9,19"  # 每天几点执行全量同步（逗号分隔）
+    ad_sync_days: int = 3          # 每次同步拉取最近N天的广告SKU明细
 
     @property
     def database_url(self) -> str:

@@ -1,5 +1,6 @@
 """财务流水 API"""
 from datetime import date
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -30,7 +31,6 @@ OPERATION_TYPE_MAP: dict[str, str] = {
     "OperationAgentSale": "代理销售",
 }
 
-# 补充按关键词匹配的映射（当 code 没命中时，用俄文名关键词匹配）
 KEYWORD_MAP: dict[str, str] = {
     "доставка покупател": "订单配送完成",
     "оплата эквайринг": "支付手续费",
@@ -49,25 +49,19 @@ KEYWORD_MAP: dict[str, str] = {
     "доставка до склад": "入仓物流费",
 }
 
+STORE_ID = Query(default=1, description="店铺 ID")
+
 
 def translate_operation_type(transaction: FinanceTransaction) -> str:
     """翻译操作类型：优先用 code 映射，再用俄文关键词匹配，兜底保留原文"""
-    # 1. 按 code 精确匹配
     if transaction.operation_type and transaction.operation_type in OPERATION_TYPE_MAP:
         return OPERATION_TYPE_MAP[transaction.operation_type]
-
-    # 2. 按俄文名关键词匹配
     if transaction.operation_type_name:
         name_lower = transaction.operation_type_name.lower()
         for keyword, cn in KEYWORD_MAP.items():
             if keyword in name_lower:
                 return cn
-
-    # 3. 兜底
     return transaction.operation_type_name or "未知操作"
-
-
-from typing import Optional
 
 
 router = APIRouter(prefix="/finance", tags=["finance"])
@@ -77,17 +71,18 @@ router = APIRouter(prefix="/finance", tags=["finance"])
 def list_transactions(
     sku_id: int = Query(..., description="SKU 编号"),
     date: date = Query(..., description="日期"),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """查询指定 SKU 在指定日期的所有财务流水"""
     rows = db.query(FinanceTransaction).filter(
+        FinanceTransaction.store_id == store_id,
         FinanceTransaction.sku_id == sku_id,
         FinanceTransaction.operation_date == date,
     ).order_by(
         FinanceTransaction.operation_id,
     ).all()
 
-    # 翻译操作类型
     for tx in rows:
         tx.operation_type_name = translate_operation_type(tx)
 
@@ -97,6 +92,7 @@ def list_transactions(
 @router.get("/returns-by-postings", response_model=list[FinanceTransactionItem])
 def list_returns_by_postings(
     posting_numbers: str = Query(..., description="逗号分隔的 posting_number 列表"),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """按 posting_number 批量查询退货流水（跨日期），用于展开行退货溯源"""
@@ -107,6 +103,7 @@ def list_returns_by_postings(
         return []
 
     rows = db.query(FinanceTransaction).filter(
+        FinanceTransaction.store_id == store_id,
         FinanceTransaction.posting_number.in_(pns),
         FinanceTransaction.operation_type.in_(
             ("OperationItemReturn", "ClientReturnAgentOperation")
@@ -115,21 +112,22 @@ def list_returns_by_postings(
         FinanceTransaction.operation_date.desc(),
     ).all()
 
-    # 关联 posting 状态，用于区分"真退货"vs"取消退款"
     posting_status_map = dict(
         db.query(Posting.posting_number, Posting.status)
-        .filter(Posting.posting_number.in_(pns))
+        .filter(
+            Posting.store_id == store_id,
+            Posting.posting_number.in_(pns),
+        )
         .all()
     )
 
     for tx in rows:
         tx.operation_type_name = translate_operation_type(tx)
-        # 注入 posting_status 到 type 字段（前端用 type 字段区分展示）
         pstatus = posting_status_map.get(tx.posting_number)
         if pstatus == "cancelled":
-            tx.type = "cancellation"  # 取消退款，不是真退货
+            tx.type = "cancellation"
         elif pstatus == "delivered":
-            tx.type = "returns"       # 真退货
+            tx.type = "returns"
 
     return rows
 
@@ -137,6 +135,7 @@ def list_returns_by_postings(
 @router.get("/by-postings", response_model=list[FinanceTransactionItem])
 def list_by_postings(
     posting_numbers: str = Query(..., description="逗号分隔的 posting_number 列表"),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """按 posting_number 批量查询所有类型流水（跨日期），用于展开行展示订单全生命周期"""
@@ -147,6 +146,7 @@ def list_by_postings(
         return []
 
     rows = db.query(FinanceTransaction).filter(
+        FinanceTransaction.store_id == store_id,
         FinanceTransaction.posting_number.in_(pns),
     ).order_by(
         FinanceTransaction.operation_date.asc(),
@@ -154,7 +154,10 @@ def list_by_postings(
 
     posting_status_map = dict(
         db.query(Posting.posting_number, Posting.status)
-        .filter(Posting.posting_number.in_(pns))
+        .filter(
+            Posting.store_id == store_id,
+            Posting.posting_number.in_(pns),
+        )
         .all()
     )
 

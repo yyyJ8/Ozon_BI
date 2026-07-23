@@ -1,13 +1,9 @@
 """
-SQLAlchemy ORM 模型 — 9 张表，每字段带中文注释
+SQLAlchemy ORM 模型 — 10 张数据表 + 1 张 stores 配置表，每字段带中文注释
 
 主键设计：
-  products, stocks, sku_daily_summary, finance_transactions, postings,
-  ad_campaigns, ad_daily_stats, ad_campaign_sku_map
-     → 自然主键（业务上就是唯一的）
-  sync_log → 自增 id（纯审计，顺序递增更直观）
-
-运行 scripts/reset_db.py 可重建表结构
+  所有数据表 = store_id + 业务主键
+  stocks FK → products (store_id, sku_id)
 """
 from datetime import date, datetime
 from decimal import Decimal
@@ -15,6 +11,7 @@ from typing import Optional
 
 from sqlalchemy import (
     JSON, BigInteger, Boolean, Date, DateTime, ForeignKey,
+    ForeignKeyConstraint,
     Integer, Numeric, String, Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,11 +19,34 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
+# ============================================================
+# Store — 店铺配置表
+# ============================================================
+class Store(Base):
+    """店铺 API 凭证配置"""
+    __tablename__ = "stores"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="店铺 ID")
+    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="店铺名称")
+    client_id: Mapped[str] = mapped_column(String(50), nullable=False, comment="Ozon Seller API Client-Id")
+    api_key: Mapped[str] = mapped_column(String(100), nullable=False, comment="Ozon Seller API Key")
+    perf_client_id: Mapped[Optional[str]] = mapped_column(String(100), comment="Performance API Client-Id")
+    perf_client_secret: Mapped[Optional[str]] = mapped_column(String(100), comment="Performance API Client-Secret")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用同步")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")
+
+
+# ============================================================
+# 数据表
+# ============================================================
+
 class Product(Base):
     """商品主数据 — 来源 /v3/product/info/list"""
     __tablename__ = "products"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="SKU 编号（Ozon 唯一标识）")
     product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="商品 ID（Ozon 内部编号）")
     name: Mapped[Optional[str]] = mapped_column(Text, comment="商品名称")
@@ -51,9 +71,16 @@ class Product(Base):
 class Stock(Base):
     """库存明细 — 来源 /v3/product/info/list -> stocks.stocks[]"""
     __tablename__ = "stocks"
-    __table_args__ = {"schema": "ozon"}
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["store_id", "sku_id"],
+            ["ozon.products.store_id", "ozon.products.sku_id"],
+        ),
+        {"schema": "ozon"},
+    )
 
-    sku_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("ozon.products.sku_id"), primary_key=True, comment="SKU 编号，关联 products.sku_id")
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
+    sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="SKU 编号，关联 products.sku_id")
     source: Mapped[str] = mapped_column(String(20), primary_key=True, comment="库存来源，如 fbo / fbs")
     present: Mapped[int] = mapped_column(Integer, default=0, comment="当前库存量")
     reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留库存量（订单占用）")
@@ -67,6 +94,7 @@ class SkuDailySummary(Base):
     __tablename__ = "sku_daily_summary"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     record_date: Mapped[date] = mapped_column("date", Date, primary_key=True, comment="日期（YYYY-MM-DD）")
     sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="SKU 编号")
     offer_id: Mapped[Optional[str]] = mapped_column(String(255), comment="商家自定义商品编码")
@@ -101,16 +129,11 @@ class SkuDailySummary(Base):
 
 
 class Posting(Base):
-    """订单履约数据 — 来源 /v2/posting/fbo/list + /v3/posting/fbs/list
-
-    记录每笔订单的完整生命周期：下单 → 配送 → 签收 / 取消
-    核心用途：
-      1. 退货归因 — posting_number → created_at 找到原销售日期
-      2. 漏斗分析 — ordered_units vs delivered vs cancelled
-    """
+    """订单履约数据 — 来源 /v2/posting/fbo/list + /v3/posting/fbs/list"""
     __tablename__ = "postings"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     posting_number: Mapped[str] = mapped_column(String(255), primary_key=True, comment="发货单号（Ozon 唯一标识）")
     order_number: Mapped[Optional[str]] = mapped_column(String(255), comment="订单号（一个订单可拆多个 posting）")
     delivery_schema: Mapped[Optional[str]] = mapped_column(String(20), comment="配送方案: FBO / FBS")
@@ -128,6 +151,7 @@ class FinanceTransaction(Base):
     __tablename__ = "finance_transactions"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     operation_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="操作 ID（Ozon 唯一标识）")
     operation_type: Mapped[str] = mapped_column(String(100), nullable=False, comment="操作类型代码，如 OperationAgentDeliveredToCustomer")
     operation_type_name: Mapped[Optional[str]] = mapped_column(Text, comment="操作类型名称（中文描述）")
@@ -154,6 +178,7 @@ class SyncLog(Base):
     __table_args__ = {"schema": "ozon"}
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="自增主键")
+    store_id: Mapped[int] = mapped_column(Integer, nullable=False, comment="店铺 ID")
     sync_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="同步类型: products / analytics / finance / summary")
     status: Mapped[str] = mapped_column(String(20), nullable=False, comment="状态: running / success / failed")
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="开始时间")
@@ -170,6 +195,7 @@ class AdCampaign(Base):
     __tablename__ = "ad_campaigns"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     campaign_id: Mapped[str] = mapped_column(
         String(20), primary_key=True,
         comment="广告活动 ID（Ozon Performance 唯一标识）")
@@ -197,6 +223,7 @@ class AdDailyStats(Base):
     __tablename__ = "ad_daily_stats"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     campaign_id: Mapped[str] = mapped_column(
         String(20), primary_key=True,
         comment="广告活动 ID，关联 ad_campaigns.campaign_id")
@@ -228,6 +255,7 @@ class AdCampaignSkuMap(Base):
     __tablename__ = "ad_campaign_sku_map"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     campaign_id: Mapped[str] = mapped_column(
         String(20), primary_key=True,
         comment="广告活动 ID，关联 ad_campaigns.campaign_id")
@@ -246,17 +274,11 @@ class AdCampaignSkuMap(Base):
 
 
 class Return(Base):
-    """退货数据 — 来源 /v1/returns/list
-
-    记录每笔退货的完整信息，按 posting_number + sku 定位。
-    核心用途：
-      1. 区分 Cancellation（未签收退回）vs ClientReturn（签收后退回）
-      2. 退货原因归因（return_reason_name → category）
-      3. 退货时效：returned_at → finished_at
-    """
+    """退货数据 — 来源 /v1/returns/list"""
     __tablename__ = "returns"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="退货 ID（Ozon 唯一标识）")
     posting_number: Mapped[str] = mapped_column(String(255), nullable=False, comment="发货单号，关联 postings.posting_number")
     sku: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="SKU 编号，关联 products.sku_id")
@@ -273,15 +295,11 @@ class Return(Base):
 
 
 class AdSkuDailyStats(Base):
-    """广告 SKU 日明细 — 来源 POST /api/client/statistics 异步报告 (ZIP CSV)
-
-    报告内每个活动含 1~N 个 SKU，一个 SKU 一行。
-    日常同步: dateFrom=dateTo=昨天 → stat_date=昨天。
-    字段来源于异步报告 CSV 的俄文表头。
-    """
+    """广告 SKU 日明细 — 来源 POST /api/client/statistics 异步报告 (ZIP CSV)"""
     __tablename__ = "ad_sku_daily_stats"
     __table_args__ = {"schema": "ozon"}
 
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
     campaign_id: Mapped[str] = mapped_column(
         String(20), primary_key=True,
         comment="广告活动 ID")

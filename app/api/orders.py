@@ -20,14 +20,21 @@ from app.schemas.orders import (
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
+STORE_ID = Query(default=1, description="店铺 ID")
+
+STATUS_LABELS: dict[str, str] = {
+    "awaiting_deliver": "等待发货",
+    "delivering": "配送中",
+    "delivered": "已签收",
+    "cancelled": "已取消",
+}
+
 
 def _date_params(date_from: date, date_to: date, **extra) -> dict:
-    """构建日期范围参数"""
     return {"date_from": date_from, "date_to_excl": date_to + timedelta(days=1), **extra}
 
 
 def _sku_filter_clause(sku_id: Optional[int], params: dict) -> str:
-    """生成 SKU 筛选子句（JSONB EXISTS 注入）"""
     if not sku_id:
         return ""
     params["sku_id"] = sku_id
@@ -37,32 +44,22 @@ def _sku_filter_clause(sku_id: Optional[int], params: dict) -> str:
     )"""
 
 
-# ── 状态中文映射 ──────────────────────────────────────────
-STATUS_LABELS: dict[str, str] = {
-    "awaiting_deliver": "等待发货",
-    "delivering": "配送中",
-    "delivered": "已签收",
-    "cancelled": "已取消",
-}
-
-
 @router.get("/overview", response_model=OrderOverview)
 def orders_overview(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """订单总览：总数、FBO/FBS、状态分布、取消率、平均每单件数"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
     sku_clause = _sku_filter_clause(sku_id, params)
 
-    # 订单计数
     row = db.execute(text(f"""
         SELECT
             COUNT(*) AS total_orders,
@@ -72,7 +69,8 @@ def orders_overview(
             COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled_count,
             COUNT(*) FILTER (WHERE p.status NOT IN ('delivered', 'cancelled')) AS in_progress_count
         FROM ozon.postings p
-        WHERE p.created_at >= :date_from
+        WHERE p.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
     """), params).fetchone()
@@ -85,8 +83,6 @@ def orders_overview(
     in_progress_count = int(row[5]) if row else 0
     cancellation_rate = round(cancelled_count / total_orders * 100, 2) if total_orders > 0 else 0.0
 
-    # 总件数（JSONB 展开）
-    # 如果有 sku_id，只统计该 SKU 的件数
     units_clause = ""
     if sku_id:
         units_clause = "AND (prod->>'sku')::bigint = :sku_id"
@@ -94,17 +90,18 @@ def orders_overview(
         SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
         FROM ozon.postings p,
              jsonb_array_elements(p.products) AS prod
-        WHERE p.created_at >= :date_from
+        WHERE p.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {units_clause}
     """), params).fetchone()
     total_ordered_units = int(units_row[0]) if units_row and units_row[0] else 0
 
-    # 平均每单商品数
     avg_items_row = db.execute(text(f"""
         SELECT AVG(jsonb_array_length(p.products))
         FROM ozon.postings p
-        WHERE p.created_at >= :date_from
+        WHERE p.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
     """), params).fetchone()
@@ -128,15 +125,15 @@ def orders_trend(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """订单趋势：按下单日期 (p.created_at) × 状态分组"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
     sku_clause = _sku_filter_clause(sku_id, params)
 
     rows = db.execute(text(f"""
@@ -148,7 +145,8 @@ def orders_trend(
             COUNT(*) FILTER (WHERE p.status = 'delivered') AS delivered,
             COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled
         FROM ozon.postings p
-        WHERE p.created_at >= :date_from
+        WHERE p.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
         GROUP BY p.created_at::date
@@ -172,24 +170,24 @@ def orders_trend(
 def orders_list(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
-    status: Optional[str] = Query(default=None, description="过滤: awaiting_deliver / delivering / delivered / cancelled"),
-    schema: Optional[str] = Query(default=None, description="过滤: FBO / FBS"),
+    status: Optional[str] = Query(default=None),
+    schema: Optional[str] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
-    search: Optional[str] = Query(default=None, description="模糊搜索: SKU / 货号"),
+    search: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=200),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """订单列表 — 分页 + 筛选"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
 
-    # 动态 WHERE 子句
     where_clauses = [
+        "p.store_id = :store_id",
         "p.created_at >= :date_from",
         "p.created_at  < :date_to_excl",
     ]
@@ -215,13 +213,11 @@ def orders_list(
 
     where_sql = " AND ".join(where_clauses)
 
-    # 计数
     total_row = db.execute(text(f"""
         SELECT COUNT(*) FROM ozon.postings p WHERE {where_sql}
     """), params).fetchone()
     total = int(total_row[0]) if total_row else 0
 
-    # 分页查询
     offset = (page - 1) * page_size
     params["limit"] = page_size
     params["offset"] = offset
@@ -237,6 +233,7 @@ def orders_list(
                 SELECT MIN(ft.operation_date)::timestamp
                 FROM ozon.finance_transactions ft
                 WHERE ft.posting_number = p.posting_number
+                  AND ft.store_id = p.store_id
                   AND ft.operation_type = 'OperationAgentDeliveredToCustomer'
             )) AS delivered_at,
             p.in_process_at,
@@ -281,34 +278,33 @@ def orders_list(
 @router.get("/{posting_number}", response_model=OrderDetail)
 def order_detail(
     posting_number: str,
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """订单详情 — 基本信息 + 商品清单 + 关联退货 + 财务流水"""
-    # 1. Posting
+    import json
+
     p = db.execute(text("""
         SELECT posting_number, order_number, delivery_schema, status,
                cancel_reason_id, created_at, in_process_at, delivered_at, products
         FROM ozon.postings
-        WHERE posting_number = :pn
-    """), {"pn": posting_number}).fetchone()
+        WHERE store_id = :store_id AND posting_number = :pn
+    """), {"store_id": store_id, "pn": posting_number}).fetchone()
 
     if not p:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=f"订单 {posting_number} 不存在")
 
-    # 解析 products JSON
-    import json
     products_raw = p[8] if p[8] else []
     if isinstance(products_raw, str):
         products_raw = json.loads(products_raw)
 
-    # 查商品图片
     sku_ids = [prod.get("sku") for prod in (products_raw or []) if prod.get("sku")]
     image_map: dict[int, str] = {}
     if sku_ids:
         img_rows = db.execute(text("""
-            SELECT sku_id, primary_image FROM ozon.products WHERE sku_id = ANY(:skus)
-        """), {"skus": sku_ids}).fetchall()
+            SELECT sku_id, primary_image FROM ozon.products
+            WHERE store_id = :store_id AND sku_id = ANY(:skus)
+        """), {"store_id": store_id, "skus": sku_ids}).fetchall()
         image_map = {int(r[0]): r[1] for r in img_rows if r[1]}
 
     products = [
@@ -323,14 +319,13 @@ def order_detail(
         for prod in (products_raw or [])
     ]
 
-    # 2. 关联退货
     returns_raw = db.execute(text("""
         SELECT id, sku, type, return_reason_name, quantity,
                visual_status, returned_at, finished_at
         FROM ozon.returns
-        WHERE posting_number = :pn
+        WHERE store_id = :store_id AND posting_number = :pn
         ORDER BY returned_at DESC
-    """), {"pn": posting_number}).fetchall()
+    """), {"store_id": store_id, "pn": posting_number}).fetchall()
 
     returns = [
         OrderReturn(
@@ -341,15 +336,14 @@ def order_detail(
         for r in returns_raw
     ]
 
-    # 3. 财务流水
     finance_raw = db.execute(text("""
         SELECT operation_id, operation_type_name, type, operation_date,
                amount, accruals_for_sale, sale_commission,
                delivery_charge, return_delivery_charge
         FROM ozon.finance_transactions
-        WHERE posting_number = :pn
+        WHERE store_id = :store_id AND posting_number = :pn
         ORDER BY operation_date DESC
-    """), {"pn": posting_number}).fetchall()
+    """), {"store_id": store_id, "pn": posting_number}).fetchall()
 
     finance = [
         OrderFinance(

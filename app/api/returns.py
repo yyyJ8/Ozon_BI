@@ -17,9 +17,7 @@ from app.schemas.returns import (
 
 router = APIRouter(prefix="/returns", tags=["returns"])
 
-# ── 中文原因映射 ──────────────────────────────────────────
 REASON_CN_MAP: dict[str, str] = {
-    # 取消退回 — Cancellation (10)
     "Покупатель отказался при вручении: товар не подошел": "拒收：商品不合适",
     "Покупатель отменил заказ: нашел дешевле": "取消：找到更便宜的",
     "Покупатель отменил заказ": "买家取消订单",
@@ -30,7 +28,6 @@ REASON_CN_MAP: dict[str, str] = {
     "Покупатель отказался при вручении: в заказе не тот товар": "拒收：商品不符",
     "Покупатель отказался при вручении: неполная комплектация": "拒收：缺配件",
     "Покупатель отменил заказ: перенос сроков доставки": "取消：配送延期",
-    # 签收后退货 — ClientReturn (7)
     "Покупатель передумал": "改变主意",
     "Упаковка и товар повреждены": "包装商品损坏",
     "Покупатель получил не те товары": "收到错误商品",
@@ -40,16 +37,25 @@ REASON_CN_MAP: dict[str, str] = {
     "Товар поддельный": "假货",
 }
 
+STORE_ID = Query(default=1, description="店铺 ID")
+
 
 def _translate_reason(russian: str) -> str:
     return REASON_CN_MAP.get(russian, russian)
 
 
 def _date_params(date_from: date, date_to: date, **extra) -> dict:
-    """构建日期范围参数"""
     return {"date_from": date_from, "date_to_excl": date_to + timedelta(days=1), **extra}
 
 
+# Cohort base: FROM/JOIN/WHERE shared by most returns endpoints
+_COHORT_BASE = """
+    FROM ozon.returns r
+    LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
+    WHERE r.store_id = :store_id
+      AND p.created_at >= :date_from
+      AND p.created_at  < :date_to_excl
+"""
 
 
 @router.get("/overview", response_model=ReturnsOverview)
@@ -57,28 +63,19 @@ def returns_overview(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """退货总览：总数、type 分布、状态分布、退货率、平均处理天数（cohort 口径：按 p.created_at 筛选）"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
     sku_clause = "AND r.sku = :sku_id" if sku_id else ""
     if sku_id:
         params["sku_id"] = sku_id
 
-    # 退货统计 cohort base — 按订单创建时间筛选
-    _COHORT_BASE = """
-        FROM ozon.returns r
-        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-        WHERE p.created_at >= :date_from
-          AND p.created_at  < :date_to_excl
-    """
-
-    # 总数 + type 分布
     type_rows = db.execute(text(f"""
         SELECT r.type, COUNT(*) {_COHORT_BASE} {sku_clause} GROUP BY r.type
     """), params).fetchall()
@@ -87,21 +84,20 @@ def returns_overview(
     cancellation_count = sum(int(c) for t, c in type_rows if t == "Cancellation")
     client_return_count = sum(int(c) for t, c in type_rows if t == "ClientReturn")
 
-    # 状态分布
     status_rows = db.execute(text(f"""
         SELECT r.visual_status, COUNT(*) {_COHORT_BASE} {sku_clause}
         GROUP BY r.visual_status ORDER BY COUNT(*) DESC
     """), params).fetchall()
     by_status = {row[0]: int(row[1]) for row in status_rows}
 
-    # 退货率 = 退货件数 / 下单总件数（同 cohort）
     ordered = 0
     if not sku_id:
         ordered_row = db.execute(text("""
             SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
-            WHERE created_at >= :date_from AND created_at < :date_to_excl
+            WHERE store_id = :store_id
+              AND created_at >= :date_from AND created_at < :date_to_excl
         """), params).fetchone()
         ordered = int(ordered_row[0]) if ordered_row and ordered_row[0] else 0
     else:
@@ -109,13 +105,13 @@ def returns_overview(
             SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
-            WHERE created_at >= :date_from AND created_at < :date_to_excl
+            WHERE store_id = :store_id
+              AND created_at >= :date_from AND created_at < :date_to_excl
               AND (prod->>'sku')::bigint = :sku_id
         """), params).fetchone()
         ordered = int(ordered_row[0]) if ordered_row and ordered_row[0] else 0
     return_rate = round(total / ordered * 100, 2) if ordered > 0 else 0.0
 
-    # 平均处理天数
     avg_days_row = db.execute(text(f"""
         SELECT AVG(EXTRACT(EPOCH FROM (r.finished_at - r.returned_at)) / 86400.0)
         {_COHORT_BASE} {sku_clause}
@@ -138,15 +134,15 @@ def returns_trend(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """退货趋势：按下单日期 (p.created_at) × type 分组 — 展示各日期创建的订单最终发生了多少退货"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
     sku_clause = "AND r.sku = :sku_id" if sku_id else ""
     if sku_id:
         params["sku_id"] = sku_id
@@ -156,10 +152,7 @@ def returns_trend(
             p.created_at::date AS order_date,
             r.type,
             COUNT(*)
-        FROM ozon.returns r
-        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-        WHERE p.created_at >= :date_from
-          AND p.created_at  < :date_to_excl
+        {_COHORT_BASE}
           {sku_clause}
         GROUP BY p.created_at::date, r.type
         ORDER BY order_date
@@ -189,15 +182,15 @@ def returns_trend(
 def sku_return_stats(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """SKU 维度退货明细"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
 
     rows = db.execute(text(f"""
         WITH sku_returns AS (
@@ -215,8 +208,9 @@ def sku_return_stats(
                     FILTER (WHERE r.finished_at IS NOT NULL AND r.returned_at IS NOT NULL) AS avg_days,
                 MODE() WITHIN GROUP (ORDER BY r.return_reason_name)         AS main_reason
             FROM ozon.returns r
-            LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-            WHERE p.created_at >= :date_from
+            LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
+            WHERE r.store_id = :store_id
+              AND p.created_at >= :date_from
               AND p.created_at  < :date_to_excl
             GROUP BY r.sku
         ),
@@ -226,7 +220,8 @@ def sku_return_stats(
                 COALESCE(SUM((prod->>'quantity')::int), 0) AS ordered_units
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
-            WHERE created_at >= :date_from AND created_at < :date_to_excl
+            WHERE store_id = :store_id
+              AND created_at >= :date_from AND created_at < :date_to_excl
             GROUP BY (prod->>'sku')::bigint
         )
         SELECT
@@ -246,7 +241,7 @@ def sku_return_stats(
             sr.avg_days,
             sr.main_reason
         FROM sku_returns sr
-        LEFT JOIN ozon.products pr ON sr.sku = pr.sku_id
+        LEFT JOIN ozon.products pr ON sr.sku = pr.sku_id AND pr.store_id = :store_id
         LEFT JOIN sku_ordered so ON sr.sku = so.sku_id
         ORDER BY sr.total_returns DESC
     """), params).fetchall()
@@ -284,15 +279,15 @@ def returns_details(
     sku_id: int = Query(...),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """某 SKU 的逐条退货记录 — 用于 SKU 明细表行展开"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to, sku_id=sku_id)
+    params = _date_params(date_from, date_to, store_id=store_id, sku_id=sku_id)
 
     rows = db.execute(text(f"""
         SELECT
@@ -313,9 +308,10 @@ def returns_details(
             r.status_changed_at,
             EXTRACT(EPOCH FROM (r.finished_at - r.returned_at)) / 86400.0 AS processing_days
         FROM ozon.returns r
-        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-        LEFT JOIN ozon.products pr ON r.sku = pr.sku_id
-        WHERE p.created_at >= :date_from
+        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
+        LEFT JOIN ozon.products pr ON r.sku = pr.sku_id AND r.store_id = pr.store_id
+        WHERE r.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           AND r.sku = :sku_id
         ORDER BY r.returned_at DESC
@@ -352,28 +348,21 @@ def returns_reasons(
     date_to: Optional[date] = Query(default=None),
     type: Optional[str] = Query(default=None, description="过滤: Cancellation / ClientReturn"),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """退货原因分布（cohort 口径：按 p.created_at 筛选）"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
-    params = _date_params(date_from, date_to)
+    params = _date_params(date_from, date_to, store_id=store_id)
     type_clause = "AND r.type = :rtype" if type else ""
     if type:
         params["rtype"] = type
     sku_clause = "AND r.sku = :sku_id" if sku_id else ""
     if sku_id:
         params["sku_id"] = sku_id
-
-    _COHORT_BASE = """
-        FROM ozon.returns r
-        LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number
-        WHERE p.created_at >= :date_from
-          AND p.created_at  < :date_to_excl
-    """
 
     rows = db.execute(text(f"""
         SELECT r.return_reason_name, r.type, COUNT(*)

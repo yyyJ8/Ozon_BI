@@ -7,22 +7,25 @@ from typing import Optional
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from app.clients.ozon import OzonClient
-from app.models import SyncLog
+from app.clients.ozon import OzonClient, get_ozon_client
+from app.clients.perf import get_perf_client
+from app.models import SyncLog, Store
 from app.services.product_sync import sync_products, sync_stocks_v4
 from app.services.analytics_sync import sync_analytics
 from app.services.finance_sync import sync_finance
 from app.services.posting_sync import sync_postings
 from app.services.returns_sync import sync_returns
+from app.services.advertising_sync import sync_advertising, sync_sku_advertising
 from app.services.summary_service import build_summary
 
 
-def _log_sync(db: Session, sync_type: str, status: str,
+def _log_sync(db: Session, store_id: int, sync_type: str, status: str,
               records: int = 0, error: Optional[str] = None,
               date_from: Optional[date] = None, date_to: Optional[date] = None,
               batch_id: Optional[str] = None):
     """写入同步日志"""
     log = SyncLog(
+        store_id=store_id,
         sync_type=sync_type,
         status=status,
         started_at=datetime.now(),
@@ -37,11 +40,11 @@ def _log_sync(db: Session, sync_type: str, status: str,
     db.commit()
 
 
-def run_full_sync(db: Session, client: OzonClient,
+def run_full_sync(db: Session, client: OzonClient, store_id: int,
                   days_back: int = 500,
                   skip_sku_detail: bool = True) -> dict:
     """
-    全量同步: 按顺序 商品 → 分析 → 财务 → 汇总
+    全量同步: 按顺序 商品 → 库存 → 分析 → 财务 → 履约 → 退货 → 广告 → 汇总
     默认拉取 ~1.5 年数据（500天），覆盖所有历史
     """
     batch_id = f"full_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -51,20 +54,20 @@ def run_full_sync(db: Session, client: OzonClient,
 
     # ── 1. 商品同步 ──
     try:
-        _log_sync(db, "products", "running", batch_id=batch_id)
-        pr = sync_products(db, client)
+        _log_sync(db, store_id, "products", "running", batch_id=batch_id)
+        pr = sync_products(db, client, store_id)
         results["products"] = pr
-        _log_sync(db, "products", "success",
+        _log_sync(db, store_id, "products", "success",
                   records=pr["products_updated"], batch_id=batch_id)
     except Exception as e:
         logger.error(f"商品同步失败: {e}")
-        _log_sync(db, "products", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "products", "failed", error=str(e), batch_id=batch_id)
         results["products"] = {"error": str(e)}
         return results  # 商品失败则中断
 
     # ── 1.5. 库存同步 (v4 专用接口，更完整) ──
     try:
-        sr = sync_stocks_v4(db, client)
+        sr = sync_stocks_v4(db, client, store_id)
         results["stocks_v4"] = sr
     except Exception as e:
         logger.error(f"库存同步失败 (v4): {e}")
@@ -72,110 +75,144 @@ def run_full_sync(db: Session, client: OzonClient,
 
     # ── 2. 销售分析同步 ──
     try:
-        _log_sync(db, "analytics", "running", batch_id=batch_id)
+        _log_sync(db, store_id, "analytics", "running", batch_id=batch_id)
         ar = sync_analytics(db, client,
                             date_from=start_date.isoformat(),
-                            date_to=today.isoformat())
+                            date_to=today.isoformat(),
+                            store_id=store_id)
         results["analytics"] = ar
-        _log_sync(db, "analytics", "success",
+        _log_sync(db, store_id, "analytics", "success",
                   records=ar["analytics_updated"], batch_id=batch_id)
     except Exception as e:
         logger.error(f"分析同步失败: {e}")
-        _log_sync(db, "analytics", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "analytics", "failed", error=str(e), batch_id=batch_id)
         results["analytics"] = {"error": str(e)}
 
     # ── 3. 财务流水同步 ──
     try:
-        _log_sync(db, "finance", "running", batch_id=batch_id)
+        _log_sync(db, store_id, "finance", "running", batch_id=batch_id)
         fr = sync_finance(db, client,
                           date_from=start_date.isoformat(),
                           date_to=today.isoformat(),
+                          store_id=store_id,
                           batch_id=batch_id)
         results["finance"] = fr
-        _log_sync(db, "finance", "success",
+        _log_sync(db, store_id, "finance", "success",
                   records=fr["finance_inserted"], batch_id=batch_id)
     except Exception as e:
         logger.error(f"财务同步失败: {e}")
-        _log_sync(db, "finance", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "finance", "failed", error=str(e), batch_id=batch_id)
         results["finance"] = {"error": str(e)}
 
     # ── 4. 订单履约同步（增量: 最近30天到昨天 + 补齐缺失）──
+    yesterday = today - timedelta(days=1)
     try:
-        yesterday = today - timedelta(days=1)
-        _log_sync(db, "postings", "running", batch_id=batch_id)
+        _log_sync(db, store_id, "postings", "running", batch_id=batch_id)
         pr = sync_postings(db, client,
                           date_from=(yesterday - timedelta(days=30)).isoformat(),
-                          date_to=yesterday.isoformat())
+                          date_to=yesterday.isoformat(),
+                          store_id=store_id)
         results["postings"] = pr
-        _log_sync(db, "postings", "success",
+        _log_sync(db, store_id, "postings", "success",
                   records=pr.get("posting_list_inserted", 0) + pr.get("posting_get_inserted", 0),
                   batch_id=batch_id)
     except Exception as e:
         logger.error(f"订单履约同步失败: {e}")
-        _log_sync(db, "postings", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "postings", "failed", error=str(e), batch_id=batch_id)
         results["postings"] = {"error": str(e)}
 
     # ── 4.5. 退货数据同步（最近 90 天，退货状态变化周期较长）──
     try:
-        _log_sync(db, "returns", "running", batch_id=batch_id)
+        _log_sync(db, store_id, "returns", "running", batch_id=batch_id)
         rr = sync_returns(db, client,
                           date_from=(yesterday - timedelta(days=90)).isoformat(),
-                          date_to=yesterday.isoformat())
+                          date_to=yesterday.isoformat(),
+                          store_id=store_id)
         results["returns"] = rr
-        _log_sync(db, "returns", "success",
+        _log_sync(db, store_id, "returns", "success",
                   records=rr.get("returns_processed", 0), batch_id=batch_id)
     except Exception as e:
         logger.error(f"退货同步失败: {e}")
-        _log_sync(db, "returns", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "returns", "failed", error=str(e), batch_id=batch_id)
         results["returns"] = {"error": str(e)}
 
     # ── 5. 广告数据同步 ──
-    from app.clients.perf import get_perf_client
-    from app.services.advertising_sync import sync_advertising, sync_sku_advertising
-    perf_client = get_perf_client()
-
-    try:
-        _log_sync(db, "advertising", "running", batch_id=batch_id)
-        ar = sync_advertising(db, perf_client,
-                              date_from=start_date.isoformat(),
-                              date_to=today.isoformat(),
-                              batch_id=batch_id)
-        results["advertising"] = ar
-        _log_sync(db, "advertising", "success",
-                  records=ar.get("daily_stats_inserted", 0) + ar.get("daily_stats_updated", 0), batch_id=batch_id)
-    except Exception as e:
-        logger.error(f"广告同步失败: {e}")
-        _log_sync(db, "advertising", "failed", error=str(e), batch_id=batch_id)
-        results["advertising"] = {"error": str(e)}
-
-    # ── 5.5. 广告 SKU 明细同步（仅昨天，异步报告极慢）──
-    if not skip_sku_detail:
+    store = db.query(Store).filter_by(id=store_id).first()
+    if store and store.perf_client_id and store.perf_client_secret:
+        perf_client = get_perf_client(store.perf_client_id, store.perf_client_secret)
         try:
-            _log_sync(db, "ad_sku_daily", "running", batch_id=batch_id)
-            yesterday = today - timedelta(days=1)
-            sr = sync_sku_advertising(db, perf_client,
-                                      date_from=yesterday.isoformat(),
-                                      date_to=yesterday.isoformat())
-            results["ad_sku_daily"] = sr
-            _log_sync(db, "ad_sku_daily", "success",
-                      records=sr.get("sku_inserted", 0), batch_id=batch_id)
+            _log_sync(db, store_id, "advertising", "running", batch_id=batch_id)
+            ar = sync_advertising(db, perf_client,
+                                  date_from=start_date.isoformat(),
+                                  date_to=today.isoformat(),
+                                  store_id=store_id,
+                                  batch_id=batch_id)
+            results["advertising"] = ar
+            _log_sync(db, store_id, "advertising", "success",
+                      records=ar.get("daily_stats_inserted", 0) + ar.get("daily_stats_updated", 0),
+                      batch_id=batch_id)
         except Exception as e:
-            logger.error(f"广告 SKU 明细同步失败: {e}")
-            _log_sync(db, "ad_sku_daily", "failed", error=str(e), batch_id=batch_id)
-            results["ad_sku_daily"] = {"error": str(e)}
+            logger.error(f"广告同步失败: {e}")
+            _log_sync(db, store_id, "advertising", "failed", error=str(e), batch_id=batch_id)
+            results["advertising"] = {"error": str(e)}
+
+        # ── 5.5. 广告 SKU 明细同步 ──
+        if not skip_sku_detail:
+            try:
+                _log_sync(db, store_id, "ad_sku_daily", "running", batch_id=batch_id)
+                sr = sync_sku_advertising(db, perf_client,
+                                          date_from=yesterday.isoformat(),
+                                          date_to=yesterday.isoformat(),
+                                          store_id=store_id)
+                results["ad_sku_daily"] = sr
+                _log_sync(db, store_id, "ad_sku_daily", "success",
+                          records=sr.get("sku_inserted", 0), batch_id=batch_id)
+            except Exception as e:
+                logger.error(f"广告 SKU 明细同步失败: {e}")
+                _log_sync(db, store_id, "ad_sku_daily", "failed", error=str(e), batch_id=batch_id)
+                results["ad_sku_daily"] = {"error": str(e)}
+        else:
+            logger.info("─ 跳过 SKU 明细 ─")
     else:
-        logger.info("─ 跳过 SKU 明细 ─")
+        logger.warning(f"店铺 {store_id} 未配置 Performance API，跳过广告同步")
 
     # ── 6. 构建汇总 ──
     try:
-        _log_sync(db, "summary", "running", batch_id=batch_id)
-        sr = build_summary(db, start_date, today)
+        _log_sync(db, store_id, "summary", "running", batch_id=batch_id)
+        sr = build_summary(db, start_date, today, store_id)
         results["summary"] = sr
-        _log_sync(db, "summary", "success",
+        _log_sync(db, store_id, "summary", "success",
                   records=sr["summary_updated"], batch_id=batch_id)
     except Exception as e:
         logger.error(f"汇总构建失败: {e}")
-        _log_sync(db, "summary", "failed", error=str(e), batch_id=batch_id)
+        _log_sync(db, store_id, "summary", "failed", error=str(e), batch_id=batch_id)
         results["summary"] = {"error": str(e)}
 
     return results
+
+
+def sync_all_stores(db: Session, days_back: int = 3,
+                    skip_sku_detail: bool = True) -> dict:
+    """遍历所有启用店铺，依次执行全量同步"""
+    stores = db.query(Store).filter_by(is_active=True).all()
+    if not stores:
+        logger.warning("没有启用的店铺，跳过同步")
+        return {"stores": 0, "results": {}}
+
+    logger.info(f"开始同步 {len(stores)} 个店铺")
+    all_results = {}
+    for store in stores:
+        logger.info(f"── 店铺 {store.id}: {store.name} ──")
+        client = get_ozon_client(store.client_id, store.api_key)
+        try:
+            result = run_full_sync(db, client, store.id,
+                                   days_back=days_back,
+                                   skip_sku_detail=skip_sku_detail)
+            all_results[str(store.id)] = result
+        except Exception as e:
+            logger.error(f"店铺 {store.id} 同步失败: {e}")
+            all_results[str(store.id)] = {"error": str(e)}
+        finally:
+            client.close()
+
+    return {"stores": len(stores), "results": all_results}

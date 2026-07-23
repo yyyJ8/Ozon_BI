@@ -17,6 +17,8 @@ from app.schemas.advertising import (
 
 router = APIRouter(prefix="/advertising", tags=["advertising"])
 
+STORE_ID = Query(default=1, description="店铺 ID")
+
 
 # ── 1. 活动列表 ───────────────────────────────────────────
 
@@ -26,6 +28,7 @@ def list_campaigns(
     state: Optional[str] = Query(default=None, description="活动状态过滤"),
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """广告活动列表，含期间内汇总统计"""
@@ -34,9 +37,9 @@ def list_campaigns(
     if date_from is None:
         date_from = date_to - timedelta(days=30)
 
-    # 活动 + 统计子查询
     stat_sub = (
         db.query(
+            AdDailyStats.store_id,
             AdDailyStats.campaign_id,
             func.sum(AdDailyStats.spend).label("total_spend"),
             func.sum(AdDailyStats.orders_count).label("total_orders"),
@@ -44,8 +47,11 @@ def list_campaigns(
             func.sum(AdDailyStats.impressions).label("total_impressions"),
             func.sum(AdDailyStats.clicks).label("total_clicks"),
         )
-        .filter(AdDailyStats.stat_date.between(date_from, date_to))
-        .group_by(AdDailyStats.campaign_id)
+        .filter(
+            AdDailyStats.store_id == store_id,
+            AdDailyStats.stat_date.between(date_from, date_to),
+        )
+        .group_by(AdDailyStats.store_id, AdDailyStats.campaign_id)
         .subquery()
     )
 
@@ -57,7 +63,11 @@ def list_campaigns(
         func.coalesce(stat_sub.c.total_impressions, 0).label("total_impressions"),
         func.coalesce(stat_sub.c.total_clicks, 0).label("total_clicks"),
     ).outerjoin(
-        stat_sub, AdCampaign.campaign_id == stat_sub.c.campaign_id,
+        stat_sub,
+        (AdCampaign.campaign_id == stat_sub.c.campaign_id)
+        & (AdCampaign.store_id == stat_sub.c.store_id),
+    ).filter(
+        AdCampaign.store_id == store_id,
     )
 
     if campaign_type:
@@ -70,11 +80,11 @@ def list_campaigns(
         AdCampaign.campaign_id,
     ).all()
 
-    # 批量查映射表（避免主查询中的 JOIN 膨胀）
     campaign_ids = [c.campaign_id for c, *_ in rows]
     mapping_map: dict[str, tuple] = {}
     if campaign_ids:
         mappings = db.query(AdCampaignSkuMap).filter(
+            AdCampaignSkuMap.store_id == store_id,
             AdCampaignSkuMap.campaign_id.in_(campaign_ids),
         ).all()
         for m in mappings:
@@ -108,6 +118,7 @@ def campaign_daily(
     campaign_id: str,
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """某广告活动的每日维度数据"""
@@ -117,6 +128,7 @@ def campaign_daily(
         date_from = date_to - timedelta(days=30)
 
     rows = db.query(AdDailyStats).filter(
+        AdDailyStats.store_id == store_id,
         AdDailyStats.campaign_id == campaign_id,
         AdDailyStats.stat_date.between(date_from, date_to),
     ).order_by(AdDailyStats.stat_date).all()
@@ -134,13 +146,14 @@ def campaign_daily(
     ]
 
 
-# ── 2.5. 每日趋势（花费/展示/点击/订单）────────────────────
+# ── 2.5. 每日趋势 ──────────────────────────────────────
 
 @router.get("/trend", response_model=list[AdTrendItem])
 def advertising_trend(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     campaign_type: Optional[str] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """广告每日趋势：花费 / 展示 / 点击 / 订单 / 已归因花费"""
@@ -149,7 +162,6 @@ def advertising_trend(
     if date_from is None:
         date_from = date_to - timedelta(days=30)
 
-    # 每日总量
     daily_rows = (
         db.query(
             AdDailyStats.stat_date,
@@ -159,19 +171,24 @@ def advertising_trend(
             func.sum(AdDailyStats.orders_count).label("total_orders_count"),
             func.sum(AdDailyStats.orders_sum).label("total_orders_sum"),
         )
+        .filter(
+            AdDailyStats.store_id == store_id,
+            AdDailyStats.stat_date.between(date_from, date_to),
+        )
     )
     if campaign_type:
         daily_rows = daily_rows.join(
-            AdCampaign, AdDailyStats.campaign_id == AdCampaign.campaign_id,
+            AdCampaign,
+            (AdDailyStats.campaign_id == AdCampaign.campaign_id)
+            & (AdDailyStats.store_id == AdCampaign.store_id),
         ).filter(AdCampaign.campaign_type == campaign_type)
 
-    daily_rows = daily_rows.filter(
-        AdDailyStats.stat_date.between(date_from, date_to),
-    ).group_by(AdDailyStats.stat_date).order_by(AdDailyStats.stat_date).all()
+    daily_rows = daily_rows.group_by(AdDailyStats.stat_date).order_by(AdDailyStats.stat_date).all()
 
-    # 每日已归因花费（仅 mapped campaigns，先去重避免 JOIN 膨胀）
     mapped_campaign_ids = db.query(
         AdCampaignSkuMap.campaign_id,
+    ).filter(
+        AdCampaignSkuMap.store_id == store_id,
     ).distinct().subquery()
 
     mapped_rows = (
@@ -180,6 +197,7 @@ def advertising_trend(
             func.sum(AdDailyStats.spend).label("mapped_spend"),
         )
         .filter(
+            AdDailyStats.store_id == store_id,
             AdDailyStats.stat_date.between(date_from, date_to),
             AdDailyStats.campaign_id.in_(mapped_campaign_ids),
         )
@@ -212,6 +230,7 @@ def sku_advertising(
     sku_id: int,
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """某 SKU 的每日广告费用（通过活动映射聚合）"""
@@ -226,8 +245,13 @@ def sku_advertising(
             func.sum(AdDailyStats.spend).label("total_spend"),
             func.count(func.distinct(AdDailyStats.campaign_id)).label("campaign_count"),
         )
-        .join(AdCampaignSkuMap, AdDailyStats.campaign_id == AdCampaignSkuMap.campaign_id)
+        .join(
+            AdCampaignSkuMap,
+            (AdDailyStats.campaign_id == AdCampaignSkuMap.campaign_id)
+            & (AdDailyStats.store_id == AdCampaignSkuMap.store_id),
+        )
         .filter(
+            AdDailyStats.store_id == store_id,
             AdCampaignSkuMap.sku_id == sku_id,
             AdDailyStats.stat_date.between(date_from, date_to),
         )
@@ -246,26 +270,23 @@ def sku_advertising(
     ]
 
 
-# ── 3.5. SKU 广告详情（含 CTR/CPC/加购）───────────────────
+# ── 3.5. SKU 广告详情 ───────────────────────────────────
 
 @router.get("/sku/{sku_id}/detail", response_model=list[AdSkuDetailItem])
 def sku_ad_detail(
     sku_id: int,
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """某 SKU 的每日广告明细（展示/点击/CTR/加购/CPC/花费/售出/DRR）
-
-    数据来源: ad_sku_daily_stats（异步报告，通常覆盖最近N天）。
-    若日期范围内无数据则返回空列表。
-    """
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=30)
 
     rows = db.query(AdSkuDailyStats).filter(
+        AdSkuDailyStats.store_id == store_id,
         AdSkuDailyStats.sku_id == sku_id,
         AdSkuDailyStats.stat_date.between(date_from, date_to),
     ).order_by(AdSkuDailyStats.stat_date.desc()).all()
@@ -297,15 +318,14 @@ def sku_ad_detail(
 def advertising_summary(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
-    """广告总览：总花费、按类型拆分、mapped/unmapped 拆分"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
         date_from = date_to - timedelta(days=30)
 
-    # 总览（不带类型拆分）
     agg = db.query(
         func.sum(AdDailyStats.spend).label("total_spend"),
         func.sum(AdDailyStats.orders_count).label("total_orders_count"),
@@ -313,10 +333,10 @@ def advertising_summary(
         func.sum(AdDailyStats.impressions).label("total_impressions"),
         func.sum(AdDailyStats.clicks).label("total_clicks"),
     ).filter(
+        AdDailyStats.store_id == store_id,
         AdDailyStats.stat_date.between(date_from, date_to),
     ).first()
 
-    # 按类型拆分
     type_rows = (
         db.query(
             AdCampaign.campaign_type,
@@ -324,8 +344,15 @@ def advertising_summary(
             func.count(func.distinct(AdCampaign.campaign_id)).label("type_count"),
             func.sum(AdDailyStats.orders_sum).label("type_orders_sum"),
         )
-        .join(AdCampaign, AdDailyStats.campaign_id == AdCampaign.campaign_id)
-        .filter(AdDailyStats.stat_date.between(date_from, date_to))
+        .join(
+            AdCampaign,
+            (AdDailyStats.campaign_id == AdCampaign.campaign_id)
+            & (AdDailyStats.store_id == AdCampaign.store_id),
+        )
+        .filter(
+            AdDailyStats.store_id == store_id,
+            AdDailyStats.stat_date.between(date_from, date_to),
+        )
         .group_by(AdCampaign.campaign_type)
         .all()
     )
@@ -338,26 +365,27 @@ def advertising_summary(
             "orders_sum": float(osum or 0),
         }
 
-    # 已映射的 SKU 广告费（先去重避免 JOIN 膨胀）
     mapped_campaign_ids = db.query(
         AdCampaignSkuMap.campaign_id,
+    ).filter(
+        AdCampaignSkuMap.store_id == store_id,
     ).distinct().subquery()
 
     mapped = db.query(
         func.sum(AdDailyStats.spend),
     ).filter(
+        AdDailyStats.store_id == store_id,
         AdDailyStats.stat_date.between(date_from, date_to),
         AdDailyStats.campaign_id.in_(mapped_campaign_ids),
     ).scalar() or 0
 
-    # 总数
     total_spend = float(agg.total_spend or 0)
     unmapped_spend = total_spend - float(mapped)
 
-    # 活动 + 映射 SKU 数量（仅在日期范围内有花费的）
     active_campaign_ids = db.query(
         AdDailyStats.campaign_id,
     ).filter(
+        AdDailyStats.store_id == store_id,
         AdDailyStats.stat_date.between(date_from, date_to),
     ).distinct().subquery()
 
@@ -367,14 +395,20 @@ def advertising_summary(
 
     active_count = (
         db.query(func.count(active_campaign_ids.c.campaign_id))
-        .join(AdCampaign, AdCampaign.campaign_id == active_campaign_ids.c.campaign_id)
+        .join(
+            AdCampaign,
+            active_campaign_ids.c.campaign_id == AdCampaign.campaign_id,
+        )
         .filter(AdCampaign.state == "CAMPAIGN_STATE_RUNNING")
         .scalar() or 0
     )
 
     mapped_sku_count = (
         db.query(func.count(func.distinct(AdCampaignSkuMap.sku_id)))
-        .filter(AdCampaignSkuMap.campaign_id.in_(mapped_campaign_ids))
+        .filter(
+            AdCampaignSkuMap.store_id == store_id,
+            AdCampaignSkuMap.campaign_id.in_(mapped_campaign_ids),
+        )
         .scalar() or 0
     )
 

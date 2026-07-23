@@ -30,19 +30,19 @@ def _date_range_chunks(date_from: str, date_to: str, max_days: int = 30):
 
 
 def sync_analytics(db: Session, client: OzonClient,
-                   date_from: str, date_to: str) -> dict:
+                   date_from: str, date_to: str, store_id: int) -> dict:
     """
     同步销售分析数据（revenue，ordered_units 改由 build_summary 从 postings 聚合）
     """
-    logger.info(f"=== 开始同步销售分析: {date_from} ~ {date_to} ===")
+    logger.info(f"=== [store={store_id}] 开始同步销售分析: {date_from} ~ {date_to} ===")
 
     chunks = _date_range_chunks(date_from, date_to)
-    logger.info(f"已拆分为 {len(chunks)} 个时间窗口")
+    logger.info(f"[store={store_id}] 已拆分为 {len(chunks)} 个时间窗口")
 
     updated = 0
     for i, (win_from, win_to) in enumerate(chunks, 1):
         try:
-            logger.info(f"  窗口 {i}/{len(chunks)}: {win_from} ~ {win_to}")
+            logger.info(f"  [store={store_id}] 窗口 {i}/{len(chunks)}: {win_from} ~ {win_to}")
             rows = client.get_all_analytics(win_from, win_to)
             if not rows:
                 logger.info(f"  窗口 {i}: 无数据")
@@ -60,11 +60,12 @@ def sync_analytics(db: Session, client: OzonClient,
                 revenue = Decimal(str(metrics[1])) if metrics[1] else Decimal("0")
 
                 stmt = pg_insert(SkuDailySummary).values(
+                    store_id=store_id,
                     record_date=day_str,
                     sku_id=sku_id,
                     revenue=revenue,
                 ).on_conflict_do_update(
-                    index_elements=["date", "sku_id"],
+                    index_elements=["store_id", "date", "sku_id"],
                     set_={
                         "revenue": revenue,
                     },
@@ -80,5 +81,5 @@ def sync_analytics(db: Session, client: OzonClient,
                 continue
             raise
 
-    logger.info(f"销售分析同步完成: {updated} 行")
+    logger.info(f"[store={store_id}] 销售分析同步完成: {updated} 行")
     return {"analytics_updated": updated}

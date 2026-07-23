@@ -28,13 +28,14 @@ def _parse_amount(val) -> Decimal:
     return Decimal(str(val))
 
 
-def build_profit(db: Session, start_date: date, end_date: date) -> dict:
+def build_profit(db: Session, start_date: date, end_date: date, store_id: int) -> dict:
     """
     计算日期范围内所有 sku_daily_summary 行的 net_profit 和 profit_margin。
     """
-    logger.info(f"=== 利润计算: {start_date} ~ {end_date} ===")
+    logger.info(f"=== [store={store_id}] 利润计算: {start_date} ~ {end_date} ===")
 
     rows = db.query(SkuDailySummary).filter(
+        SkuDailySummary.store_id == store_id,
         SkuDailySummary.record_date.between(start_date, end_date),
     ).all()
 
@@ -75,7 +76,7 @@ def build_profit(db: Session, start_date: date, end_date: date) -> dict:
     db.commit()
 
     logger.info(
-        f"利润计算完成: {updated} 行, "
+        f"[store={store_id}] 利润计算完成: {updated} 行, "
         f"其中 {partial_count} 行标记 partial（有收入无费用）"
     )
     return {

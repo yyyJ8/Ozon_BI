@@ -16,9 +16,6 @@ from typing import Optional
 import httpx
 from loguru import logger
 
-from app.config import settings
-
-
 class OzonPerfClient:
     """Ozon Performance API（广告）HTTP 客户端"""
 
@@ -419,8 +416,6 @@ def _parse_async_csv(text: str, campaign_id: str) -> list[dict]:
 
 # ── 工厂函数 ──────────────────────────────────────────────
 
-def get_perf_client() -> OzonPerfClient:
-    return OzonPerfClient(
-        client_id=settings.ozon_perf_client_id,
-        client_secret=settings.ozon_perf_client_secret,
-    )
+def get_perf_client(client_id: str, client_secret: str) -> OzonPerfClient:
+    """创建 Ozon Performance API 客户端"""
+    return OzonPerfClient(client_id=client_id, client_secret=client_secret)

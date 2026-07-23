@@ -32,7 +32,7 @@ def _parse_amount(val) -> Decimal:
     return Decimal(str(val))
 
 
-def build_summary(db: Session, start_date: date, end_date: date) -> dict:
+def build_summary(db: Session, start_date: date, end_date: date, store_id: int) -> dict:
     """
     构建/更新 sku_daily_summary:
       1. 聚合履约指标（postings → ordered/delivered/cancelled）
@@ -41,7 +41,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
       4. 费用计算（cost_service）
       5. 利润计算（profit_service）
     """
-    logger.info(f"=== 开始构建日汇总: {start_date} ~ {end_date} ===")
+    logger.info(f"=== [store={store_id}] 开始构建日汇总: {start_date} ~ {end_date} ===")
 
     all_groups: dict[tuple, dict] = {}
 
@@ -65,10 +65,11 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             SUM((prod->>'quantity')::int * (prod->>'price')::numeric) AS revenue
         FROM ozon.postings,
              jsonb_array_elements(products) AS prod
-        WHERE created_at >= :date_from
+        WHERE store_id = :store_id
+          AND created_at >= :date_from
           AND created_at  < :date_to
         GROUP BY created_at::date, (prod->>'sku')::bigint
-    """), {"date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
+    """), {"store_id": store_id, "date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
 
     for pdate, sku_id, ordered_units, revenue in posting_agg_rows:
         if sku_id is None:
@@ -90,10 +91,11 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             status
         FROM ozon.postings,
              jsonb_array_elements(products) AS prod
-        WHERE created_at >= :date_from
+        WHERE store_id = :store_id
+          AND created_at >= :date_from
           AND created_at  < :date_to
           AND status IN ('delivered', 'cancelled')
-    """), {"date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
+    """), {"store_id": store_id, "date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
 
     for pdate, sku_id, qty, status in posting_rows:
         if sku_id is None or qty is None:
@@ -113,11 +115,12 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             r.sku,
             SUM(r.quantity) AS total_returns
         FROM ozon.returns r
-        JOIN ozon.postings p ON r.posting_number = p.posting_number
-        WHERE p.created_at >= :date_from
+        JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
+        WHERE r.store_id = :store_id
+          AND p.created_at >= :date_from
           AND p.created_at  < :date_to
         GROUP BY p.created_at::date, r.sku
-    """), {"date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
+    """), {"store_id": store_id, "date_from": start_date, "date_to": end_date + timedelta(days=1)}).fetchall()
 
     for sale_date, sku_id, total_returns in return_rows:
         if sku_id is None:
@@ -134,12 +137,16 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
             Stock.sku_id,
             func.coalesce(func.sum(Stock.present), 0).label("present"),
             func.coalesce(func.sum(Stock.reserved), 0).label("reserved"),
-        ).filter(Stock.sku_id.in_(all_sku_ids)).group_by(Stock.sku_id).all()
+        ).filter(
+            Stock.store_id == store_id,
+            Stock.sku_id.in_(all_sku_ids),
+        ).group_by(Stock.sku_id).all()
         stock_map = {r.sku_id: (int(r.present), int(r.reserved)) for r in stock_rows}
 
     posting_updated = 0
     for (pdate, sku_id), vals in all_groups.items():
         summary = db.query(SkuDailySummary).filter(
+            SkuDailySummary.store_id == store_id,
             SkuDailySummary.record_date == pdate,
             SkuDailySummary.sku_id == sku_id,
         ).first()
@@ -149,6 +156,7 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
         if not summary:
             is_today = (pdate == date.today())
             summary = SkuDailySummary(
+                store_id=store_id,
                 record_date=pdate,
                 sku_id=sku_id,
                 stock_present=sp if is_today else 0,
@@ -170,14 +178,14 @@ def build_summary(db: Session, start_date: date, end_date: date) -> dict:
     logger.info(f"履约指标写入: {posting_updated} 行")
 
     # ── 5. 费用计算 ──
-    cost_result = build_costs(db, start_date, end_date)
+    cost_result = build_costs(db, start_date, end_date, store_id)
 
     # ── 6. 利润计算 ──
-    profit_result = build_profit(db, start_date, end_date)
+    profit_result = build_profit(db, start_date, end_date, store_id)
 
     total_updated = posting_updated + cost_result["costs_updated"]
     logger.info(
-        f"汇总构建完成: 履约 {posting_updated} + 费用 {cost_result['costs_updated']}"
+        f"[store={store_id}] 汇总构建完成: 履约 {posting_updated} + 费用 {cost_result['costs_updated']}"
         f"（新建 {cost_result['costs_created']}）+ 利润 {profit_result['profit_updated']}"
     )
     return {

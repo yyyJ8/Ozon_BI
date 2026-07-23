@@ -57,6 +57,7 @@ def sync_advertising(
     client: OzonPerfClient,
     date_from: str,
     date_to: str,
+    store_id: int,
     batch_id: Optional[str] = None,
 ) -> dict:
     """
@@ -64,11 +65,9 @@ def sync_advertising(
       1. 拉取活动列表 → upsert ad_campaigns
       2. 拉取每日统计 → upsert ad_daily_stats
       3. 构建 SKU 映射 → upsert ad_campaign_sku_map
-      4. 更新 sku_daily_summary.advertising
-
-    注意: SEARCH_PROMO 类活动不映射到 SKU，因此不会进入 sku_daily_summary。
+      4. 广告费汇总已移至 build_summary
     """
-    logger.info(f"=== 开始同步广告数据: {date_from} ~ {date_to} ===")
+    logger.info(f"=== [store={store_id}] 开始同步广告数据: {date_from} ~ {date_to} ===")
 
     if not batch_id:
         batch_id = f"adv_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -81,17 +80,18 @@ def sync_advertising(
     # ── 1. 拉取活动列表 ──────────────────────────────────
     try:
         campaigns = client.get_campaigns()
-        logger.info(f"获取到 {len(campaigns)} 个广告活动")
+        logger.info(f"[store={store_id}] 获取到 {len(campaigns)} 个广告活动")
 
         for c in campaigns:
             stmt = pg_insert(AdCampaign).values(
+                store_id=store_id,
                 campaign_id=c["id"],
                 title=c.get("title"),
                 campaign_type=c.get("advObjectType", ""),
                 state=c.get("state", ""),
                 budget=Decimal(str(c.get("budget", 0))),
             ).on_conflict_do_update(
-                index_elements=["campaign_id"],
+                index_elements=["store_id", "campaign_id"],
                 set_={
                     "title": c.get("title"),
                     "campaign_type": c.get("advObjectType", ""),
@@ -125,6 +125,7 @@ def sync_advertising(
 
         for row in rows:
             stmt = pg_insert(AdDailyStats).values(
+                store_id=store_id,
                 campaign_id=row["campaign_id"],
                 stat_date=date_type.fromisoformat(row["date"]),
                 impressions=row.get("impressions", 0),
@@ -133,7 +134,7 @@ def sync_advertising(
                 orders_count=row.get("orders_count", 0),
                 orders_sum=Decimal(str(row.get("orders_sum", 0))),
             ).on_conflict_do_update(
-                index_elements=["campaign_id", "stat_date"],
+                index_elements=["store_id", "campaign_id", "stat_date"],
                 set_={
                     "impressions": row.get("impressions", 0),
                     "clicks": row.get("clicks", 0),
@@ -154,6 +155,7 @@ def sync_advertising(
     # ── 3. 构建 SKU 映射 ─────────────────────────────────
     try:
         sku_campaigns = db.query(AdCampaign).filter(
+            AdCampaign.store_id == store_id,
             AdCampaign.campaign_type == "SKU"
         ).all()
         logger.info(f"SKU 类型活动: {len(sku_campaigns)} 个")
@@ -165,6 +167,7 @@ def sync_advertising(
                 continue
 
             products = db.query(Product).filter(
+                Product.store_id == store_id,
                 Product.offer_id.like(f"{prefix}-%")
             ).all()
 
@@ -174,12 +177,13 @@ def sync_advertising(
 
             for p in products:
                 stmt = pg_insert(AdCampaignSkuMap).values(
+                    store_id=store_id,
                     campaign_id=campaign.campaign_id,
                     sku_id=p.sku_id,
                     offer_id=p.offer_id,
                     mapping_method="auto",
                 ).on_conflict_do_nothing(
-                    index_elements=["campaign_id", "sku_id"],
+                    index_elements=["store_id", "campaign_id", "sku_id"],
                 )
                 result = db.execute(stmt)
                 if result.rowcount:
@@ -190,11 +194,8 @@ def sync_advertising(
         logger.error(f"SKU 映射构建失败: {e}")
         raise
 
-    # ── 4. 广告费汇总已移至 build_summary（从 ad_sku_daily_stats 聚合）──
-    #      此处不再直接 UPDATE sku_daily_summary，避免重复写入
-
     logger.info(
-        f"广告同步完成: campaigns={campaigns_updated}, "
+        f"[store={store_id}] 广告同步完成: campaigns={campaigns_updated}, "
         f"daily_inserted={daily_inserted}, daily_updated={daily_updated}, "
         f"mappings={mappings_created}"
     )
@@ -211,6 +212,7 @@ def sync_sku_advertising(
     client: OzonPerfClient,
     date_from: str,
     date_to: str,
+    store_id: int,
 ) -> dict:
     """同步广告 SKU 日明细（异步报告模式）
 
@@ -219,7 +221,7 @@ def sync_sku_advertising(
 
     存入 ad_sku_daily_stats，用 on_conflict_do_update 覆写已有数据。
     """
-    logger.info(f"=== 开始同步广告 SKU 明细: {date_from} ~ {date_to} ===")
+    logger.info(f"=== [store={store_id}] 开始同步广告 SKU 明细: {date_from} ~ {date_to} ===")
 
     start = datetime.strptime(date_from[:10], "%Y-%m-%d").date()
     end = datetime.strptime(date_to[:10], "%Y-%m-%d").date()
@@ -247,6 +249,7 @@ def sync_sku_advertising(
 
         for row in rows:
             vals = {
+                "store_id": store_id,
                 "campaign_id": row["campaign_id"],
                 "sku_id": row["sku_id"],
                 "stat_date": cur,
@@ -271,7 +274,7 @@ def sync_sku_advertising(
                     pass
 
             stmt = pg_insert(AdSkuDailyStats).values(**vals).on_conflict_do_update(
-                index_elements=["campaign_id", "sku_id", "stat_date"],
+                index_elements=["store_id", "campaign_id", "sku_id", "stat_date"],
                 set_={
                     "sku_name": vals["sku_name"],
                     "sku_price": vals["sku_price"],
@@ -297,7 +300,7 @@ def sync_sku_advertising(
         db.commit()
         cur += timedelta(days=1)
 
-    logger.info(f"SKU 明细同步完成: {total_inserted} 新增, {total_updated} 更新")
+    logger.info(f"[store={store_id}] SKU 明细同步完成: {total_inserted} 新增, {total_updated} 更新")
     return {
         "sku_inserted": total_inserted,
         "sku_updated": total_updated,

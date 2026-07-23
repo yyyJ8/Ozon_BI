@@ -1,5 +1,5 @@
 """商品 API"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,15 +11,18 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 
 @router.get("", response_model=list[ProductItem])
-def list_products(db: Session = Depends(get_db)):
+def list_products(
+    store_id: int = Query(default=1, description="店铺 ID"),
+    db: Session = Depends(get_db),
+):
     """获取所有商品（含当前库存快照，来自 stocks 表）"""
-    # 子查询：按 sku_id 聚合 stocks 表（跨 source 求和）
     stock_sub = (
         db.query(
             Stock.sku_id,
             func.coalesce(func.sum(Stock.present), 0).label("present"),
             func.coalesce(func.sum(Stock.reserved), 0).label("reserved"),
         )
+        .filter(Stock.store_id == store_id)
         .group_by(Stock.sku_id)
         .subquery()
     )
@@ -30,6 +33,7 @@ def list_products(db: Session = Depends(get_db)):
             func.coalesce(stock_sub.c.present, 0).label("stock_present"),
             func.coalesce(stock_sub.c.reserved, 0).label("stock_reserved"),
         )
+        .filter(Product.store_id == store_id)
         .outerjoin(stock_sub, Product.sku_id == stock_sub.c.sku_id)
         .order_by(Product.name)
         .all()

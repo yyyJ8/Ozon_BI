@@ -14,11 +14,15 @@ from app.schemas.summary import SummaryItem, SummaryStats, DateRange
 router = APIRouter(prefix="/summary", tags=["summary"])
 
 
+STORE_ID = Query(default=1, description="店铺 ID")
+
+
 @router.get("", response_model=list[SummaryItem])
 def list_summary(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """查询日汇总数据，支持按日期范围和 SKU 筛选"""
@@ -34,8 +38,10 @@ def list_summary(
         Product.offer_id,
     ).outerjoin(
         Product,
-        SkuDailySummary.sku_id == Product.sku_id,
+        (SkuDailySummary.sku_id == Product.sku_id)
+        & (SkuDailySummary.store_id == Product.store_id),
     ).filter(
+        SkuDailySummary.store_id == store_id,
         SkuDailySummary.record_date.between(date_from, date_to),
     )
 
@@ -81,6 +87,7 @@ def summary_stats(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
     sku_id: Optional[int] = Query(default=None),
+    store_id: int = STORE_ID,
     db: Session = Depends(get_db),
 ):
     """看板顶部汇总卡数据"""
@@ -107,6 +114,7 @@ def summary_stats(
         func.count(func.distinct(SkuDailySummary.record_date)).label("day_count"),
         func.count(func.distinct(SkuDailySummary.sku_id)).label("sku_count"),
     ).filter(
+        SkuDailySummary.store_id == store_id,
         SkuDailySummary.record_date.between(date_from, date_to),
     )
 
@@ -136,11 +144,16 @@ def summary_stats(
 
 
 @router.get("/date-range", response_model=DateRange)
-def summary_date_range(db: Session = Depends(get_db)):
+def summary_date_range(
+    store_id: int = STORE_ID,
+    db: Session = Depends(get_db),
+):
     """数据可用日期范围（用于前端日期选择器限制）"""
     row = db.query(
         func.min(SkuDailySummary.record_date).label("min_date"),
         func.max(SkuDailySummary.record_date).label("max_date"),
+    ).filter(
+        SkuDailySummary.store_id == store_id,
     ).first()
     today = date.today()
     return DateRange(

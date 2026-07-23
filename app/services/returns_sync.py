@@ -3,7 +3,7 @@
 
 策略:
   1. 按时间范围全量拉取（游标分页）
-  2. 每次 UPSERT（以 id 为主键，状态变化时更新）
+  2. 每次 UPSERT（以 store_id + id 为主键，状态变化时更新）
 
 用途:
   1. 区分 Cancellation（未签收退回）vs ClientReturn（签收后退回）
@@ -78,12 +78,12 @@ def _extract_return_row(r: dict) -> dict:
 
 
 def sync_returns(db: Session, client: OzonClient,
-                 date_from: str, date_to: str,
+                 date_from: str, date_to: str, store_id: int,
                  batch_id: Optional[str] = None) -> dict:
     """
     同步退货数据: FBO + FBS，全量拉取指定时间范围
     """
-    logger.info(f"=== 开始同步退货数据: {date_from} ~ {date_to} ===")
+    logger.info(f"=== [store={store_id}] 开始同步退货数据: {date_from} ~ {date_to} ===")
 
     if not batch_id:
         batch_id = f"returns_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -92,18 +92,19 @@ def sync_returns(db: Session, client: OzonClient,
 
     for schema in ("FBO", "FBS"):
         try:
-            logger.info(f"  拉取 {schema} 退货 ({date_from} ~ {date_to})...")
+            logger.info(f"  [store={store_id}] 拉取 {schema} 退货 ({date_from} ~ {date_to})...")
             returns_raw = client.get_all_returns(date_from, date_to, schema=schema)
             logger.info(f"  {schema}: {len(returns_raw)} 条")
 
             batch_processed = 0
             for r in returns_raw:
                 data = _extract_return_row(r)
+                data["store_id"] = store_id
                 if not data["sku"]:
                     continue  # 没有 SKU 的异常数据跳过
 
                 stmt = pg_insert(Return).values(**data).on_conflict_do_update(
-                    index_elements=["id"],
+                    index_elements=["store_id", "id"],
                     set_={
                         "visual_status": data["visual_status"],
                         "status_changed_at": data["status_changed_at"],
@@ -122,7 +123,7 @@ def sync_returns(db: Session, client: OzonClient,
             logger.error(f"  {schema} 退货同步失败: {e}")
             db.rollback()
 
-    logger.info(f"退货同步完成: 合计 {total_processed} 条")
+    logger.info(f"[store={store_id}] 退货同步完成: 合计 {total_processed} 条")
     return {
         "returns_processed": total_processed,
     }

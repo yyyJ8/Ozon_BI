@@ -20,22 +20,22 @@ def _parse_price(val) -> Optional[float]:
     return float(val)
 
 
-def sync_products(db: Session, client: OzonClient) -> dict:
+def sync_products(db: Session, client: OzonClient, store_id: int) -> dict:
     """
     同步商品主数据和库存
     流程: 拉 product_list → 拉 product_info → upsert products → upsert stocks
     返回: {products_updated, stocks_upserted}
     """
-    logger.info("=== 开始同步商品 ===")
+    logger.info(f"=== [store={store_id}] 开始同步商品 ===")
 
     # 1. 拉取 product_list（获取所有 product_id）
     product_list = client.get_product_list()
-    logger.info(f"product_list: {len(product_list)} 条")
+    logger.info(f"[store={store_id}] product_list: {len(product_list)} 条")
 
     # 2. 提取 product_id 并拉取详情
     product_ids = list(set(p["product_id"] for p in product_list if p.get("product_id")))
     product_infos = client.get_product_info(product_ids)
-    logger.info(f"product_info: {len(product_infos)} 条")
+    logger.info(f"[store={store_id}] product_info: {len(product_infos)} 条")
 
     # 3. Upsert products
     now = datetime.now()
@@ -51,6 +51,7 @@ def sync_products(db: Session, client: OzonClient) -> dict:
         primary_images = info.get("primary_image", [])
 
         product_data = {
+            "store_id": store_id,
             "sku_id": info.get("sku"),
             "product_id": info.get("id"),
             "name": info.get("name"),
@@ -80,6 +81,7 @@ def sync_products(db: Session, client: OzonClient) -> dict:
         stocks_data = info.get("stocks", {}).get("stocks", [])
         for s in stocks_data:
             stocks_to_insert.append({
+                "store_id": store_id,
                 "sku_id": s.get("sku", info.get("sku")),
                 "present": s.get("present", 0),
                 "reserved": s.get("reserved", 0),
@@ -91,7 +93,7 @@ def sync_products(db: Session, client: OzonClient) -> dict:
     stocks_upserted = 0
     for s_data in stocks_to_insert:
         stmt = pg_insert(Stock).values(**s_data).on_conflict_do_update(
-            index_elements=["sku_id", "source"],
+            index_elements=["store_id", "sku_id", "source"],
             set_={
                 "present": s_data["present"],
                 "reserved": s_data["reserved"],
@@ -102,16 +104,16 @@ def sync_products(db: Session, client: OzonClient) -> dict:
         stocks_upserted += 1
 
     db.commit()
-    logger.info(f"商品同步完成: {products_updated} 商品, {stocks_upserted} 库存")
+    logger.info(f"[store={store_id}] 商品同步完成: {products_updated} 商品, {stocks_upserted} 库存")
     return {"products_updated": products_updated, "stocks_upserted": stocks_upserted}
 
 
-def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
+def sync_stocks_v4(db: Session, client: OzonClient, store_id: int) -> dict:
     """
     从 v4 专用库存接口全量拉取并更新 stocks 表（独立于商品同步）
     v4 返回 type 字段(如 "fbo")，映射到 stocks.source
     """
-    logger.info("=== 开始同步库存 (v4) ===")
+    logger.info(f"=== [store={store_id}] 开始同步库存 (v4) ===")
     now = datetime.now()
 
     all_items: list[dict] = []
@@ -127,7 +129,7 @@ def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
         cursor = resp.get("cursor", "")
         if not cursor or not items:
             break
-    logger.info(f"v4 stocks: 拉取 {len(all_items)} 个商品")
+    logger.info(f"[store={store_id}] v4 stocks: 拉取 {len(all_items)} 个商品")
 
     upserted = 0
     for item in all_items:
@@ -137,6 +139,7 @@ def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
                 continue
             source = s.get("type", "fbo")
             s_data = {
+                "store_id": store_id,
                 "sku_id": int(sku_id),
                 "source": source,
                 "present": s.get("present", 0) or 0,
@@ -144,7 +147,7 @@ def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
                 "updated_at": now,
             }
             stmt = pg_insert(Stock).values(**s_data).on_conflict_do_update(
-                index_elements=["sku_id", "source"],
+                index_elements=["store_id", "sku_id", "source"],
                 set_={
                     "present": s_data["present"],
                     "reserved": s_data["reserved"],
@@ -155,5 +158,5 @@ def sync_stocks_v4(db: Session, client: OzonClient) -> dict:
             upserted += 1
 
     db.commit()
-    logger.info(f"库存同步完成 (v4): {upserted} 条")
+    logger.info(f"[store={store_id}] 库存同步完成 (v4): {upserted} 条")
     return {"stocks_upserted": upserted}

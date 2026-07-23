@@ -9,9 +9,6 @@ from typing import Any, Optional
 import httpx
 from loguru import logger
 
-from app.config import settings
-
-
 class OzonClient:
     """Ozon Seller API HTTP 客户端"""
 
@@ -238,9 +235,6 @@ class OzonClient:
         self._client.close()
 
 
-# 全局单例
-def get_ozon_client() -> OzonClient:
-    return OzonClient(
-        client_id=settings.ozon_client_id,
-        api_key=settings.ozon_api_key,
-    )
+def get_ozon_client(client_id: str, api_key: str) -> OzonClient:
+    """创建 Ozon Seller API 客户端"""
+    return OzonClient(client_id=client_id, api_key=api_key)
