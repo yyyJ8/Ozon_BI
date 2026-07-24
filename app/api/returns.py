@@ -37,7 +37,7 @@ REASON_CN_MAP: dict[str, str] = {
     "Товар поддельный": "假货",
 }
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
 
 
 def _translate_reason(russian: str) -> str:
@@ -49,11 +49,13 @@ def _date_params(date_from: date, date_to: date, **extra) -> dict:
 
 
 # Cohort base: FROM/JOIN/WHERE shared by most returns endpoints
-_COHORT_BASE = """
+def _cohort_base(store_id: int) -> str:
+    store_filter = "r.store_id = :store_id AND" if store_id != 0 else ""
+    return f"""
     FROM ozon.returns r
     LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
-    WHERE r.store_id = :store_id
-      AND p.created_at >= :date_from
+    WHERE {store_filter}
+      p.created_at >= :date_from
       AND p.created_at  < :date_to_excl
 """
 
@@ -77,7 +79,7 @@ def returns_overview(
         params["sku_id"] = sku_id
 
     type_rows = db.execute(text(f"""
-        SELECT r.type, COUNT(*) {_COHORT_BASE} {sku_clause} GROUP BY r.type
+        SELECT r.type, COUNT(*) {_cohort_base(store_id)} {sku_clause} GROUP BY r.type
     """), params).fetchall()
 
     total = sum(int(c) for _, c in type_rows)
@@ -85,7 +87,7 @@ def returns_overview(
     client_return_count = sum(int(c) for t, c in type_rows if t == "ClientReturn")
 
     status_rows = db.execute(text(f"""
-        SELECT r.visual_status, COUNT(*) {_COHORT_BASE} {sku_clause}
+        SELECT r.visual_status, COUNT(*) {_cohort_base(store_id)} {sku_clause}
         GROUP BY r.visual_status ORDER BY COUNT(*) DESC
     """), params).fetchall()
     by_status = {row[0]: int(row[1]) for row in status_rows}
@@ -114,7 +116,7 @@ def returns_overview(
 
     avg_days_row = db.execute(text(f"""
         SELECT AVG(EXTRACT(EPOCH FROM (r.finished_at - r.returned_at)) / 86400.0)
-        {_COHORT_BASE} {sku_clause}
+        {_cohort_base(store_id)} {sku_clause}
           AND r.finished_at IS NOT NULL AND r.returned_at IS NOT NULL
     """), params).fetchone()
     avg_days = round(float(avg_days_row[0]), 1) if avg_days_row and avg_days_row[0] else None
@@ -152,7 +154,7 @@ def returns_trend(
             p.created_at::date AS order_date,
             r.type,
             COUNT(*)
-        {_COHORT_BASE}
+        {_cohort_base(store_id)}
           {sku_clause}
         GROUP BY p.created_at::date, r.type
         ORDER BY order_date
@@ -366,7 +368,7 @@ def returns_reasons(
 
     rows = db.execute(text(f"""
         SELECT r.return_reason_name, r.type, COUNT(*)
-        {_COHORT_BASE} {type_clause} {sku_clause}
+        {_cohort_base(store_id)} {type_clause} {sku_clause}
         GROUP BY r.return_reason_name, r.type
         ORDER BY COUNT(*) DESC
     """), params).fetchall()

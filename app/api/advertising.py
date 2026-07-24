@@ -17,7 +17,13 @@ from app.schemas.advertising import (
 
 router = APIRouter(prefix="/advertising", tags=["advertising"])
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
+
+
+def _by_store(model, store_id: int):
+    """store_id=0 时不加店铺过滤，返回 TRUE"""
+    from sqlalchemy import true
+    return model.store_id == store_id if store_id != 0 else true()
 
 
 # ── 1. 活动列表 ───────────────────────────────────────────
@@ -48,7 +54,7 @@ def list_campaigns(
             func.sum(AdDailyStats.clicks).label("total_clicks"),
         )
         .filter(
-            AdDailyStats.store_id == store_id,
+            _by_store(AdDailyStats, store_id),
             AdDailyStats.stat_date.between(date_from, date_to),
         )
         .group_by(AdDailyStats.store_id, AdDailyStats.campaign_id)
@@ -66,9 +72,9 @@ def list_campaigns(
         stat_sub,
         (AdCampaign.campaign_id == stat_sub.c.campaign_id)
         & (AdCampaign.store_id == stat_sub.c.store_id),
-    ).filter(
-        AdCampaign.store_id == store_id,
     )
+    if store_id != 0:
+        q = q.filter(AdCampaign.store_id == store_id)
 
     if campaign_type:
         q = q.filter(AdCampaign.campaign_type == campaign_type)
@@ -84,7 +90,7 @@ def list_campaigns(
     mapping_map: dict[str, tuple] = {}
     if campaign_ids:
         mappings = db.query(AdCampaignSkuMap).filter(
-            AdCampaignSkuMap.store_id == store_id,
+            _by_store(AdCampaignSkuMap, store_id),
             AdCampaignSkuMap.campaign_id.in_(campaign_ids),
         ).all()
         for m in mappings:
@@ -128,7 +134,7 @@ def campaign_daily(
         date_from = date_to - timedelta(days=30)
 
     rows = db.query(AdDailyStats).filter(
-        AdDailyStats.store_id == store_id,
+        _by_store(AdDailyStats, store_id),
         AdDailyStats.campaign_id == campaign_id,
         AdDailyStats.stat_date.between(date_from, date_to),
     ).order_by(AdDailyStats.stat_date).all()
@@ -172,7 +178,7 @@ def advertising_trend(
             func.sum(AdDailyStats.orders_sum).label("total_orders_sum"),
         )
         .filter(
-            AdDailyStats.store_id == store_id,
+            _by_store(AdDailyStats, store_id),
             AdDailyStats.stat_date.between(date_from, date_to),
         )
     )
@@ -188,7 +194,7 @@ def advertising_trend(
     mapped_campaign_ids = db.query(
         AdCampaignSkuMap.campaign_id,
     ).filter(
-        AdCampaignSkuMap.store_id == store_id,
+        _by_store(AdCampaignSkuMap, store_id),
     ).distinct().subquery()
 
     mapped_rows = (
@@ -197,7 +203,7 @@ def advertising_trend(
             func.sum(AdDailyStats.spend).label("mapped_spend"),
         )
         .filter(
-            AdDailyStats.store_id == store_id,
+            _by_store(AdDailyStats, store_id),
             AdDailyStats.stat_date.between(date_from, date_to),
             AdDailyStats.campaign_id.in_(mapped_campaign_ids),
         )
@@ -251,7 +257,7 @@ def sku_advertising(
             & (AdDailyStats.store_id == AdCampaignSkuMap.store_id),
         )
         .filter(
-            AdDailyStats.store_id == store_id,
+            _by_store(AdDailyStats, store_id),
             AdCampaignSkuMap.sku_id == sku_id,
             AdDailyStats.stat_date.between(date_from, date_to),
         )
@@ -285,11 +291,13 @@ def sku_ad_detail(
     if date_from is None:
         date_from = date_to - timedelta(days=30)
 
-    rows = db.query(AdSkuDailyStats).filter(
-        AdSkuDailyStats.store_id == store_id,
+    q = db.query(AdSkuDailyStats).filter(
         AdSkuDailyStats.sku_id == sku_id,
         AdSkuDailyStats.stat_date.between(date_from, date_to),
-    ).order_by(AdSkuDailyStats.stat_date.desc()).all()
+    )
+    if store_id != 0:
+        q = q.filter(AdSkuDailyStats.store_id == store_id)
+    rows = q.order_by(AdSkuDailyStats.stat_date.desc()).all()
 
     return [
         AdSkuDetailItem(
@@ -333,7 +341,7 @@ def advertising_summary(
         func.sum(AdDailyStats.impressions).label("total_impressions"),
         func.sum(AdDailyStats.clicks).label("total_clicks"),
     ).filter(
-        AdDailyStats.store_id == store_id,
+        _by_store(AdDailyStats, store_id),
         AdDailyStats.stat_date.between(date_from, date_to),
     ).first()
 
@@ -350,7 +358,7 @@ def advertising_summary(
             & (AdDailyStats.store_id == AdCampaign.store_id),
         )
         .filter(
-            AdDailyStats.store_id == store_id,
+            _by_store(AdDailyStats, store_id),
             AdDailyStats.stat_date.between(date_from, date_to),
         )
         .group_by(AdCampaign.campaign_type)
@@ -368,13 +376,13 @@ def advertising_summary(
     mapped_campaign_ids = db.query(
         AdCampaignSkuMap.campaign_id,
     ).filter(
-        AdCampaignSkuMap.store_id == store_id,
+        _by_store(AdCampaignSkuMap, store_id),
     ).distinct().subquery()
 
     mapped = db.query(
         func.sum(AdDailyStats.spend),
     ).filter(
-        AdDailyStats.store_id == store_id,
+        _by_store(AdDailyStats, store_id),
         AdDailyStats.stat_date.between(date_from, date_to),
         AdDailyStats.campaign_id.in_(mapped_campaign_ids),
     ).scalar() or 0
@@ -385,7 +393,7 @@ def advertising_summary(
     active_campaign_ids = db.query(
         AdDailyStats.campaign_id,
     ).filter(
-        AdDailyStats.store_id == store_id,
+        _by_store(AdDailyStats, store_id),
         AdDailyStats.stat_date.between(date_from, date_to),
     ).distinct().subquery()
 
@@ -406,7 +414,7 @@ def advertising_summary(
     mapped_sku_count = (
         db.query(func.count(func.distinct(AdCampaignSkuMap.sku_id)))
         .filter(
-            AdCampaignSkuMap.store_id == store_id,
+            _by_store(AdCampaignSkuMap, store_id),
             AdCampaignSkuMap.campaign_id.in_(mapped_campaign_ids),
         )
         .scalar() or 0

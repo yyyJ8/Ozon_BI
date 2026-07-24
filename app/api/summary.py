@@ -14,7 +14,7 @@ from app.schemas.summary import SummaryItem, SummaryStats, DateRange
 router = APIRouter(prefix="/summary", tags=["summary"])
 
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
 
 
 @router.get("", response_model=list[SummaryItem])
@@ -41,9 +41,11 @@ def list_summary(
         (SkuDailySummary.sku_id == Product.sku_id)
         & (SkuDailySummary.store_id == Product.store_id),
     ).filter(
-        SkuDailySummary.store_id == store_id,
         SkuDailySummary.record_date.between(date_from, date_to),
     )
+
+    if store_id != 0:
+        q = q.filter(SkuDailySummary.store_id == store_id)
 
     if sku_id:
         q = q.filter(SkuDailySummary.sku_id == sku_id)
@@ -114,9 +116,11 @@ def summary_stats(
         func.count(func.distinct(SkuDailySummary.record_date)).label("day_count"),
         func.count(func.distinct(SkuDailySummary.sku_id)).label("sku_count"),
     ).filter(
-        SkuDailySummary.store_id == store_id,
         SkuDailySummary.record_date.between(date_from, date_to),
     )
+
+    if store_id != 0:
+        q = q.filter(SkuDailySummary.store_id == store_id)
 
     if sku_id:
         q = q.filter(SkuDailySummary.sku_id == sku_id)
@@ -149,12 +153,13 @@ def summary_date_range(
     db: Session = Depends(get_db),
 ):
     """数据可用日期范围（用于前端日期选择器限制）"""
-    row = db.query(
+    q = db.query(
         func.min(SkuDailySummary.record_date).label("min_date"),
         func.max(SkuDailySummary.record_date).label("max_date"),
-    ).filter(
-        SkuDailySummary.store_id == store_id,
-    ).first()
+    )
+    if store_id != 0:
+        q = q.filter(SkuDailySummary.store_id == store_id)
+    row = q.first()
     today = date.today()
     return DateRange(
         min_date=row.min_date or today,

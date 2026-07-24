@@ -1,3 +1,9 @@
+export interface Store {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 export interface Product {
   sku_id: number
   name: string

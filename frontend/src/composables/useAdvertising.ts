@@ -2,6 +2,7 @@ import { ref, computed, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary, AdTrendItem } from '@/types'
 import { getAdCampaigns, getAdSummary, getAdCampaignDaily, getAdSkuDetail, getAdTrend } from '@/api'
+import { useStore } from '@/composables/useStore'
 
 /** 安全转数字 */
 function n(v: unknown): number {
@@ -9,6 +10,7 @@ function n(v: unknown): number {
 }
 
 export function useAdvertising(dateRange: Ref<[string, string] | null>) {
+  const { selectedStoreId } = useStore()
   const loading = ref(false)
 
   const campaigns = ref<AdCampaignSummary[]>([])
@@ -162,10 +164,11 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
     loading.value = true
     try {
       const [df, dt] = dateRange.value
+      const sid = selectedStoreId.value
       const [camps, sum, trendData] = await Promise.all([
-        getAdCampaigns(df, dt),
-        getAdSummary(df, dt),
-        getAdTrend(df, dt),
+        getAdCampaigns(df, dt, undefined, undefined, sid),
+        getAdSummary(df, dt, sid),
+        getAdTrend(df, dt, undefined, sid),
       ])
       campaigns.value = camps
       adSummary.value = sum
@@ -194,7 +197,7 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
     loadingDaily.value[campaignId] = true
     try {
       const [df, dt] = dateRange.value
-      campaignDaily.value[campaignId] = await getAdCampaignDaily(campaignId, df, dt)
+      campaignDaily.value[campaignId] = await getAdCampaignDaily(campaignId, df, dt, selectedStoreId.value)
     } catch {
       campaignDaily.value[campaignId] = []
     } finally {
@@ -207,7 +210,7 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
     skuDetails.value[skuId] = []
     try {
       const [df, dt] = dateRange.value
-      skuDetails.value[skuId] = await getAdSkuDetail(skuId, df, dt)
+      skuDetails.value[skuId] = await getAdSkuDetail(skuId, df, dt, selectedStoreId.value)
     } catch {
       skuDetails.value[skuId] = []
     }

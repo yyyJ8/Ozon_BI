@@ -49,7 +49,7 @@ KEYWORD_MAP: dict[str, str] = {
     "доставка до склад": "入仓物流费",
 }
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
 
 
 def translate_operation_type(transaction: FinanceTransaction) -> str:
@@ -75,11 +75,13 @@ def list_transactions(
     db: Session = Depends(get_db),
 ):
     """查询指定 SKU 在指定日期的所有财务流水"""
-    rows = db.query(FinanceTransaction).filter(
-        FinanceTransaction.store_id == store_id,
+    q = db.query(FinanceTransaction).filter(
         FinanceTransaction.sku_id == sku_id,
         FinanceTransaction.operation_date == date,
-    ).order_by(
+    )
+    if store_id != 0:
+        q = q.filter(FinanceTransaction.store_id == store_id)
+    rows = q.order_by(
         FinanceTransaction.operation_id,
     ).all()
 
@@ -102,24 +104,22 @@ def list_returns_by_postings(
     if not pns:
         return []
 
-    rows = db.query(FinanceTransaction).filter(
-        FinanceTransaction.store_id == store_id,
+    q = db.query(FinanceTransaction).filter(
         FinanceTransaction.posting_number.in_(pns),
         FinanceTransaction.operation_type.in_(
             ("OperationItemReturn", "ClientReturnAgentOperation")
         ),
-    ).order_by(
-        FinanceTransaction.operation_date.desc(),
-    ).all()
-
-    posting_status_map = dict(
-        db.query(Posting.posting_number, Posting.status)
-        .filter(
-            Posting.store_id == store_id,
-            Posting.posting_number.in_(pns),
-        )
-        .all()
     )
+    if store_id != 0:
+        q = q.filter(FinanceTransaction.store_id == store_id)
+    rows = q.order_by(FinanceTransaction.operation_date.desc()).all()
+
+    post_q = db.query(Posting.posting_number, Posting.status).filter(
+        Posting.posting_number.in_(pns),
+    )
+    if store_id != 0:
+        post_q = post_q.filter(Posting.store_id == store_id)
+    posting_status_map = dict(post_q.all())
 
     for tx in rows:
         tx.operation_type_name = translate_operation_type(tx)
@@ -145,21 +145,19 @@ def list_by_postings(
     if not pns:
         return []
 
-    rows = db.query(FinanceTransaction).filter(
-        FinanceTransaction.store_id == store_id,
+    q = db.query(FinanceTransaction).filter(
         FinanceTransaction.posting_number.in_(pns),
-    ).order_by(
-        FinanceTransaction.operation_date.asc(),
-    ).all()
-
-    posting_status_map = dict(
-        db.query(Posting.posting_number, Posting.status)
-        .filter(
-            Posting.store_id == store_id,
-            Posting.posting_number.in_(pns),
-        )
-        .all()
     )
+    if store_id != 0:
+        q = q.filter(FinanceTransaction.store_id == store_id)
+    rows = q.order_by(FinanceTransaction.operation_date.asc()).all()
+
+    post_q = db.query(Posting.posting_number, Posting.status).filter(
+        Posting.posting_number.in_(pns),
+    )
+    if store_id != 0:
+        post_q = post_q.filter(Posting.store_id == store_id)
+    posting_status_map = dict(post_q.all())
 
     for tx in rows:
         tx.operation_type_name = translate_operation_type(tx)

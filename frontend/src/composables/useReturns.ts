@@ -2,8 +2,10 @@ import { ref, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem } from '@/types'
 import { getReturnsOverview, getReturnsTrend, getSkuReturnStats, getReturnsReasons } from '@/api'
+import { useStore } from '@/composables/useStore'
 
 export function useReturns(dateRange: Ref<[string, string] | null>, skuId: Ref<number | undefined> = ref(undefined)) {
+  const { selectedStoreId } = useStore()
   const loading = ref(false)
   const overview = ref<ReturnsOverview | null>(null)
   const trend = ref<ReturnsTrendItem[]>([])
@@ -16,11 +18,12 @@ export function useReturns(dateRange: Ref<[string, string] | null>, skuId: Ref<n
     try {
       const [d1, d2] = dateRange.value
       const sid = skuId.value
+      const sid2 = selectedStoreId.value
       const [ov, tr, sk, rs] = await Promise.all([
-        getReturnsOverview(d1, d2, sid),
-        getReturnsTrend(d1, d2, sid),
-        getSkuReturnStats(d1, d2),           // 明细表始终全量
-        getReturnsReasons(d1, d2, undefined, sid),
+        getReturnsOverview(d1, d2, sid, sid2),
+        getReturnsTrend(d1, d2, sid, sid2),
+        getSkuReturnStats(d1, d2, sid2),
+        getReturnsReasons(d1, d2, undefined, sid, sid2),
       ])
       overview.value = ov
       trend.value = tr

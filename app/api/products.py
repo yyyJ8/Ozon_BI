@@ -12,32 +12,29 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 @router.get("", response_model=list[ProductItem])
 def list_products(
-    store_id: int = Query(default=1, description="店铺 ID"),
+    store_id: int = Query(default=1, description="店铺 ID，0=全部店铺"),
     db: Session = Depends(get_db),
 ):
     """获取所有商品（含当前库存快照，来自 stocks 表）"""
-    stock_sub = (
+    stock_q = (
         db.query(
             Stock.sku_id,
             func.coalesce(func.sum(Stock.present), 0).label("present"),
             func.coalesce(func.sum(Stock.reserved), 0).label("reserved"),
         )
-        .filter(Stock.store_id == store_id)
-        .group_by(Stock.sku_id)
-        .subquery()
     )
+    if store_id != 0:
+        stock_q = stock_q.filter(Stock.store_id == store_id)
+    stock_sub = stock_q.group_by(Stock.sku_id).subquery()
 
-    rows = (
-        db.query(
-            Product,
-            func.coalesce(stock_sub.c.present, 0).label("stock_present"),
-            func.coalesce(stock_sub.c.reserved, 0).label("stock_reserved"),
-        )
-        .filter(Product.store_id == store_id)
-        .outerjoin(stock_sub, Product.sku_id == stock_sub.c.sku_id)
-        .order_by(Product.name)
-        .all()
+    prod_q = db.query(
+        Product,
+        func.coalesce(stock_sub.c.present, 0).label("stock_present"),
+        func.coalesce(stock_sub.c.reserved, 0).label("stock_reserved"),
     )
+    if store_id != 0:
+        prod_q = prod_q.filter(Product.store_id == store_id)
+    rows = prod_q.outerjoin(stock_sub, Product.sku_id == stock_sub.c.sku_id).order_by(Product.name).all()
 
     result = []
     for p, sp, sr in rows:

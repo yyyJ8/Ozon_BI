@@ -2,11 +2,13 @@ import { ref, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { OrderOverview, OrderTrendItem, OrderListItem, OrderDetail } from '@/types'
 import { getOrdersOverview, getOrdersTrend, getOrdersList, getOrderDetail } from '@/api'
+import { useStore } from '@/composables/useStore'
 
 export function useOrders(
   dateRange: Ref<[string, string] | null>,
   skuId: Ref<number | undefined> = ref(undefined),
 ) {
+  const { selectedStoreId } = useStore()
   const loading = ref(false)
   const overview = ref<OrderOverview | null>(null)
   const trend = ref<OrderTrendItem[]>([])
@@ -24,9 +26,10 @@ export function useOrders(
     try {
       const [d1, d2] = dateRange.value
       const sid = skuId.value
+      const sid2 = selectedStoreId.value
       const [ov, tr, listResult] = await Promise.all([
-        getOrdersOverview(d1, d2, sid),
-        getOrdersTrend(d1, d2, sid),
+        getOrdersOverview(d1, d2, sid, sid2),
+        getOrdersTrend(d1, d2, sid, sid2),
         getOrdersList(
           d1, d2,
           statusFilter.value,
@@ -35,6 +38,7 @@ export function useOrders(
           searchFilter.value,
           currentPage.value,
           pageSize.value,
+          sid2,
         ),
       ])
       overview.value = ov
@@ -62,7 +66,7 @@ export function useOrders(
   async function fetchDetail(postingNumber: string) {
     detailLoading.value = true
     try {
-      selectedOrder.value = await getOrderDetail(postingNumber)
+      selectedOrder.value = await getOrderDetail(postingNumber, selectedStoreId.value)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '未知错误'
       ElMessage.error('加载订单详情失败: ' + msg)

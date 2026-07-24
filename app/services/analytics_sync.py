@@ -6,6 +6,7 @@
 """
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+import time
 
 import httpx
 from loguru import logger
@@ -41,45 +42,51 @@ def sync_analytics(db: Session, client: OzonClient,
 
     updated = 0
     for i, (win_from, win_to) in enumerate(chunks, 1):
-        try:
-            logger.info(f"  [store={store_id}] 窗口 {i}/{len(chunks)}: {win_from} ~ {win_to}")
-            rows = client.get_all_analytics(win_from, win_to)
-            if not rows:
-                logger.info(f"  窗口 {i}: 无数据")
-                continue
+        for attempt in range(4):  # 最多重试 3 次（总共 4 次尝试）
+            try:
+                logger.info(f"  [store={store_id}] 窗口 {i}/{len(chunks)}: {win_from} ~ {win_to}")
+                rows = client.get_all_analytics(win_from, win_to)
+                if not rows:
+                    logger.info(f"  窗口 {i}: 无数据")
+                    break
 
-            for row in rows:
-                dims = row.get("dimensions", [])
-                metrics = row.get("metrics", [])
+                for row in rows:
+                    dims = row.get("dimensions", [])
+                    metrics = row.get("metrics", [])
 
-                if len(dims) < 2 or len(metrics) < 2:
+                    if len(dims) < 2 or len(metrics) < 2:
+                        continue
+
+                    sku_id = int(dims[0]["id"])
+                    day_str = dims[1]["id"]
+                    revenue = Decimal(str(metrics[1])) if metrics[1] else Decimal("0")
+
+                    stmt = pg_insert(SkuDailySummary).values(
+                        store_id=store_id,
+                        record_date=day_str,
+                        sku_id=sku_id,
+                        revenue=revenue,
+                    ).on_conflict_do_update(
+                        index_elements=["store_id", "date", "sku_id"],
+                        set_={"revenue": revenue},
+                    )
+                    db.execute(stmt)
+                    updated += 1
+
+                db.commit()
+                logger.info(f"  窗口 {i}: 处理 {len(rows)} 行")
+                break  # 成功，跳出重试循环
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 400:
+                    logger.warning(f"  窗口 {i}: 该时间段无数据 (400), 跳过")
+                    break
+                if e.response.status_code == 429 and attempt < 3:
+                    delay = 2 ** (attempt + 1)  # 4s, 8s, 16s
+                    logger.warning(f"  窗口 {i}: 429 限流, {delay}s 后重试 (attempt {attempt + 1}/4)...")
+                    time.sleep(delay)
                     continue
-
-                sku_id = int(dims[0]["id"])
-                day_str = dims[1]["id"]  # "2026-06-21"
-                revenue = Decimal(str(metrics[1])) if metrics[1] else Decimal("0")
-
-                stmt = pg_insert(SkuDailySummary).values(
-                    store_id=store_id,
-                    record_date=day_str,
-                    sku_id=sku_id,
-                    revenue=revenue,
-                ).on_conflict_do_update(
-                    index_elements=["store_id", "date", "sku_id"],
-                    set_={
-                        "revenue": revenue,
-                    },
-                )
-                db.execute(stmt)
-                updated += 1
-
-            db.commit()
-            logger.info(f"  窗口 {i}: 处理 {len(rows)} 行")
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 400:
-                logger.warning(f"  窗口 {i}: 该时间段无数据 (400), 跳过")
-                continue
-            raise
+                raise  # 非 429/400 或重试耗尽
 
     logger.info(f"[store={store_id}] 销售分析同步完成: {updated} 行")
     return {"analytics_updated": updated}

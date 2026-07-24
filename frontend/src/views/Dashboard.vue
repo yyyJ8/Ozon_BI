@@ -13,6 +13,9 @@ import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
 import AdvertisingAnalysis from '@/components/AdvertisingAnalysis.vue'
 import CostAnalysis from '@/components/CostAnalysis.vue'
 import OrderAnalysis from '@/components/OrderAnalysis.vue'
+import { useStore } from '@/composables/useStore'
+
+const { selectedStoreId, stores, fetchStores, setStoreId } = useStore()
 
 const {
   dateRange,
@@ -83,9 +86,9 @@ function applyPreset(preset: string) {
   }
 }
 
-// 首次拿到日期范围后，按默认预设（近30天）设置
+// 拿到日期范围后，按当前预设设置；店铺切换时也会重新触发
 watch(availableRange, (range) => {
-  if (range) applyPreset('30days')
+  if (range) applyPreset(periodPreset.value)
 })
 
 function rowKey(row: SummaryRow) {
@@ -113,7 +116,7 @@ async function handleExpandChange(row: SummaryRow, expandedRows: SummaryRow[]) {
   loadingTx.value[key] = true
   try {
     // 1. 获取当天流水
-    const raw = await getFinanceTransactions(row.sku_id, row.date)
+    const raw = await getFinanceTransactions(row.sku_id, row.date, selectedStoreId.value)
     const txs = raw.map(normalizeTx)
 
     // 2. 跨日期查询这些 posting 的完整流水（销售、退货、费用）
@@ -122,7 +125,7 @@ async function handleExpandChange(row: SummaryRow, expandedRows: SummaryRow[]) {
     )]
     if (postingNumbers.length > 0) {
       try {
-        const allTxs = await getTransactionsByPostings(postingNumbers)
+        const allTxs = await getTransactionsByPostings(postingNumbers, selectedStoreId.value)
         // 合并（去重：同一 operation_id 已存在则跳过）
         const existingIds = new Set(txs.map(tx => tx.operation_id))
         for (const ftx of allTxs.map(normalizeTx)) {
@@ -266,6 +269,7 @@ function groupOperations(ops: FinanceTransaction[]): { orderOps: OpGroup[]; othe
 }
 
 onMounted(() => {
+  fetchStores()
   fetchProducts()
 })
 </script>
@@ -288,6 +292,20 @@ onMounted(() => {
       <h2 style="margin: 0; font-size: 20px; color: #303133; white-space: nowrap;">
         Ozon BI Dashboard
       </h2>
+
+      <el-select
+        :model-value="selectedStoreId"
+        style="width: 180px"
+        @change="(val: number) => setStoreId(val)"
+      >
+        <el-option label="全部店铺" :value="0" />
+        <el-option
+          v-for="s in stores"
+          :key="s.id"
+          :label="s.name"
+          :value="s.id"
+        />
+      </el-select>
 
       <div style="flex: 1; min-width: 20px" />
 

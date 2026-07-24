@@ -20,7 +20,7 @@ from app.schemas.orders import (
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
 
 STATUS_LABELS: dict[str, str] = {
     "awaiting_deliver": "等待发货",
@@ -32,6 +32,11 @@ STATUS_LABELS: dict[str, str] = {
 
 def _date_params(date_from: date, date_to: date, **extra) -> dict:
     return {"date_from": date_from, "date_to_excl": date_to + timedelta(days=1), **extra}
+
+
+def _store_clause(store_id: int) -> str:
+    """返回 store_id 过滤 SQL，store_id=0 时不限定店铺"""
+    return "p.store_id = :store_id AND " if store_id != 0 else ""
 
 
 def _sku_filter_clause(sku_id: Optional[int], params: dict) -> str:
@@ -69,8 +74,7 @@ def orders_overview(
             COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled_count,
             COUNT(*) FILTER (WHERE p.status NOT IN ('delivered', 'cancelled')) AS in_progress_count
         FROM ozon.postings p
-        WHERE p.store_id = :store_id
-          AND p.created_at >= :date_from
+        WHERE {_store_clause(store_id)}p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
     """), params).fetchone()
@@ -90,8 +94,7 @@ def orders_overview(
         SELECT COALESCE(SUM((prod->>'quantity')::int), 0)
         FROM ozon.postings p,
              jsonb_array_elements(p.products) AS prod
-        WHERE p.store_id = :store_id
-          AND p.created_at >= :date_from
+        WHERE {_store_clause(store_id)}p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {units_clause}
     """), params).fetchone()
@@ -100,8 +103,7 @@ def orders_overview(
     avg_items_row = db.execute(text(f"""
         SELECT AVG(jsonb_array_length(p.products))
         FROM ozon.postings p
-        WHERE p.store_id = :store_id
-          AND p.created_at >= :date_from
+        WHERE {_store_clause(store_id)}p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
     """), params).fetchone()
@@ -145,8 +147,7 @@ def orders_trend(
             COUNT(*) FILTER (WHERE p.status = 'delivered') AS delivered,
             COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled
         FROM ozon.postings p
-        WHERE p.store_id = :store_id
-          AND p.created_at >= :date_from
+        WHERE {_store_clause(store_id)}p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
         GROUP BY p.created_at::date
@@ -187,10 +188,11 @@ def orders_list(
     params = _date_params(date_from, date_to, store_id=store_id)
 
     where_clauses = [
-        "p.store_id = :store_id",
         "p.created_at >= :date_from",
         "p.created_at  < :date_to_excl",
     ]
+    if store_id != 0:
+        where_clauses.insert(0, "p.store_id = :store_id")
     if status:
         params["status"] = status
         where_clauses.append("p.status = :status")

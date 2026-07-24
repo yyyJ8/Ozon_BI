@@ -16,6 +16,7 @@ router = APIRouter(prefix="/sync", tags=["sync"])
 @router.post("")
 def trigger_sync(
     store_id: Optional[int] = Query(default=None, description="指定店铺 ID，不传则同步全部"),
+    skip_sku_detail: bool = Query(default=True, description="跳过广告 SKU 明细（避免 429，凌晨 5 点定时跑）"),
     db: Session = Depends(get_db),
 ):
     """触发全量同步"""
@@ -28,12 +29,12 @@ def trigger_sync(
             return {"status": "error", "message": f"店铺 {store_id} 不存在"}
         client = get_ozon_client(store.client_id, store.api_key)
         try:
-            results = run_full_sync(db, client, store_id, skip_sku_detail=False)
+            results = run_full_sync(db, client, store_id, skip_sku_detail=skip_sku_detail)
             return {"status": "completed", "store_id": store_id, "results": results}
         finally:
             client.close()
     else:
-        results = sync_all_stores(db, skip_sku_detail=False)
+        results = sync_all_stores(db, skip_sku_detail=skip_sku_detail)
         return {"status": "completed", "results": results}
 
 

@@ -2,8 +2,11 @@ import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { Product, SummaryRow, SummaryStats, DateRangeInfo } from '@/types'
 import { getProducts, getSummary, getSummaryStats, getDateRange } from '@/api'
+import { useStore } from '@/composables/useStore'
 
 export function useDashboard() {
+  const { selectedStoreId } = useStore()
+
   // 筛选条件
   const dateRange = ref<[string, string] | null>(null)
   const selectedSkuId = ref<number | undefined>(undefined)
@@ -126,7 +129,7 @@ export function useDashboard() {
   // 获取可用日期范围
   async function fetchDateRange() {
     try {
-      availableRange.value = await getDateRange()
+      availableRange.value = await getDateRange(selectedStoreId.value)
       // 初始化日期范围：默认到今天
       const today = new Date().toISOString().split('T')[0]
       dateRange.value = [
@@ -148,7 +151,7 @@ export function useDashboard() {
   // 加载商品列表
   async function fetchProducts() {
     try {
-      products.value = await getProducts()
+      products.value = await getProducts(selectedStoreId.value)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '未知错误'
       ElMessage.error('加载商品列表失败: ' + msg)
@@ -208,8 +211,8 @@ export function useDashboard() {
     loading.value = true
     try {
       const [rows, st] = await Promise.all([
-        getSummary(dateRange.value[0], dateRange.value[1], selectedSkuId.value),
-        getSummaryStats(dateRange.value[0], dateRange.value[1], selectedSkuId.value),
+        getSummary(dateRange.value[0], dateRange.value[1], selectedSkuId.value, selectedStoreId.value),
+        getSummaryStats(dateRange.value[0], dateRange.value[1], selectedSkuId.value, selectedStoreId.value),
       ])
       summaryRows.value = rows.map(normalizeRow)
       stats.value = normalizeStats(st)
@@ -228,6 +231,14 @@ export function useDashboard() {
 
   watch(selectedSkuId, () => {
     if (dateRange.value) fetchData()
+  })
+
+  // 店铺切换 → 重置日期范围，重新加载
+  // 不直接调 fetchData()，而是让 availableRange → dateRange → fetchData 链路自动触发
+  watch(selectedStoreId, () => {
+    dateRange.value = null
+    fetchDateRange()
+    fetchProducts()
   })
 
   fetchDateRange()

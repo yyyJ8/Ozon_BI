@@ -243,6 +243,10 @@ def sync_sku_advertising(
                 continue
             logger.info(f"  {day_str}: {len(rows)} 行 SKU 数据")
         except Exception as e:
+            msg = str(e)
+            if "429" in msg or "Too Many" in msg:
+                logger.warning(f"  {day_str}: 429 限额，停止当天及后续")
+                raise  # 透传给调用方处理断点
             logger.error(f"  {day_str}: 拉取失败 - {e}")
             cur += timedelta(days=1)
             continue

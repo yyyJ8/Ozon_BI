@@ -15,7 +15,7 @@ from app.models import Stock, Store
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
 
-STORE_ID = Query(default=1, description="店铺 ID")
+STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
 
 
 class StockStatus(BaseModel):
@@ -40,12 +40,13 @@ def stock_status(
     db: Session = Depends(get_db),
 ):
     """返回 stocks 表最后更新时间 + 记录数"""
-    last = db.query(func.max(Stock.updated_at)).filter(
-        Stock.store_id == store_id,
-    ).scalar()
-    count = db.query(func.count(Stock.sku_id)).filter(
-        Stock.store_id == store_id,
-    ).scalar()
+    q_last = db.query(func.max(Stock.updated_at))
+    q_count = db.query(func.count(Stock.sku_id))
+    if store_id != 0:
+        q_last = q_last.filter(Stock.store_id == store_id)
+        q_count = q_count.filter(Stock.store_id == store_id)
+    last = q_last.scalar()
+    count = q_count.scalar()
     return StockStatus(last_updated=last, stock_count=count or 0)
 
 
