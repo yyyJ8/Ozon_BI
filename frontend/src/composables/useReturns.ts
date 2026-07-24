@@ -37,7 +37,7 @@ export function useReturns(dateRange: Ref<[string, string] | null>, skuId: Ref<n
     }
   }
 
-  watch([dateRange, skuId], () => { fetchAll() }, { immediate: true })
+  watch([dateRange, skuId, selectedStoreId], () => { fetchAll() }, { immediate: true })
 
   return { loading, overview, trend, skuStats, reasons, fetchAll }
 }

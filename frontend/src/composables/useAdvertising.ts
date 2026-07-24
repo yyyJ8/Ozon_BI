@@ -217,7 +217,7 @@ export function useAdvertising(dateRange: Ref<[string, string] | null>) {
   }
 
   // 日期变化时重新加载
-  watch(dateRange, () => {
+  watch([dateRange, selectedStoreId], () => {
     if (dateRange.value) {
       campaignDaily.value = {}
       skuDetails.value = {}

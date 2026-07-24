@@ -54,7 +54,7 @@ export function useOrders(
   }
 
   watch(
-    [dateRange, skuId, currentPage, pageSize, statusFilter, schemaFilter, searchFilter],
+    [dateRange, skuId, selectedStoreId, currentPage, pageSize, statusFilter, schemaFilter, searchFilter],
     () => { fetchAll() },
     { immediate: true },
   )
