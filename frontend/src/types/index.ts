@@ -269,6 +269,7 @@ export interface OrderOverview {
   in_progress_count: number
   total_ordered_units: number
   cancellation_rate: number
+  client_return_count: number
   avg_items_per_order: number | null
 }
 
@@ -279,6 +280,7 @@ export interface OrderTrendItem {
   delivering: number
   delivered: number
   cancelled: number
+  client_return: number
 }
 
 export interface OrderListItem {
@@ -294,6 +296,7 @@ export interface OrderListItem {
   product_count: number
   total_quantity: number
   total_price: number
+  actual_revenue: number
 }
 
 export interface OrderListResponse {
@@ -347,4 +350,114 @@ export interface OrderDetail {
   products: OrderProduct[]
   returns: OrderReturn[]
   finance_transactions: OrderFinance[]
+}
+
+export interface OrderSkuStats {
+  sku_id: number
+  offer_id: string | null
+  name: string | null
+  primary_image: string | null
+  order_count: number
+  total_quantity: number
+  total_revenue: number
+  actual_revenue: number
+  delivered_count: number
+  cancelled_count: number
+  return_count: number
+  fbo_count: number
+  fbs_count: number
+}
+
+// ── 利润 API 类型 ──
+
+export interface ProfitOverview {
+  revenue: number
+  net_profit: number
+  profit_margin: number
+  total_costs: number
+  total_commissions: number
+  total_logistics: number
+  total_storage: number
+  total_advertising: number
+  total_promotion: number
+  total_returns: number
+  total_other: number
+  ordered_units: number
+  sku_count: number
+  day_count: number
+}
+
+export interface ProfitTrendItem {
+  date: string
+  revenue: number
+  costs: number
+  net_profit: number
+  profit_margin: number
+  commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  promotion_costs: number
+  returns_amount: number
+  other_costs: number
+}
+
+export interface ProfitSkuItem {
+  sku_id: number
+  offer_id: string | null
+  name: string | null
+  primary_image: string | null
+  revenue: number
+  costs: number
+  net_profit: number
+  profit_margin: number
+  ordered_units: number
+  commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  promotion_costs: number
+  returns_amount: number
+  other_costs: number
+  stock_present: number
+  stock_reserved: number
+}
+
+// ── 异常检测 API 类型 ──
+
+export interface AnomalyItem {
+  sku_id: number
+  offer_id: string | null
+  name: string | null
+  primary_image: string | null
+  anomaly_type: string
+  severity: 'critical' | 'warning' | 'info'
+  description: string
+  metrics: Record<string, number>
+  triggered_conditions: string[]
+}
+
+export interface AnomalySummary {
+  total_anomalies: number
+  by_type: Record<string, number>
+}
+
+export interface AnomalyResponse {
+  summary: AnomalySummary
+  items: AnomalyItem[]
+}
+
+export interface ProfitDailyItem {
+  date: string
+  revenue: number
+  costs: number
+  net_profit: number
+  profit_margin: number
+  commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  promotion_costs: number
+  returns_amount: number
+  other_costs: number
 }

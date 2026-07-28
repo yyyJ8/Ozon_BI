@@ -137,9 +137,10 @@ export function useDashboard() {
         availableRange.value.max_date,
       ]
     } catch {
-      // 如果失败，退回到最近 30 天
+      // 如果失败，退回到最近 30 天（截止昨天，避免今天不完整数据）
       const end = new Date()
-      const start = new Date()
+      end.setDate(end.getDate() - 1)
+      const start = new Date(end)
       start.setDate(start.getDate() - 30)
       dateRange.value = [
         start.toISOString().split('T')[0],

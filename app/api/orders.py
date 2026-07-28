@@ -16,6 +16,7 @@ from app.schemas.orders import (
     OrderProduct,
     OrderReturn,
     OrderFinance,
+    OrderSkuStats,
 )
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -66,26 +67,55 @@ def orders_overview(
     sku_clause = _sku_filter_clause(sku_id, params)
 
     row = db.execute(text(f"""
+        WITH os AS (
+            SELECT p.order_number,
+                   BOOL_AND(p.status = 'delivered') AS all_delivered,
+                   BOOL_AND(p.status = 'cancelled') AS all_cancelled
+            FROM ozon.postings p
+            WHERE {_store_clause(store_id)}p.created_at >= :date_from
+              AND p.created_at  < :date_to_excl
+              {sku_clause}
+            GROUP BY p.order_number
+        )
         SELECT
             COUNT(*) AS total_orders,
+            COUNT(*) FILTER (WHERE all_delivered) AS delivered_count,
+            COUNT(*) FILTER (WHERE all_cancelled) AS cancelled_count,
+            COUNT(*) FILTER (WHERE NOT all_delivered AND NOT all_cancelled) AS in_progress_count
+        FROM os
+    """), params).fetchone()
+
+    total_orders = int(row[0]) if row and row[0] else 0
+    delivered_count = int(row[1]) if row else 0
+    cancelled_count = int(row[2]) if row else 0
+    in_progress_count = int(row[3]) if row else 0
+
+    # FBO/FBS 仍用 posting 级别（一个订单可能同时有 FBO 和 FBS）
+    schema_row = db.execute(text(f"""
+        SELECT
             COUNT(*) FILTER (WHERE p.delivery_schema = 'FBO') AS fbo_count,
-            COUNT(*) FILTER (WHERE p.delivery_schema = 'FBS') AS fbs_count,
-            COUNT(*) FILTER (WHERE p.status = 'delivered') AS delivered_count,
-            COUNT(*) FILTER (WHERE p.status = 'cancelled') AS cancelled_count,
-            COUNT(*) FILTER (WHERE p.status NOT IN ('delivered', 'cancelled')) AS in_progress_count
+            COUNT(*) FILTER (WHERE p.delivery_schema = 'FBS') AS fbs_count
         FROM ozon.postings p
         WHERE {_store_clause(store_id)}p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           {sku_clause}
     """), params).fetchone()
-
-    total_orders = int(row[0]) if row and row[0] else 0
-    fbo_count = int(row[1]) if row else 0
-    fbs_count = int(row[2]) if row else 0
-    delivered_count = int(row[3]) if row else 0
-    cancelled_count = int(row[4]) if row else 0
-    in_progress_count = int(row[5]) if row else 0
+    fbo_count = int(schema_row[0]) if schema_row else 0
+    fbs_count = int(schema_row[1]) if schema_row else 0
     cancellation_rate = round(cancelled_count / total_orders * 100, 2) if total_orders > 0 else 0.0
+
+    # ClientReturn 退货数（cohort：按下单日期归因）
+    cr_sku_clause = " AND r.sku = :sku_id" if sku_id else ""
+    cr_row = db.execute(text(f"""
+        SELECT COUNT(*)
+        FROM ozon.returns r
+        JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE {_store_clause(store_id)}r.type = 'ClientReturn'
+          AND p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+          {cr_sku_clause}
+    """), params).fetchone()
+    client_return_count = int(cr_row[0]) if cr_row else 0
 
     units_clause = ""
     if sku_id:
@@ -118,6 +148,7 @@ def orders_overview(
         in_progress_count=in_progress_count,
         total_ordered_units=total_ordered_units,
         cancellation_rate=cancellation_rate,
+        client_return_count=client_return_count,
         avg_items_per_order=avg_items_per_order,
     )
 
@@ -141,7 +172,7 @@ def orders_trend(
     rows = db.execute(text(f"""
         SELECT
             p.created_at::date AS order_date,
-            COUNT(*) AS ordered,
+            COUNT(DISTINCT p.order_number) AS ordered,
             COUNT(*) FILTER (WHERE p.status = 'awaiting_deliver') AS awaiting_deliver,
             COUNT(*) FILTER (WHERE p.status = 'delivering') AS delivering,
             COUNT(*) FILTER (WHERE p.status = 'delivered') AS delivered,
@@ -154,6 +185,20 @@ def orders_trend(
         ORDER BY order_date
     """), params).fetchall()
 
+    # ClientReturn 按 order_date 聚合
+    cr_sku = " AND r.sku = :sku_id" if sku_id else ""
+    cr_rows = db.execute(text(f"""
+        SELECT p.created_at::date, COUNT(*)
+        FROM ozon.returns r
+        JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE {_store_clause(store_id)}r.type = 'ClientReturn'
+          AND p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+          {cr_sku}
+        GROUP BY p.created_at::date
+    """), params).fetchall()
+    cr_map = {row[0]: int(row[1]) for row in cr_rows}
+
     return [
         OrderTrendItem(
             date=row[0],
@@ -162,6 +207,7 @@ def orders_trend(
             delivering=int(row[3]),
             delivered=int(row[4]),
             cancelled=int(row[5]),
+            client_return=cr_map.get(row[0], 0),
         )
         for row in rows
     ]
@@ -249,7 +295,13 @@ def orders_list(
             COALESCE(
                 (SELECT SUM((prod->>'price')::numeric)
                  FROM jsonb_array_elements(p.products) AS prod), 0.0
-            ) AS total_price
+            ) AS total_price,
+            COALESCE((
+                SELECT SUM(ft.accruals_for_sale)
+                FROM ozon.finance_transactions ft
+                WHERE ft.posting_number = p.posting_number
+                  AND ft.type = 'orders'
+            ), 0.0) AS actual_revenue
         FROM ozon.postings p
         WHERE {where_sql}
         ORDER BY p.created_at DESC
@@ -270,11 +322,110 @@ def orders_list(
             product_count=int(row[9]) if row[9] else 0,
             total_quantity=int(row[10]) if row[10] else 0,
             total_price=float(row[11]) if row[11] else 0.0,
+            actual_revenue=float(row[12]) if row[12] else 0.0,
         )
         for row in rows
     ]
 
     return OrderListResponse(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get("/sku-stats", response_model=list[OrderSkuStats])
+def sku_stats(
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    store_id: int = STORE_ID,
+    db: Session = Depends(get_db),
+):
+    """SKU 维度订单统计 — 展开 products JSONB 按 SKU 聚合"""
+    if date_to is None:
+        date_to = date.today()
+    if date_from is None:
+        date_from = date_to - timedelta(days=90)
+
+    params = _date_params(date_from, date_to, store_id=store_id)
+    store_sql = "p.store_id = :store_id AND " if store_id != 0 else ""
+
+    # 聚合 finance 的实际收入
+    finance_params = {}
+    fin_clauses = ["type = 'orders'"]
+    fin_clauses.append("operation_date >= :date_from")
+    fin_clauses.append("operation_date  < :date_to_excl")
+    finance_params["date_from"] = date_from
+    finance_params["date_to_excl"] = date_to + timedelta(days=1)
+    fin_store = ""
+    if store_id != 0:
+        fin_clauses.append("store_id = :store_id")
+        finance_params["store_id"] = store_id
+
+    fin_rows = db.execute(text(f"""
+        SELECT sku_id, COALESCE(SUM(accruals_for_sale), 0.0)
+        FROM ozon.finance_transactions
+        WHERE {' AND '.join(fin_clauses)}
+        GROUP BY sku_id
+    """), finance_params).fetchall()
+    fin_map: dict[int, float] = {int(r[0]): float(r[1]) for r in fin_rows}
+
+    rows = db.execute(text(f"""
+        SELECT
+            (prod->>'sku')::bigint AS sku_id,
+            prod->>'offer_id' AS offer_id,
+            COUNT(DISTINCT p.posting_number) AS order_count,
+            COALESCE(SUM((prod->>'quantity')::int), 0) AS total_quantity,
+            COALESCE(SUM((prod->>'price')::numeric * (prod->>'quantity')::int), 0.0) AS total_revenue,
+            COUNT(DISTINCT p.posting_number) FILTER (WHERE p.status = 'delivered') AS delivered_count,
+            COUNT(DISTINCT p.posting_number) FILTER (WHERE p.status = 'cancelled') AS cancelled_count,
+            COUNT(DISTINCT p.posting_number) FILTER (WHERE p.delivery_schema = 'FBO') AS fbo_count,
+            COUNT(DISTINCT p.posting_number) FILTER (WHERE p.delivery_schema = 'FBS') AS fbs_count
+        FROM ozon.postings p,
+             jsonb_array_elements(p.products) AS prod
+        WHERE {store_sql}p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+        GROUP BY (prod->>'sku')::bigint, prod->>'offer_id'
+        ORDER BY total_quantity DESC
+    """), params).fetchall()
+
+    # ClientReturn 按 SKU 聚合
+    cr_sku_rows = db.execute(text(f"""
+        SELECT r.sku, COUNT(*)
+        FROM ozon.returns r
+        JOIN ozon.postings p ON r.posting_number = p.posting_number
+        WHERE {store_sql}r.type = 'ClientReturn'
+          AND p.created_at >= :date_from
+          AND p.created_at  < :date_to_excl
+        GROUP BY r.sku
+    """), params).fetchall()
+    cr_sku_map = {int(r[0]): int(r[1]) for r in cr_sku_rows}
+
+    # 批量拿 products 表的 name + image
+    sku_ids = [int(r[0]) for r in rows if r[0]]
+    prod_map: dict[int, tuple] = {}
+    if sku_ids:
+        store_clause = "store_id = :store_id AND " if store_id != 0 else ""
+        p_rows = db.execute(text(f"""
+            SELECT sku_id, name, primary_image FROM ozon.products
+            WHERE {store_clause}sku_id = ANY(:skus)
+        """), {**params, "skus": sku_ids}).fetchall()
+        prod_map = {int(r[0]): (r[1], r[2]) for r in p_rows}
+
+    return [
+        OrderSkuStats(
+            sku_id=int(r[0]) if r[0] else 0,
+            offer_id=r[1],
+            name=prod_map.get(int(r[0]), (None, None))[0] if r[0] else None,
+            primary_image=prod_map.get(int(r[0]), (None, None))[1] if r[0] else None,
+            order_count=int(r[2]),
+            total_quantity=int(r[3]),
+            total_revenue=float(r[4]) if r[4] else 0.0,
+            actual_revenue=fin_map.get(int(r[0]), 0.0),
+            delivered_count=int(r[5]),
+            cancelled_count=int(r[6]),
+            return_count=cr_sku_map.get(int(r[0]), 0),
+            fbo_count=int(r[7]),
+            fbs_count=int(r[8]),
+        )
+        for r in rows
+    ]
 
 
 @router.get("/{posting_number}", response_model=OrderDetail)

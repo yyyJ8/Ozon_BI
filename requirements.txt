@@ -20,6 +20,7 @@ apscheduler==3.10.4
 python-dotenv==1.0.1
 python-dateutil==2.9.0
 pytz==2024.2
+PyYAML==6.0.2
 
 # Logging
 loguru==0.7.3

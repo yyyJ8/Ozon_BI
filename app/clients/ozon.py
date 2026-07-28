@@ -76,6 +76,18 @@ class OzonClient:
             all_products.extend(data.get("items", []))
         return all_products
 
+    def get_product_prices_v5(self, offer_ids: list[str]) -> list[dict]:
+        """批量获取商品价格 v5（每批最多 100 个 offer_id），含 marketing_seller_price"""
+        all_items: list[dict] = []
+        for i in range(0, len(offer_ids), 100):
+            batch = offer_ids[i:i + 100]
+            data = self._request("/v5/product/info/prices", {
+                "filter": {"offer_id": batch},
+                "limit": len(batch),
+            })
+            all_items.extend(data.get("items", []))
+        return all_items
+
     # ── 销售分析接口 ──────────────────────────────────────
 
     def get_analytics(self, date_from: str, date_to: str,

@@ -35,6 +35,20 @@ function formatMoney(v: number): string {
   return v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatMoneyShort(v: number): string {
+  return v.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
+}
+
+function pctOfRevenue(cost: number, revenue: number): string {
+  if (!revenue || revenue === 0) return '—'
+  return (Math.abs(cost) / revenue * 100).toFixed(1) + '%'
+}
+
+function costOfRevenue(cost: number, revenue: number): number {
+  if (!revenue || revenue === 0) return 0
+  return Math.abs(cost) / revenue * 100
+}
+
 function skuTotalCost(sku: ProductSummary): number {
   return abs(sku.commissions) + abs(sku.logistics_costs) + abs(sku.storage_fees)
        + abs(sku.advertising) + abs(sku.promotion_costs) + abs(sku.returns_amount) + abs(sku.other_costs)
@@ -81,6 +95,13 @@ const pieItems = computed(() => {
 
 const pieTotal = computed(() => pieItems.value.reduce((s, i) => s + i.value, 0))
 
+// 当前参考收入：SKU 选中时用 SKU 收入，否则用全局收入
+const currentRevenue = computed(() => {
+  if (selectedSku.value) return selectedSku.value.revenue
+  if (props.stats) return props.stats.total_revenue
+  return 0
+})
+
 const pieTitle = computed(() => {
   if (selectedSku.value) {
     const oid = selectedSku.value.offer_id || '—'
@@ -123,9 +144,11 @@ function renderChart() {
         trigger: 'item',
         formatter: (params: { name: string; value: number; percent: number }) => {
           const v = `₽ ${params.value.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          const revPct = pctOfRevenue(-params.value, currentRevenue.value)
           return `<div style="font-size:13px;line-height:1.8">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorMap[params.name] || '#909399'};margin-right:6px"></span>
-            ${params.name}: <strong>${v}</strong> (${params.percent.toFixed(1)}%)
+            ${params.name}: <strong>${v}</strong><br/>
+            <span style="color:#909399;font-size:11px;">占总费用 ${params.percent.toFixed(1)}%  |  占收入 ${revPct}</span>
           </div>`
         },
       },
@@ -297,13 +320,18 @@ onUnmounted(() => {
                 <div style="font-family: monospace; font-weight: 600; font-size: 14px; color: #f56c6c;">
                   ₽ {{ formatMoney(item.value) }}
                 </div>
-                <div style="font-size: 11px; color: #909399;">
-                  {{ pieTotal > 0 ? ((item.value / pieTotal) * 100).toFixed(1) : 0 }}%
+                <div style="font-size: 11px;">
+                  <span style="color: #409eff; font-weight: 600;">占收入 {{ pctOfRevenue(-item.value, currentRevenue) }}</span>
                 </div>
               </div>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f5f7fa; border-radius: 6px; border: 1px solid #e4e7ed; margin-top: 4px;">
-              <span style="font-weight: 600; font-size: 14px;">合计</span>
+              <div>
+                <span style="font-weight: 600; font-size: 14px;">合计</span>
+                <div style="font-size: 11px; color: #409eff; font-weight: 600;">
+                  占收入 {{ pctOfRevenue(pieTotal, currentRevenue) }}
+                </div>
+              </div>
               <span style="font-family: monospace; font-weight: 700; font-size: 16px; color: #f56c6c;">
                 ₽ {{ formatMoney(pieTotal) }}
               </span>

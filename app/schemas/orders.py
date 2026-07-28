@@ -17,6 +17,7 @@ class OrderOverview(BaseModel):
     in_progress_count: int
     total_ordered_units: int
     cancellation_rate: float
+    client_return_count: int = 0
     avg_items_per_order: float | None
 
 
@@ -28,6 +29,7 @@ class OrderTrendItem(BaseModel):
     delivering: int
     delivered: int
     cancelled: int
+    client_return: int = 0
 
 
 class OrderListItem(BaseModel):
@@ -44,6 +46,7 @@ class OrderListItem(BaseModel):
     product_count: int = 0
     total_quantity: int = 0
     total_price: float = 0.0
+    actual_revenue: float = 0.0
 
 
 class OrderListResponse(BaseModel):
@@ -98,3 +101,20 @@ class OrderDetail(BaseModel):
     products: list[OrderProduct] = []
     returns: list[OrderReturn] = []
     finance_transactions: list[OrderFinance] = []
+
+
+class OrderSkuStats(BaseModel):
+    """SKU 维度订单统计"""
+    sku_id: int
+    offer_id: str | None = None
+    name: str | None = None
+    primary_image: str | None = None
+    order_count: int = 0
+    total_quantity: int = 0
+    total_revenue: float = 0.0       # 标价（products.price × quantity）
+    actual_revenue: float = 0.0      # 实际收入（finance_transactions.accruals_for_sale）
+    delivered_count: int = 0
+    cancelled_count: int = 0
+    return_count: int = 0            # ClientReturn 退货数
+    fbo_count: int = 0
+    fbs_count: int = 0

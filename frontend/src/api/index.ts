@@ -2,9 +2,11 @@ import type {
   Product, SummaryRow, SummaryStats, SyncStatus, DateRangeInfo, FinanceTransaction,
   AdCampaignSummary, AdDailyStat, AdSkuDetail, AdSummary, AdTrendItem,
   ReturnsOverview, ReturnsTrendItem, SkuReturnStats, ReasonItem, ReturnDetailItem,
-  OrderOverview, OrderTrendItem, OrderListResponse, OrderDetail,
+  OrderOverview, OrderTrendItem, OrderListResponse, OrderDetail, OrderSkuStats,
   StockStatus, StockRefreshResult,
   Store,
+  ProfitOverview, ProfitTrendItem, ProfitSkuItem, ProfitDailyItem,
+  AnomalyResponse,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -253,6 +255,14 @@ export async function getOrderDetail(
   return fetchJson<OrderDetail>(`${BASE}/orders/${encodeURIComponent(postingNumber)}?store_id=${storeId}`)
 }
 
+export async function getOrdersSkuStats(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<OrderSkuStats[]> {
+  const extra: Record<string, string> = {}
+  return fetchJson<OrderSkuStats[]>(
+    `${BASE}/orders/sku-stats?${returnsParams(storeId, dateFrom, dateTo, extra)}`)
+}
+
 // ── 库存 API ──
 
 export async function getStockStatus(storeId: number = 1): Promise<StockStatus> {
@@ -261,4 +271,55 @@ export async function getStockStatus(storeId: number = 1): Promise<StockStatus> 
 
 export async function refreshStocks(storeId: number = 1): Promise<StockRefreshResult> {
   return fetchJson<StockRefreshResult>(`${BASE}/stocks/refresh?store_id=${storeId}`, { method: 'POST' })
+}
+
+// ── 利润 API ──
+
+function profitParams(storeId: number, dateFrom?: string, dateTo?: string, extra?: Record<string, string>): string {
+  const p = new URLSearchParams(extra)
+  p.set('store_id', String(storeId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return p.toString()
+}
+
+export async function getProfitOverview(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<ProfitOverview> {
+  return fetchJson<ProfitOverview>(`${BASE}/profit/overview?${profitParams(storeId, dateFrom, dateTo)}`)
+}
+
+export async function getProfitTrend(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<ProfitTrendItem[]> {
+  return fetchJson<ProfitTrendItem[]>(`${BASE}/profit/trend?${profitParams(storeId, dateFrom, dateTo)}`)
+}
+
+export async function getProfitSkuRanking(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<ProfitSkuItem[]> {
+  return fetchJson<ProfitSkuItem[]>(`${BASE}/profit/sku-ranking?${profitParams(storeId, dateFrom, dateTo)}`)
+}
+
+export async function getProfitSkuDaily(
+  skuId: number, dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<ProfitDailyItem[]> {
+  const p = new URLSearchParams()
+  p.set('store_id', String(storeId))
+  p.set('sku_id', String(skuId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return fetchJson<ProfitDailyItem[]>(`${BASE}/profit/sku-daily?${p.toString()}`)
+}
+
+// ── 异常检测 API ──
+
+export async function getAnomalies(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<AnomalyResponse> {
+  const p = new URLSearchParams()
+  p.set('store_id', String(storeId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return fetchJson<AnomalyResponse>(`${BASE}/anomalies?${p.toString()}`)
 }

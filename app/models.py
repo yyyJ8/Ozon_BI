@@ -55,6 +55,7 @@ class Product(Base):
     barcode: Mapped[Optional[str]] = mapped_column(String(255), comment="条形码")
     price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="当前售价（RUB）")
     old_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="原价/划线价（RUB）")
+    marketing_seller_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="促销价（RUB）——用户实际看到/支付的价格")
     min_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="最低允许售价（RUB）")
     commission_fbo_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), comment="FBO 佣金比例（如 0.12 = 12%）")
     volume_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="体积重（kg）")

@@ -105,6 +105,32 @@ def sync_products(db: Session, client: OzonClient, store_id: int) -> dict:
 
     db.commit()
     logger.info(f"[store={store_id}] 商品同步完成: {products_updated} 商品, {stocks_upserted} 库存")
+
+    # 4. v5 价格同步：获取 marketing_seller_price
+    offer_ids = db.execute(
+        text("SELECT offer_id FROM ozon.products WHERE store_id = :sid AND offer_id IS NOT NULL"),
+        {"sid": store_id},
+    ).fetchall()
+    offer_list = [r[0] for r in offer_ids if r[0]]
+    prices_updated = 0
+    if offer_list:
+        try:
+            price_items = client.get_product_prices_v5(offer_list)
+            for item in price_items:
+                oid = item.get("offer_id")
+                p = item.get("price") or {}
+                msp = _parse_price(p.get("marketing_seller_price"))
+                if oid and msp is not None:
+                    db.execute(
+                        text("UPDATE ozon.products SET marketing_seller_price = :msp, updated_at = :now WHERE store_id = :sid AND offer_id = :oid"),
+                        {"msp": msp, "now": now, "sid": store_id, "oid": oid},
+                    )
+                    prices_updated += 1
+            db.commit()
+            logger.info(f"[store={store_id}] v5 促销价更新: {prices_updated} 商品")
+        except Exception as e:
+            logger.warning(f"[store={store_id}] v5 价格同步失败: {e}")
+            db.rollback()
     return {"products_updated": products_updated, "stocks_upserted": stocks_upserted}
 
 

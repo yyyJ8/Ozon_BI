@@ -1,0 +1,126 @@
+# OZON 业务口径 & 异常检测规则配置
+#
+# 改 yaml 即可生效，不需要改代码。
+
+# ── 数据源定义 ──
+# 每个 data_source 映射到数据库表和查询方式
+
+data_sources:
+  get_daily_summary:
+    table: "ozon.sku_daily_summary"
+    description: "SKU 日汇总表 — 按月聚合 SUM"
+    period: "monthly"  # 按月聚合后再判条件
+
+  get_ad_performance:
+    table: "ozon.ad_sku_daily_stats"
+    description: "广告 SKU 日明细表 — 按月聚合 SUM"
+    period: "monthly"
+
+  get_stock_snapshot:
+    table: "ozon.stocks"
+    description: "库存实时快照 — 当前库存"
+    period: "snapshot"
+
+# ── 异常检测规则 ──
+#
+# 每条规则包含:
+#   type: 规则类型（阈值 / 趋势 / 占比）
+#   require: all = 全部条件满足才触发
+#   data_source: 引用上面 data_sources 的 key
+#   period: 覆盖 data_source 默认周期（可选）
+#   conditions: 条件列表
+#     field: 数据库字段名
+#     op: gte / lte / gt / lt / eq
+#     value: 阈值
+#   severity_map: 严重程度分级（可选）
+
+anomaly_rules:
+
+  # ── 1. SKU 退货异常 ──
+  SKU退货异常:
+    type: "阈值"
+    require: "all"
+    data_source: get_daily_summary
+    conditions:
+      - field: returns_units
+        op: "gte"
+        value: 4
+      - field: ordered_units
+        op: "gte"
+        value: 20
+    description: "退货 ≥4件 且 月订单 ≥20 单"
+    severity: "warning"
+
+  # ── 2. SKU 利润率预警 ──
+  SKU利润率预警:
+    type: "阈值"
+    require: "all"
+    data_source: get_daily_summary
+    conditions:
+      - field: profit_margin
+        op: "lt"
+        value: 10
+    description: "利润率异常"
+    severity_map:
+      critical: "< 0   → 亏损"
+      warning:  "< 10  → 利润过低"
+
+  # ── 3. 广告 DRR 过高 ──
+  广告DRR过高:
+    type: "阈值"
+    require: "all"
+    data_source: get_ad_performance
+    conditions:
+      - field: drr_total
+        op: "gte"
+        value: 5
+      - field: spend
+        op: "gte"
+        value: 500
+    description: "DRR ≥5% 且 花费 ≥500₽"
+    severity: "warning"
+
+  # ── 4. 高点击低转化 ──
+  高点击低转化:
+    type: "阈值"
+    require: "all"
+    data_source: get_ad_performance
+    conditions:
+      - field: ctr
+        op: "gte"
+        value: 3
+      - field: spend
+        op: "gte"
+        value: 300
+      - field: sold_units
+        op: "lte"
+        value: 5
+    description: "CTR ≥3% 且 花费 ≥300₽ 且 月成交≤5单 → 主图好但转化差"
+    severity: "info"
+
+  # ── 5. SKU 断货风险 ──
+  SKU断货风险:
+    type: "阈值"
+    require: "all"
+    data_source: get_stock_snapshot
+    conditions:
+      - field: present
+        op: "lte"
+        value: 10
+    description: "库存 ≤10 件"
+    severity: "warning"
+
+  # ── 6. SKU 滞销积压 ──
+  SKU滞销积压:
+    type: "阈值"
+    require: "all"
+    data_source: get_daily_summary
+    conditions:
+      - field: ordered_units
+        op: "eq"
+        value: 0
+      - field: stock_present
+        op: "gte"
+        value: 20
+    description: "当日0销售 且 库存 ≥20（连续多日需人工判断）"
+    severity: "info"

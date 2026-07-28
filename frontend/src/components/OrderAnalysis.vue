@@ -12,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const dr = toRef(props, 'dateRange')
+const selectedSkuId = ref<number>()
 
 // ── 状态映射 ────────────────────────────────────────────
 const STATUS_MAP: Record<string, { label: string; type: string }> = {
@@ -35,8 +36,9 @@ const {
   loading, overview, trend,
   orderList, listTotal, currentPage, pageSize,
   statusFilter, schemaFilter, searchFilter,
+  viewMode, skuStats,
   selectedOrder, fetchDetail, clearDetail,
-} = useOrders(dr)
+} = useOrders(dr, selectedSkuId)
 
 // ── 订单详情抽屉 ────────────────────────────────────────
 const drawerVisible = ref(false)
@@ -49,6 +51,25 @@ async function onRowClick(row: OrderListItem) {
 function onDrawerClosed() {
   clearDetail()
 }
+
+// ── SKU 点击筛选 ────────────────────────────────────────
+function onSkuRowClick(row: any) {
+  if (selectedSkuId.value === row.sku_id) {
+    selectedSkuId.value = undefined
+  } else {
+    selectedSkuId.value = row.sku_id
+    viewMode.value = 'posting'  // 切回订单视图看具体订单
+  }
+}
+function clearSkuFilter() {
+  selectedSkuId.value = undefined
+}
+
+const selectedSkuName = computed(() => {
+  if (!selectedSkuId.value) return ''
+  const s = skuStats.value.find(s => s.sku_id === selectedSkuId.value)
+  return s ? (s.offer_id || `SKU ${s.sku_id}`) : ''
+})
 
 // ── 趋势图 ──────────────────────────────────────────────
 const trendChartRef = ref<HTMLDivElement>()
@@ -68,7 +89,7 @@ function renderTrendChart() {
         return h + '</div>'
       },
     },
-    legend: { data: ['订单总数', '待发货', '配送中', '已签收', '已取消'], bottom: 0 },
+    legend: { data: ['订单总数', '待发货', '配送中', '已签收', '已取消', '签收后退'], bottom: 0 },
     grid: { left: 50, right: 20, top: 20, bottom: 35 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
     yAxis: { type: 'value', minInterval: 1 },
@@ -94,6 +115,10 @@ function renderTrendChart() {
         name: '已取消', type: 'line', data: trend.value.map(d => d.cancelled),
         lineStyle: { width: 2 }, itemStyle: { color: '#f56c6c' }, symbolSize: 3,
       },
+      {
+        name: '签收后退', type: 'line', data: trend.value.map(d => d.client_return),
+        lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#e6a23c' }, symbolSize: 4,
+      },
     ],
   }, true)
 }
@@ -117,7 +142,10 @@ function formatMoney(v: number) {
 function fmtInt(v: number) { return v.toLocaleString('ru-RU') }
 function formatDate(v: string | null) {
   if (!v) return '—'
-  return v.replace('T', ' ').slice(0, 16)
+  const s = v.replace('T', ' ').slice(0, 16)
+  // finance 补的日期是 00:00，只显示日期
+  if (s.endsWith('00:00')) return s.slice(0, 10)
+  return s
 }
 
 // ── 分页 ──────────────────────────────────────────────────
@@ -239,24 +267,40 @@ const financeSummary = computed(() => {
     <el-card shadow="hover" style="margin-top: 16px;">
       <template #header>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <span style="font-weight:600;">订单列表</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-weight:600;">{{ viewMode === 'posting' ? '订单列表' : 'SKU 统计' }}</span>
+            <el-tag v-if="selectedSkuId" type="warning" closable size="small" @close="clearSkuFilter">
+              {{ selectedSkuName }}
+            </el-tag>
+            <el-radio-group v-model="viewMode" size="small">
+              <el-radio-button value="posting">按订单</el-radio-button>
+              <el-radio-button value="sku">按 SKU</el-radio-button>
+            </el-radio-group>
+          </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <el-select v-model="statusFilter" placeholder="全部状态" clearable size="small" style="width:110px;">
-              <el-option label="待发货" value="awaiting_deliver" />
-              <el-option label="配送中" value="delivering" />
-              <el-option label="已签收" value="delivered" />
-              <el-option label="已取消" value="cancelled" />
-            </el-select>
-            <el-select v-model="schemaFilter" placeholder="全部配送" clearable size="small" style="width:100px;">
-              <el-option label="FBO" value="FBO" />
-              <el-option label="FBS" value="FBS" />
-            </el-select>
-            <el-input v-model="searchFilter" placeholder="搜索 SKU / 货号" clearable size="small" style="width:170px;" />
-            <el-tag type="info" size="small">{{ listTotal }} 单</el-tag>
+            <template v-if="viewMode === 'posting'">
+              <el-select v-model="selectedSkuId" placeholder="全部 SKU" clearable filterable size="small" style="width:180px;">
+                <el-option v-for="p in products" :key="p.sku_id" :label="`${p.sku_id} — ${p.offer_id || ''}`" :value="p.sku_id" />
+              </el-select>
+              <el-select v-model="statusFilter" placeholder="全部状态" clearable size="small" style="width:110px;">
+                <el-option label="待发货" value="awaiting_deliver" />
+                <el-option label="配送中" value="delivering" />
+                <el-option label="已签收" value="delivered" />
+                <el-option label="已取消" value="cancelled" />
+              </el-select>
+              <el-select v-model="schemaFilter" placeholder="全部配送" clearable size="small" style="width:100px;">
+                <el-option label="FBO" value="FBO" />
+                <el-option label="FBS" value="FBS" />
+              </el-select>
+              <el-input v-model="searchFilter" placeholder="搜索 SKU / 货号" clearable size="small" style="width:170px;" />
+            </template>
+            <el-tag type="info" size="small">{{ viewMode === 'posting' ? listTotal + ' 单' : skuStats.length + ' SKU' }}</el-tag>
           </div>
         </div>
       </template>
-      <el-table :data="orderList" stripe size="small" style="width:100%" max-height="500"
+
+      <!-- 订单视图 -->
+      <el-table v-if="viewMode === 'posting'" :data="orderList" stripe size="small" style="width:100%" max-height="500"
         @row-click="onRowClick">
         <el-table-column prop="posting_number" label="订单号" min-width="175" show-overflow-tooltip>
           <template #default="{ row }">
@@ -292,7 +336,7 @@ const financeSummary = computed(() => {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="下单时间" width="140" sortable :sort-method="(a:OrderListItem,b:OrderListItem) => (a.created_at||'').localeCompare(b.created_at||'')">
+        <el-table-column label="下单时间" width="140" sortable>
           <template #default="{ row }">
             <span style="font-size:12px;">{{ formatDate(row.created_at) }}</span>
           </template>
@@ -302,21 +346,86 @@ const financeSummary = computed(() => {
             <span style="font-size:12px;">{{ formatDate(row.delivered_at) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="product_count" label="商品数" width="70" align="center" sortable />
+        <el-table-column prop="total_price" label="售价" width="110" align="right" sortable>
+          <template #default="{ row }">
+            <span style="font-size:12px;">{{ row.total_price > 0 ? '₽ ' + formatMoney(row.total_price) : '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="actual_revenue" label="结算" width="110" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.actual_revenue > 0 ? '#67c23a' : '#c0c4cc', fontWeight: row.actual_revenue > 0 ? 600 : 400 }">
+              {{ row.actual_revenue > 0 ? '₽ ' + formatMoney(row.actual_revenue) : '—' }}
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- SKU 视图 -->
+      <el-table v-else :data="skuStats" stripe size="small" style="width:100%" max-height="500"
+        :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
+        @row-click="onSkuRowClick">
+        <el-table-column label="图片" width="50">
+          <template #default="{ row }">
+            <el-image v-if="row.primary_image" :src="row.primary_image" style="width:28px;height:28px;border-radius:4px;" fit="cover" lazy>
+              <template #error><div style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" /></template>
+            </el-image>
+            <div v-else style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" />
+          </template>
+        </el-table-column>
+        <el-table-column label="SKU" width="95">
+          <template #default="{ row }">
+            <span style="font-family:monospace;font-size:12px;">{{ row.sku_id }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="offer_id" label="货号" min-width="120">
+          <template #default="{ row }">
+            <span style="font-size:12px;">{{ row.offer_id || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="order_count" label="订单数" width="70" align="right" sortable>
+          <template #default="{ row }">
+            <span style="font-weight:600;">{{ fmtInt(row.order_count) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="total_quantity" label="总件数" width="70" align="right" sortable>
           <template #default="{ row }">
             <span style="font-weight:600;">{{ fmtInt(row.total_quantity) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_price" label="金额" width="110" align="right" sortable>
+        <el-table-column prop="total_revenue" label="售价" width="110" align="right" sortable>
           <template #default="{ row }">
-            <span :style="{ color: row.total_price > 0 ? '#303133' : '#c0c4cc' }">
-              {{ row.total_price > 0 ? '₽ ' + formatMoney(row.total_price) : '—' }}
+            <span style="font-size:12px;">{{ row.total_revenue > 0 ? '₽ ' + formatMoney(row.total_revenue) : '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="actual_revenue" label="结算" width="110" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.actual_revenue > 0 ? '#67c23a' : '#c0c4cc', fontWeight: row.actual_revenue > 0 ? 600 : 400 }">
+              {{ row.actual_revenue > 0 ? '₽ ' + formatMoney(row.actual_revenue) : '—' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态分布" width="165" align="center">
+          <template #default="{ row }">
+            <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+              <el-tag size="small" type="success" effect="plain">签收 {{ row.delivered_count }}</el-tag>
+              <el-tag v-if="row.cancelled_count" size="small" type="danger" effect="plain">取消 {{ row.cancelled_count }}</el-tag>
+              <el-tag v-if="row.return_count" size="small" type="warning" effect="plain">退货 {{ row.return_count }}</el-tag>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="配送" width="110" align="center">
+          <template #default="{ row }">
+            <span style="font-size:12px;white-space:nowrap;">
+              <span v-if="row.fbo_count" style="color:#409eff;">FBO {{ row.fbo_count }}</span>
+              <span v-if="row.fbo_count && row.fbs_count" style="color:#c0c4cc;"> / </span>
+              <span v-if="row.fbs_count" style="color:#e6a23c;">FBS {{ row.fbs_count }}</span>
+              <span v-if="!row.fbo_count && !row.fbs_count" style="color:#c0c4cc;">—</span>
             </span>
           </template>
         </el-table-column>
       </el-table>
-      <div v-if="listTotal > 0" style="margin-top:12px;display:flex;justify-content:flex-end;">
+
+      <div v-if="viewMode === 'posting' && listTotal > 0" style="margin-top:12px;display:flex;justify-content:flex-end;">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -509,4 +618,7 @@ const financeSummary = computed(() => {
 </template>
 
 <style scoped>
+:deep(.el-table .selected-sku-row > td) {
+  background-color: #ecf5ff !important;
+}
 </style>

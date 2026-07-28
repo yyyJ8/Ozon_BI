@@ -13,6 +13,8 @@ import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
 import AdvertisingAnalysis from '@/components/AdvertisingAnalysis.vue'
 import CostAnalysis from '@/components/CostAnalysis.vue'
 import OrderAnalysis from '@/components/OrderAnalysis.vue'
+import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
+import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
 import { useStore } from '@/composables/useStore'
 
 const { selectedStoreId, stores, fetchStores, setStoreId } = useStore()
@@ -64,23 +66,24 @@ function daysAgoStr(n: number): string {
 
 function applyPreset(preset: string) {
   showCustomDate.value = preset === 'custom'
-  const today = daysAgoStr(0)
+  // 图表不展示今天的数据（不完整），终点统一用昨天。
+  // 库存实时数据（stock_present）来自 products API，不受日期范围影响。
+  const yesterday = daysAgoStr(1)
   switch (preset) {
     case 'yesterday': {
-      const y = daysAgoStr(1)
-      dateRange.value = [y, y]
+      dateRange.value = [yesterday, yesterday]
       break
     }
     case '7days':
-      dateRange.value = [daysAgoStr(7), today]
+      dateRange.value = [daysAgoStr(7), yesterday]
       break
     case '30days':
-      dateRange.value = [daysAgoStr(30), today]
+      dateRange.value = [daysAgoStr(30), yesterday]
       break
     case 'all':
     default:
       if (availableRange.value) {
-        dateRange.value = [availableRange.value.min_date, today]
+        dateRange.value = [availableRange.value.min_date, yesterday]
       }
       break
   }
@@ -396,6 +399,16 @@ onMounted(() => {
                 @refresh-products="fetchProducts"
               />
             </el-tab-pane>
+            <el-tab-pane label="订单分析" name="orders">
+              <template #label>
+                <span><el-icon><Document /></el-icon> 订单分析</span>
+              </template>
+              <OrderAnalysis
+                :date-range="dateRange"
+                :products="products"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
             <el-tab-pane label="退货分析" name="returns">
               <template #label>
                 <span><el-icon><Failed /></el-icon> 退货分析</span>
@@ -424,13 +437,21 @@ onMounted(() => {
                 :active-tab="activeTab"
               />
             </el-tab-pane>
-            <el-tab-pane label="订单分析" name="orders">
+            <el-tab-pane label="利润分析" name="profit">
               <template #label>
-                <span><el-icon><Document /></el-icon> 订单分析</span>
+                <span><el-icon><TrendCharts /></el-icon> 利润分析</span>
               </template>
-              <OrderAnalysis
+              <ProfitAnalysis
                 :date-range="dateRange"
-                :products="products"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="异常预警" name="anomalies">
+              <template #label>
+                <span><el-icon><WarningFilled /></el-icon> 异常预警</span>
+              </template>
+              <AnomalyAnalysis
+                :date-range="dateRange"
                 :active-tab="activeTab"
               />
             </el-tab-pane>

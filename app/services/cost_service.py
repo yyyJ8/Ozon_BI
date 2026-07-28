@@ -7,7 +7,7 @@
 
 7 类费用（与前端 CostAnalysis.vue 一致）:
   commissions      ← OperationAgentDeliveredToCustomer.sale_commission
-  logistics_costs  ← delivery_charge + return_delivery_charge
+  logistics_costs  ← services JSON 中含 "Logistic" 的条目（Ozon API 不填充 delivery_charge 字段）
   storage_fees     ← TemporaryStorage amount
   advertising      ← ad_sku_daily_stats.spend + SEARCH_PROMO revenue 分摊
   promotion_costs  ← OperationPromotionWithCostPerOrder
@@ -29,6 +29,19 @@ def _parse_amount(val) -> Decimal:
     if val is None:
         return Decimal("0")
     return Decimal(str(val))
+
+
+def _extract_logistics_from_services(services: Optional[list]) -> Decimal:
+    """从 services JSON 中提取物流费用（Ozon API 的 delivery_charge 字段始终为 0，
+    实际物流费在 services 数组里，name 包含 'Logistic' 的条目）"""
+    if not services:
+        return Decimal("0")
+    total = Decimal("0")
+    for svc in services:
+        name = svc.get("name", "")
+        if "Logistic" in name or "logistic" in name:
+            total += _parse_amount(svc.get("price"))
+    return total
 
 
 def build_costs(db: Session, start_date: date, end_date: date, store_id: int) -> dict:
@@ -134,11 +147,13 @@ def build_costs(db: Session, start_date: date, end_date: date, store_id: int) ->
 
         if optype == "OperationAgentDeliveredToCustomer":
             g["commissions"] += _parse_amount(tx.sale_commission)
-            g["logistics_costs"] += _parse_amount(tx.delivery_charge)
+            # 物流费从 services JSON 提取（Ozon API 的 delivery_charge 字段始终为 0）
+            g["logistics_costs"] += _extract_logistics_from_services(tx.services)
 
         elif optype in ("OperationItemReturn", "ClientReturnAgentOperation"):
             g["returns_amount"] += amt
-            g["logistics_costs"] += _parse_amount(tx.return_delivery_charge)
+            # 退货物流费也从 services JSON 提取（return_delivery_charge 字段始终为 0）
+            g["logistics_costs"] += _extract_logistics_from_services(tx.services)
 
         elif "TemporaryStorage" in optype:
             g["storage_fees"] += amt
@@ -154,6 +169,91 @@ def build_costs(db: Session, start_date: date, end_date: date, store_id: int) ->
         f"分组聚合: {len(groups)} 个 (date, sku) 组合"
         f"（含 {sum(1 for v in groups.values() if v['is_cross_period'])} 个跨期归因）"
     )
+
+    # ── 3.5 推广费（OperationPromotionWithCostPerOrder，全部 sku_id=NULL，需通过 posting 归因）──
+    promo_txs = db.query(FinanceTransaction).filter(
+        FinanceTransaction.store_id == store_id,
+        FinanceTransaction.operation_type == "OperationPromotionWithCostPerOrder",
+        FinanceTransaction.operation_date.between(start_date, end_date),
+    ).all()
+    if promo_txs:
+        promo_posting_numbers = {tx.posting_number for tx in promo_txs if tx.posting_number}
+        posting_skus: dict[str, list[int]] = {}
+        if promo_posting_numbers:
+            promo_postings = db.query(Posting).filter(
+                Posting.store_id == store_id,
+                Posting.posting_number.in_(promo_posting_numbers),
+            ).all()
+            for p in promo_postings:
+                if p.products:
+                    skus = [
+                        prod.get("sku") for prod in p.products
+                        if prod.get("sku") is not None
+                    ]
+                    if skus:
+                        posting_skus[p.posting_number] = skus
+            logger.info(f"推广费 posting 匹配: {len(posting_skus)}/{len(promo_posting_numbers)}")
+
+        # 有 posting → 按 SKU 数均摊
+        has_posting_txs = [tx for tx in promo_txs if tx.posting_number in posting_skus]
+        for tx in has_posting_txs:
+            skus = posting_skus.get(tx.posting_number)
+            if not skus:
+                continue
+            amt = _parse_amount(tx.amount)
+            per_sku = amt / Decimal(str(len(skus)))
+            attr_date = posting_date_map.get(tx.posting_number, tx.operation_date)
+            is_cross = attr_date < start_date or attr_date > end_date
+            for sid in skus:
+                g = _get_group((attr_date, sid))
+                g["promotion_costs"] += per_sku
+                if is_cross:
+                    g["is_cross_period"] = True
+
+        # 无 posting → 按当天 revenue 占比分摊
+        unmatched_txs = [tx for tx in promo_txs if tx.posting_number not in posting_skus]
+        if unmatched_txs:
+            daily_promo: dict[date, Decimal] = {}
+            for tx in unmatched_txs:
+                d = daily_promo.get(tx.operation_date, Decimal("0"))
+                daily_promo[tx.operation_date] = d + _parse_amount(tx.amount)
+
+            revenue_rows = db.execute(text("""
+                SELECT "date", sku_id, revenue
+                FROM ozon.sku_daily_summary
+                WHERE store_id = :store_id
+                  AND "date" BETWEEN :from_date AND :to_date
+                  AND revenue > 0
+            """), {"store_id": store_id, "from_date": start_date, "to_date": end_date}).fetchall()
+
+            daily_revenue: dict[date, dict[int, Decimal]] = {}
+            daily_revenue_total: dict[date, Decimal] = {}
+            for rdate, sid, rev in revenue_rows:
+                rev_d = Decimal(str(rev or 0))
+                if rdate not in daily_revenue:
+                    daily_revenue[rdate] = {}
+                daily_revenue[rdate][sid] = rev_d
+                daily_revenue_total[rdate] = daily_revenue_total.get(rdate, Decimal("0")) + rev_d
+
+            rev_attributed = 0
+            for rdate, total_promo in daily_promo.items():
+                rev_map = daily_revenue.get(rdate, {})
+                day_total_rev = daily_revenue_total.get(rdate, Decimal("0"))
+                if day_total_rev <= 0 or total_promo == 0:
+                    continue
+                for sid, rev in rev_map.items():
+                    share = rev / day_total_rev
+                    g = _get_group((rdate, sid))
+                    g["promotion_costs"] += total_promo * share
+                    rev_attributed += 1
+            logger.info(f"推广费 revenue 分摊: {len(daily_promo)} 天, {rev_attributed} 个组合")
+
+        logger.info(
+            f"推广费归因: {len(promo_txs)} 条, "
+            f"posting={len(has_posting_txs)} + revenue={len(unmatched_txs)}"
+        )
+    else:
+        logger.info("promotion 记录: 0 条")
 
     # ── 4. 广告费聚合 ──
 

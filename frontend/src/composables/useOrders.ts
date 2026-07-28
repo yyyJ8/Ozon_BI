@@ -1,7 +1,7 @@
 import { ref, watch, type Ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { OrderOverview, OrderTrendItem, OrderListItem, OrderDetail } from '@/types'
-import { getOrdersOverview, getOrdersTrend, getOrdersList, getOrderDetail } from '@/api'
+import type { OrderOverview, OrderTrendItem, OrderListItem, OrderDetail, OrderSkuStats } from '@/types'
+import { getOrdersOverview, getOrdersTrend, getOrdersList, getOrderDetail, getOrdersSkuStats } from '@/api'
 import { useStore } from '@/composables/useStore'
 
 export function useOrders(
@@ -19,6 +19,8 @@ export function useOrders(
   const statusFilter = ref<string | undefined>(undefined)
   const schemaFilter = ref<string | undefined>(undefined)
   const searchFilter = ref<string | undefined>(undefined)
+  const viewMode = ref<'posting' | 'sku'>('posting')
+  const skuStats = ref<OrderSkuStats[]>([])
 
   async function fetchAll() {
     if (!dateRange.value) return
@@ -27,7 +29,7 @@ export function useOrders(
       const [d1, d2] = dateRange.value
       const sid = skuId.value
       const sid2 = selectedStoreId.value
-      const [ov, tr, listResult] = await Promise.all([
+      const [ov, tr, listResult, sk] = await Promise.all([
         getOrdersOverview(d1, d2, sid, sid2),
         getOrdersTrend(d1, d2, sid, sid2),
         getOrdersList(
@@ -40,11 +42,13 @@ export function useOrders(
           pageSize.value,
           sid2,
         ),
+        getOrdersSkuStats(d1, d2, sid2),
       ])
       overview.value = ov
       trend.value = tr
       orderList.value = listResult.items
       listTotal.value = listResult.total
+      skuStats.value = sk
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '未知错误'
       ElMessage.error('加载订单数据失败: ' + msg)
@@ -83,6 +87,7 @@ export function useOrders(
     loading, overview, trend,
     orderList, listTotal, currentPage, pageSize,
     statusFilter, schemaFilter, searchFilter,
+    viewMode, skuStats,
     fetchAll,
     detailLoading, selectedOrder, fetchDetail, clearDetail,
   }
