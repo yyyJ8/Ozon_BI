@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed, toRef, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { TrendCharts, DataAnalysis } from '@element-plus/icons-vue'
 import { useAdvertising } from '@/composables/useAdvertising'
+import { useLocalDateRange } from '@/composables/useLocalDateRange'
 import type { Product } from '@/types'
 
 const props = defineProps<{
@@ -11,7 +12,7 @@ const props = defineProps<{
   activeTab: string
 }>()
 
-const dr = toRef(props, 'dateRange')
+const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
 
 const productMap = computed(() => {
   const map = new Map<number, Product>()
@@ -24,7 +25,7 @@ const {
   summaryCards, campaignTable, skuTable, convTrend,
   loadingDaily, campaignDaily,
   fetchCampaignDaily,
-} = useAdvertising(dr)
+} = useAdvertising(localDateRange)
 
 // ── 表切换 ──────────────────────────────────────
 const tableMode = ref<'campaign' | 'sku'>('sku')
@@ -119,6 +120,30 @@ const campaignStateLabel = (s: string) => s === 'CAMPAIGN_STATE_RUNNING' ? '运�
 
 <template>
   <div v-loading="loading" style="min-height:300px;">
+
+    <!-- 独立日期筛选 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:#909399;">📅 时间筛选</span>
+      <el-select v-model="periodPreset" style="width:100px" size="small" @change="applyPreset">
+        <el-option label="昨天" value="yesterday" />
+        <el-option label="近7天" value="7days" />
+        <el-option label="近30天" value="30days" />
+        <el-option label="全部" value="all" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+      <el-date-picker
+        v-if="showCustomDate"
+        v-model="localDateRange"
+        type="daterange"
+        size="small"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="YYYY-MM-DD"
+        style="width:240px"
+        :disabled-date="disabledDate"
+      />
+    </div>
 
     <!-- ── KPI 卡片 8 张 ────────────────────────── -->
     <el-row :gutter="12" style="margin-bottom:12px">

@@ -461,3 +461,86 @@ export interface ProfitDailyItem {
   returns_amount: number
   other_costs: number
 }
+
+// ── SKU 管理（可编辑表格）──
+
+export interface SkuManagementRow {
+  store_id: number
+  sku_id: number
+
+  // products 表（只读）
+  name: string | null
+  offer_id: string | null
+  primary_image: string | null
+  category_name: string | null
+  price: number | null
+  stock_present: number | null
+
+  // sku_management 表（可编辑）
+  main_sku: string | null
+  source_url_1688: string | null
+  specification: string | null
+  sales_manager: string | null
+  listed_stores: string | null
+  product_status: string | null
+  key_notes: string | null
+
+  length_cm: number | null
+  width_cm: number | null
+  height_cm: number | null
+  actual_weight_kg: number | null
+  volume_cbm: number | null
+  density: number | null
+
+  first_leg_unit_price: number | null
+  units_per_carton: number | null
+  carton_length_cm: number | null
+  carton_width_cm: number | null
+  carton_height_cm: number | null
+  gross_weight_kg: number | null
+  volume_liters: number | null
+
+  purchase_cost_rmb: number | null
+  warehousing_fee_rmb: number | null
+  fbo_delivery_fee_rmb: number | null
+  first_leg_cost_rmb: number | null
+
+  acquiring_fee_pct: number | null
+  fbo_commission_pct: number | null
+  logistics_rub: number | null
+  delivery_pickup_rub: number | null
+  advertising_rate_pct: number | null
+  return_rate_pct: number | null
+  tax_and_fee_pct: number | null
+  risk_reserve_rub: number | null
+
+  exchange_rate: number | null
+  green_price_rub: number | null
+
+  competitor_1: string | null
+  competitor_2: string | null
+  competitor_sales: number | null
+
+  purchase_cost_pct: number | null
+  first_leg_pct: number | null
+  last_mile_pct: number | null
+  product_cost_rmb: number | null
+  discount_pct: number | null
+  platform_payout_rub: number | null
+  actual_payout_rub: number | null
+  profit_rmb: number | null
+  profit_rub: number | null
+  profit_margin_pct: number | null
+
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface SkuManagementUpdate {
+  sku_id: number
+  [key: string]: any
+}
+
+export interface SkuManagementBatchUpdate {
+  items: SkuManagementUpdate[]
+}

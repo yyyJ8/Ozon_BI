@@ -1,0 +1,90 @@
+import { ref, computed, watch } from 'vue'
+import type { DateRangeInfo } from '@/types'
+import { getDateRange } from '@/api'
+import { useStore } from '@/composables/useStore'
+
+/**
+ * 子组件独立日期范围管理
+ * 默认近30天（截止昨天），支持预设 + 自定义日期范围
+ */
+export function useLocalDateRange() {
+  const { selectedStoreId } = useStore()
+
+  // ── 日期预设 ──────────────────────────────────────────────
+  const periodPreset = ref('30days')
+  const showCustomDate = computed(() => periodPreset.value === 'custom')
+  const availableRange = ref<DateRangeInfo | null>(null)
+
+  // 默认：近30天 → 昨天
+  function daysAgoStr(n: number): string {
+    const d = new Date()
+    d.setDate(d.getDate() - n)
+    return d.toISOString().split('T')[0]
+  }
+
+  const yesterday = daysAgoStr(1)
+  const localDateRange = ref<[string, string]>([daysAgoStr(30), yesterday])
+
+  function applyPreset(preset: string) {
+    periodPreset.value = preset
+    if (preset === 'custom') return // 等用户自己选日期
+
+    const y = daysAgoStr(1)
+    switch (preset) {
+      case 'yesterday':
+        localDateRange.value = [y, y]
+        break
+      case '7days':
+        localDateRange.value = [daysAgoStr(7), y]
+        break
+      case '30days':
+        localDateRange.value = [daysAgoStr(30), y]
+        break
+      case 'all':
+      default:
+        if (availableRange.value) {
+          localDateRange.value = [availableRange.value.min_date, y]
+        } else {
+          localDateRange.value = [daysAgoStr(90), y] // fallback
+        }
+        break
+    }
+  }
+
+  // 日期禁用：不选未来
+  function disabledDate(time: Date): boolean {
+    const d = time.toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
+    if (d > today) return true
+    if (availableRange.value && d < availableRange.value.min_date) return true
+    return false
+  }
+
+  // 获取可用日期范围（用于"全部"预设）
+  async function fetchDateRange() {
+    try {
+      availableRange.value = await getDateRange(selectedStoreId.value)
+    } catch {
+      // 失败时保持 null，applyPreset('all') 会用 fallback
+    }
+  }
+
+  // 初始化
+  fetchDateRange()
+
+  // 店铺切换 → 重新获取范围
+  watch(selectedStoreId, () => {
+    fetchDateRange()
+    // 店铺切换后重置为近30天
+    applyPreset('30days')
+  })
+
+  return {
+    localDateRange,
+    periodPreset,
+    showCustomDate,
+    availableRange,
+    applyPreset,
+    disabledDate,
+  }
+}

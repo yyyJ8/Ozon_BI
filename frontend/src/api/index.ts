@@ -7,6 +7,7 @@ import type {
   Store,
   ProfitOverview, ProfitTrendItem, ProfitSkuItem, ProfitDailyItem,
   AnomalyResponse,
+  SkuManagementRow, SkuManagementUpdate,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -322,4 +323,24 @@ export async function getAnomalies(
   if (dateFrom) p.set('date_from', dateFrom)
   if (dateTo) p.set('date_to', dateTo)
   return fetchJson<AnomalyResponse>(`${BASE}/anomalies?${p.toString()}`)
+}
+
+// ── SKU 管理 API ──
+
+export async function getSkuManagement(storeId: number = 1): Promise<SkuManagementRow[]> {
+  return fetchJson<SkuManagementRow[]>(`${BASE}/sku-management?store_id=${storeId}`)
+}
+
+export async function batchUpdateSkuManagement(
+  items: SkuManagementUpdate[],
+  storeId: number = 1,
+): Promise<SkuManagementRow[]> {
+  return fetchJson<SkuManagementRow[]>(
+    `${BASE}/sku-management/batch?store_id=${storeId}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    },
+  )
 }

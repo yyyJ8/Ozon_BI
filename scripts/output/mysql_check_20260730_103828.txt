@@ -1,0 +1,680 @@
+🔗 正在连接 mysql://wangyilong:******@223.84.201.140:9030 ...
+
+📁 找到 1 个用户数据库 (共 3 个)
+
+
+====================================================================================================
+  📂 [db_warehouse] — 338 个表, 匹配 'ozon' 的 6 个
+====================================================================================================
+  表名                                            类型             行数           大小             创建时间                   备注
+  ----------------------------------------------------------------------------------------------------------------------------------
+  ods_ozon_product_f                            BASE TABLE     532          -              2025-09-28 10:55:35    Ozon产品表
+  ods_ozon_fbo_order_f                          BASE TABLE     5124         -              2025-09-28 10:13:40    OZON Fulfillment by Ozon (FBO) 订单主表
+  ods_ozon_fbo_order_product_f                  BASE TABLE     4755         -              2025-09-28 10:13:40    OZON Fulfillment by Ozon (FBO) 订单商品明细表
+  ods_ozon_fbs_order_f                          BASE TABLE     965          -              2025-09-28 10:14:21    OZON FBS订单主表
+  ods_ozon_product_stock_d                      BASE TABLE     20122        -              2025-09-28 10:14:21    Ozon产品库存表
+  ods_ozon_fbs_order_product_f                  BASE TABLE     971          -              2025-09-28 10:14:21    OZON FBS订单商品表
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_product_f]
+  字段 (39 列):
+    product_id                          bigint                                                   -- 产品ID
+    seller_id                           bigint                                                   -- 卖家ID
+    offer_id                            varchar(255)                                             -- 报价ID
+    archived                            boolean                                                  -- 是否已归档
+    has_fbo_stocks                      boolean                                                  -- 是否有FBO库存
+    has_fbs_stocks                      boolean                                                  -- 是否有FBS库存
+    quants                              text                                                     -- 数量信息(JSON格式)
+    barcodes                            text                                                     -- 条形码(JSON格式)
+    color_image                         text                                                     -- 颜色图片(JSON格式)
+    commissions                         text                                                     -- 佣金信息(JSON格式)
+    description_category_id             bigint                                                   -- 描述分类ID
+    discounted_fbo_stocks               int                                                      -- 折扣FBO库存数量
+    has_discounted_fbo_item             boolean                                                  -- 是否有折扣FBO商品
+    is_autoarchived                     boolean                                                  -- 是否自动归档
+    is_discounted                       boolean                                                  -- 是否有折扣
+    is_kgt                              boolean                                                  -- 是否KGT商品
+    is_prepayment_allowed               boolean                                                  -- 是否允许预付款
+    is_super                            boolean                                                  -- 是否超级商品
+    marketing_price                     varchar(255)                                             -- 营销价格
+    min_price                           varchar(255)                                             -- 最低价格
+    model_id                            bigint                                                   -- 模型ID
+    model_count                         int                                                      -- 模型数量
+    name                                varchar(800)                                             -- 商品名称
+    old_price                           varchar(255)                                             -- 旧价格
+    price                               varchar(255)                                             -- 价格
+    price_indexes                       text                                                     -- 价格指数(JSON格式)
+    primary_image                       text                                                     -- 主图(JSON格式)
+    promotions                          text                                                     -- 促销信息(JSON格式)
+    sku                                 bigint                                                   -- SKU
+    sources                             text                                                     -- 来源信息(JSON格式)
+    statuses                            text                                                     -- 状态信息(JSON格式)
+    stocks                              text                                                     -- 库存信息(JSON格式)
+    type_id                             bigint                                                   -- 类型ID
+    updated_at                          datetimev2(0)                                            -- 更新时间(Ozon平台)
+    vat                                 varchar(255)                                             -- 增值税
+    visibility_details                  text                                                     -- 可见性详情(JSON格式)
+    volume_weight                       decimalv3(10,2)                                          -- 体积重量
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      product_id: 1954466990
+      seller_id: 3013635
+      offer_id: 29714-Y07U0002-A01
+      archived: 0
+      has_fbo_stocks: 0
+      has_fbs_stocks: 1
+      quants: []
+      barcodes: []
+      color_image: []
+      commissions: [{"delivery_amount":2.22,"percent":14,"return_amount":47.07,"sale_schema":"FBO","value":55.3},{"delivery_amount":2.22,"percent":14,"return_amount":73.48,"sale_schema":"FBS","value":55.3},{"percent":14,"sale_schema":"RFBS","value":55.3},{"percent":13,"sale_schema":"FBP","value":51.35}]
+      description_category_id: 17028665
+      discounted_fbo_stocks: 0
+      has_discounted_fbo_item: 0
+      is_autoarchived: 0
+      is_discounted: 0
+      is_kgt: 0
+      is_prepayment_allowed: 1
+      is_super: 0
+      marketing_price: 395.00
+      min_price: 
+      model_id: 513372215
+      model_count: 9
+      name: До 1500 деталей Головоломка 2-в-1: подставка и крышка, 6 разноцветных ящиков, темно-серый цвет
+      old_price: 699.00
+      price: 395.00
+      price_indexes: {"color_index":"COLOR_INDEX_WITHOUT_INDEX","external_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"ozon_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"self_marketplaces_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0}}
+      primary_image: ["https://cdn1.ozone.ru/s3/multimedia-1-a/7578820846.jpg"]
+      promotions: [{"is_enabled":true,"type":"REVIEWS_PROMO"}]
+      sku: 2276172200
+      sources: [{"sku":2276172200,"source":"sds","created_at":"2025-06-12T02:11:52.360850Z","shipment_type":"SHIPMENT_TYPE_GENERAL","quant_code":""}]
+      statuses: {"status":"price_sent","status_failed":"","moderate_status":"approved","validation_status":"success","status_name":"Не продается","status_description":"Убран из продажи","is_created":true,"status_tooltip":"","status_updated_at":"2025-06-12T02:12:05.129751Z"}
+      stocks: {"has_stock":true,"stocks":[{"present":200,"reserved":0,"sku":2276172200,"source":"fbs"}]}
+      type_id: 92941
+      updated_at: 2025-06-12 02:23:24
+      vat: 0.00
+      visibility_details: {"has_price":true,"has_stock":true}
+      volume_weight: 6.70
+      create_time: 2025-09-20 10:45:13
+      update_time: 2025-10-15 03:45:03
+    --- 第 2 行 ---
+      product_id: 1954467061
+      seller_id: 3013635
+      offer_id: 31248-Y07U0001-A01
+      archived: 0
+      has_fbo_stocks: 0
+      has_fbs_stocks: 1
+      quants: []
+      barcodes: []
+      color_image: []
+      commissions: [{"delivery_amount":2.22,"percent":14,"return_amount":11.17,"sale_schema":"FBO","value":20.3},{"delivery_amount":2.22,"percent":14,"return_amount":18.44,"sale_schema":"FBS","value":20.3},{"percent":14,"sale_schema":"RFBS","value":20.3},{"percent":13,"sale_schema":"FBP","value":18.85}]
+      description_category_id: 17028665
+      discounted_fbo_stocks: 0
+      has_discounted_fbo_item: 0
+      is_autoarchived: 0
+      is_discounted: 0
+      is_kgt: 0
+      is_prepayment_allowed: 1
+      is_super: 0
+      marketing_price: 145.00
+      min_price: 
+      model_id: 490618036
+      model_count: 7
+      name: Коврик для пазлов на 500, 1000, 1500, 2000 деталей, коврик и аксессуары для сборки пазлов серый зеленый
+      old_price: 300.00
+      price: 145.00
+      price_indexes: {"color_index":"COLOR_INDEX_WITHOUT_INDEX","external_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"ozon_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"self_marketplaces_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0}}
+      primary_image: ["https://cdn1.ozone.ru/s3/multimedia-1-c/7405034016.jpg"]
+      promotions: [{"is_enabled":false,"type":"REVIEWS_PROMO"}]
+      sku: 2276172674
+      sources: [{"sku":2276172674,"source":"sds","created_at":"2025-06-12T02:11:57.065747Z","shipment_type":"SHIPMENT_TYPE_GENERAL","quant_code":""}]
+      statuses: {"status":"price_sent","status_failed":"","moderate_status":"approved","validation_status":"success","status_name":"Не продается","status_description":"Убран из продажи","is_created":true,"status_tooltip":"","status_updated_at":"2025-06-12T02:12:09.944638Z"}
+      stocks: {"has_stock":true,"stocks":[{"present":200,"reserved":0,"sku":2276172674,"source":"fbs"}]}
+      type_id: 92941
+      updated_at: 2025-06-12 02:24:25
+      vat: 0.00
+      visibility_details: {"has_price":true,"has_stock":true}
+      volume_weight: 1.40
+      create_time: 2025-09-20 10:45:13
+      update_time: 2025-10-15 03:45:04
+    --- 第 3 行 ---
+      product_id: 1954467128
+      seller_id: 3013635
+      offer_id: 31244-Y07U0001-A01
+      archived: 0
+      has_fbo_stocks: 0
+      has_fbs_stocks: 1
+      quants: []
+      barcodes: []
+      color_image: []
+      commissions: [{"delivery_amount":2.22,"percent":14,"return_amount":25.79,"sale_schema":"FBO","value":49},{"delivery_amount":2.22,"percent":14,"return_amount":40.86,"sale_schema":"FBS","value":49},{"percent":14,"sale_schema":"RFBS","value":49},{"percent":13,"sale_schema":"FBP","value":45.5}]
+      description_category_id: 17028665
+      discounted_fbo_stocks: 0
+      has_discounted_fbo_item: 0
+      is_autoarchived: 0
+      is_discounted: 0
+      is_kgt: 0
+      is_prepayment_allowed: 1
+      is_super: 0
+      marketing_price: 350.00
+      min_price: 
+      model_id: 513372215
+      model_count: 9
+      name: До 1000 деталей Головоломка 2-в-1: подставка и крышка, 6 разноцветных ящиков, темно-серый цвет
+      old_price: 599.00
+      price: 350.00
+      price_indexes: {"color_index":"COLOR_INDEX_WITHOUT_INDEX","external_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"ozon_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"self_marketplaces_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0}}
+      primary_image: ["https://cdn1.ozone.ru/s3/multimedia-1-j/7384576915.jpg"]
+      promotions: [{"is_enabled":false,"type":"REVIEWS_PROMO"}]
+      sku: 2276173831
+      sources: [{"sku":2276173831,"source":"sds","created_at":"2025-06-12T02:12:06.042285Z","shipment_type":"SHIPMENT_TYPE_GENERAL","quant_code":""}]
+      statuses: {"status":"price_sent","status_failed":"","moderate_status":"approved","validation_status":"success","status_name":"Не продается","status_description":"Убран из продажи","is_created":true,"status_tooltip":"","status_updated_at":"2025-06-12T02:12:18.847626Z"}
+      stocks: {"has_stock":true,"stocks":[{"present":200,"reserved":0,"sku":2276173831,"source":"fbs"}]}
+      type_id: 92941
+      updated_at: 2025-06-12 04:03:57
+      vat: 0.00
+      visibility_details: {"has_price":true,"has_stock":true}
+      volume_weight: 4.00
+      create_time: 2025-09-20 10:45:13
+      update_time: 2025-10-15 03:45:03
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_fbo_order_f]
+  字段 (13 列):
+    posting_number                      varchar(50)                                              -- 订单唯一标识号（发货编号）
+    seller_id                           bigint                                                   -- 卖家ID
+    order_id                            varchar(50)                                              -- 平台订单ID
+    order_number                        varchar(50)                                              -- 订单编号（商家可见）
+    status                              varchar(30)                                              -- 订单状态（delivering/awaiting_packaging等）
+    cancel_reason_id                    bigint                                                   -- 取消原因ID（0表示未取消）
+    created_at                          datetimev2(0)                                            -- 订单创建时间（OZON平台时间）
+    in_process_at                       datetimev2(0)                                            -- 订单开始处理时间
+    legal_info                          text                                                     -- 法律信息（JSON格式存储）
+    analytics_data                      text                                                     -- 分析数据（JSON格式存储）
+    additional_data                     text                                                     -- 附加数据（JSON格式存储）
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      posting_number: 0100655248-0233-1
+      seller_id: 3018128
+      order_id: 33597240144
+      order_number: 0100655248-0233
+      status: delivered
+      cancel_reason_id: 0
+      created_at: 2025-12-14 12:45:26
+      in_process_at: 2025-12-14 12:45:41
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      analytics_data: None
+      additional_data: []
+      create_time: 2025-12-15 00:22:07
+      update_time: 2026-01-13 00:22:04
+    --- 第 2 行 ---
+      posting_number: 0101803007-0134-1
+      seller_id: 3018151
+      order_id: 32768931023
+      order_number: 0101803007-0134
+      status: delivered
+      cancel_reason_id: 0
+      created_at: 2025-12-27 16:40:55
+      in_process_at: 2025-12-27 16:41:01
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      analytics_data: None
+      additional_data: []
+      create_time: 2025-12-29 00:22:03
+      update_time: 2026-01-26 00:22:02
+    --- 第 3 行 ---
+      posting_number: 0102149719-0004-1
+      seller_id: 3018151
+      order_id: 30868643671
+      order_number: 0102149719-0004
+      status: delivered
+      cancel_reason_id: 0
+      created_at: 2025-08-26 07:13:05
+      in_process_at: 2025-08-26 07:14:28
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      analytics_data: None
+      additional_data: []
+      create_time: 2025-09-19 20:14:15
+      update_time: 2025-09-19 20:17:25
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_fbo_order_product_f]
+  字段 (12 列):
+    id                                  varchar(50)                                              -- 主键ID
+    posting_number                      varchar(50)                                              -- 关联订单编号（外键）
+    sku                                 bigint                                                   -- 商品SKU编码
+    name                                text                                                     -- 商品名称
+    quantity                            int                                                      -- 商品数量
+    offer_id                            varchar(50)                                              -- 商家商品编号
+    price                               varchar(20)                                              -- 商品价格（字符串格式）
+    is_marketplace_buyout               boolean                                                  -- 是否平台回购商品
+    digital_codes                       text                                                     -- 数字商品码（JSON数组格式）
+    currency_code                       varchar(10)                                              -- 货币代码（如RUB/USD）
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      id: 00178968-0964-1_36020-Y07U0001-B03
+      posting_number: 00178968-0964-1
+      sku: 2860898035
+      name: Напольный держатель для шланга: для хранения садового шланга, со стойкой и 2 крючками, металлический
+      quantity: 1
+      offer_id: 36020-Y07U0001-B03
+      price: 6450.00
+      is_marketplace_buyout: 0
+      digital_codes: []
+      currency_code: RUB
+      create_time: 2025-11-05 00:22:04
+      update_time: 2025-12-04 00:22:04
+    --- 第 2 行 ---
+      id: 00451598-0260-1_15079-Y07U0007-B01
+      posting_number: 00451598-0260-1
+      sku: 2238512937
+      name: Коврик-стол для пазлов с 6 ящиками,Стол коврик для сборки пазлов 1000PCS светло-серый 77X54CM
+      quantity: 1
+      offer_id: 15079-Y07U0007-B01
+      price: 4385.00
+      is_marketplace_buyout: 0
+      digital_codes: []
+      currency_code: RUB
+      create_time: 2025-09-19 20:17:28
+      update_time: 2025-09-19 20:17:28
+    --- 第 3 行 ---
+      id: 0104505399-0147-1_33386-Y07U0001-B02
+      posting_number: 0104505399-0147-1
+      sku: 2413578988
+      name: Металлическая клетка с легким съемом поддона для уборки, трехэтажная для маленьких пород крыс, мышей и хомячков
+      quantity: 1
+      offer_id: 33386-Y07U0001-B02
+      price: 2800.00
+      is_marketplace_buyout: 0
+      digital_codes: []
+      currency_code: RUB
+      create_time: 2025-09-19 20:14:15
+      update_time: 2025-10-02 03:40:01
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_fbs_order_f]
+  字段 (60 列):
+    posting_number                      varchar(50)                                              -- 订单唯一标识号
+    seller_id                           bigint                                                   -- 卖家ID
+    order_id                            bigint                                                   -- 订单ID
+    order_number                        varchar(50)                                              -- 订单编号
+    status                              varchar(30)                                              -- 订单状态
+    substatus                           varchar(100)                                             -- 子状态
+    delivery_id                         bigint                                                   -- 配送方式ID
+    delivery_name                       varchar(100)                                             -- 配送方式名称
+    delivery_warehouse_id               bigint                                                   -- 发货仓库ID
+    delivery_warehouse                  varchar(100)                                             -- 发货仓库名称
+    delivery_tpl_provider_id            bigint                                                   -- 物流供应商ID
+    delivery_tpl_provider               varchar(100)                                             -- 物流供应商名称
+    tracking_number                     varchar(100)                                             -- 物流跟踪号
+    tpl_integration_type                varchar(50)                                              -- 物流集成类型
+    in_process_at                       datetimev2(0)                                            -- 开始处理时间
+    shipment_date                       datetimev2(0)                                            -- 发货时间
+    delivering_date                     datetimev2(0)                                            -- 配送时间
+    cancel_reason_id                    bigint                                                   -- 取消原因ID
+    cancel_reason                       varchar(255)                                             -- 取消原因描述
+    cancellation_type                   varchar(50)                                              -- 取消类型
+    cancelled_after_ship                boolean                                                  -- 是否发货后取消
+    affect_cancellation_rating          boolean                                                  -- 是否影响取消评级
+    cancellation_initiator              varchar(50)                                              -- 取消发起方
+    customer                            varchar(500)                                             -- 客户信息JSON
+    addressee                           varchar(500)                                             -- 收件人信息JSON
+    barcodes                            varchar(500)                                             -- 条形码信息
+    analytics_data                      text                                                     -- 分析数据JSON
+    financial_data                      text                                                     -- 财务数据JSON
+    is_express                          boolean                                                  -- 是否加急订单
+    legal_info                          text                                                     -- 法律信息JSON
+    products_requiring_gtd              text                                                     -- 需要GTD的商品信息
+    products_requiring_country          text                                                     -- 需要原产国信息的商品
+    products_requiring_mandatory_mark   text                                                     -- 需要强制标记的商品
+    products_requiring_rnpt             text                                                     -- 需要RNPT信息的商品
+    products_requiring_jw_uin           text                                                     -- 需要JW UIN信息的商品
+    products_requiring_change_country   text                                                     -- 需要更改原产国的商品
+    products_requiring_imei             text                                                     -- 需要IMEI信息的商品
+    products_requiring_weight           text                                                     -- 需要重量信息的商品
+    parent_posting_number               varchar(50)                                              -- 父订单编号
+    available_actions                   text                                                     -- 可用操作JSON
+    multi_box_qty                       int                                                      -- 多箱数量
+    is_multibox                         boolean                                                  -- 是否多箱订单
+    prr_option                          varchar(50)                                              -- PRR选项
+    quantum_id                          bigint                                                   -- Quantum ID
+    current_tariff_rate                 int                                                      -- 当前费率
+    current_tariff_type                 varchar(50)                                              -- 当前费率类型
+    current_tariff_charge               varchar(50)                                              -- 当前费用
+    current_tariff_charge_currency_code varchar(10)                                              -- 当前费用货币代码
+    next_tariff_rate                    decimalv3(10,2)                                          -- 下一费率
+    next_tariff_type                    varchar(50)                                              -- 下一费率类型
+    next_tariff_charge                  varchar(50)                                              -- 下一费用
+    next_tariff_starts_at               datetimev2(0)                                            -- 下一费率开始时间
+    next_tariff_charge_currency_code    varchar(10)                                              -- 下一费用货币代码
+    destination_place_id                bigint                                                   -- 目的地ID
+    destination_place_name              varchar(100)                                             -- 目的地名称
+    is_presortable                      boolean                                                  -- 是否可预分拣
+    pickup_code_verified_at             datetimev2(0)                                            -- 取件码验证时间
+    optional                            text                                                     -- 可选信息JSON
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      posting_number: 00308364-0495-1
+      seller_id: 3012909
+      order_id: 30462605260
+      order_number: 00308364-0495
+      status: delivered
+      substatus: posting_received
+      delivery_id: 1020005000204760
+      delivery_name: Доставка Ozon самостоятельно, Balashikha
+      delivery_warehouse_id: 1020005000204760
+      delivery_warehouse: EY-FBS
+      delivery_tpl_provider_id: 24
+      delivery_tpl_provider: Доставка Ozon
+      tracking_number: 
+      tpl_integration_type: ozon
+      in_process_at: 2025-08-06 17:09:22
+      shipment_date: 2025-08-06 15:00:00
+      delivering_date: 2025-08-07 15:16:43
+      cancel_reason_id: 0
+      cancel_reason: 
+      cancellation_type: 
+      cancelled_after_ship: 0
+      affect_cancellation_rating: 0
+      cancellation_initiator: 
+      customer: None
+      addressee: None
+      barcodes: None
+      analytics_data: None
+      financial_data: None
+      is_express: 0
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      products_requiring_gtd: []
+      products_requiring_country: []
+      products_requiring_mandatory_mark: []
+      products_requiring_rnpt: []
+      products_requiring_jw_uin: []
+      products_requiring_change_country: []
+      products_requiring_imei: []
+      products_requiring_weight: []
+      parent_posting_number: 
+      available_actions: []
+      multi_box_qty: 1
+      is_multibox: 0
+      prr_option: 
+      quantum_id: 0
+      current_tariff_rate: 0
+      current_tariff_type: 
+      current_tariff_charge: 
+      current_tariff_charge_currency_code: 
+      next_tariff_rate: 0.00
+      next_tariff_type: 
+      next_tariff_charge: 
+      next_tariff_starts_at: None
+      next_tariff_charge_currency_code: 
+      destination_place_id: 0
+      destination_place_name: 
+      is_presortable: 0
+      pickup_code_verified_at: None
+      optional: {"products_with_possible_mandatory_mark":[]}
+      create_time: 2025-09-19 18:26:52
+      update_time: 2025-09-19 19:36:40
+    --- 第 2 行 ---
+      posting_number: 0100701034-0165-1
+      seller_id: 3018151
+      order_id: 30660374970
+      order_number: 0100701034-0165
+      status: cancelled
+      substatus: posting_canceled
+      delivery_id: 1020005000205887
+      delivery_name: Доставка Ozon самостоятельно, Balashikha
+      delivery_warehouse_id: 1020005000205887
+      delivery_warehouse: EY-FBS
+      delivery_tpl_provider_id: 24
+      delivery_tpl_provider: Доставка Ozon
+      tracking_number: 
+      tpl_integration_type: ozon
+      in_process_at: 2025-08-09 19:40:23
+      shipment_date: 2025-08-09 15:00:00
+      delivering_date: None
+      cancel_reason_id: 352
+      cancel_reason: Товар закончился на складе
+      cancellation_type: seller
+      cancelled_after_ship: 1
+      affect_cancellation_rating: 1
+      cancellation_initiator: Продавец
+      customer: None
+      addressee: None
+      barcodes: None
+      analytics_data: None
+      financial_data: None
+      is_express: 0
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      products_requiring_gtd: []
+      products_requiring_country: []
+      products_requiring_mandatory_mark: []
+      products_requiring_rnpt: []
+      products_requiring_jw_uin: []
+      products_requiring_change_country: []
+      products_requiring_imei: []
+      products_requiring_weight: []
+      parent_posting_number: 
+      available_actions: []
+      multi_box_qty: 1
+      is_multibox: 0
+      prr_option: 
+      quantum_id: 0
+      current_tariff_rate: 0
+      current_tariff_type: 
+      current_tariff_charge: 
+      current_tariff_charge_currency_code: 
+      next_tariff_rate: 0.00
+      next_tariff_type: 
+      next_tariff_charge: 
+      next_tariff_starts_at: None
+      next_tariff_charge_currency_code: 
+      destination_place_id: 0
+      destination_place_name: 
+      is_presortable: 0
+      pickup_code_verified_at: None
+      optional: {"products_with_possible_mandatory_mark":[]}
+      create_time: 2025-09-19 18:21:02
+      update_time: 2025-09-19 19:36:35
+    --- 第 3 行 ---
+      posting_number: 0102254031-0063-1
+      seller_id: 3012909
+      order_id: 29601581487
+      order_number: 0102254031-0063
+      status: delivered
+      substatus: posting_received
+      delivery_id: 1020005000204760
+      delivery_name: Доставка Ozon самостоятельно, Balashikha
+      delivery_warehouse_id: 1020005000204760
+      delivery_warehouse: EY-FBS
+      delivery_tpl_provider_id: 24
+      delivery_tpl_provider: Доставка Ozon
+      tracking_number: 
+      tpl_integration_type: ozon
+      in_process_at: 2025-07-26 18:41:11
+      shipment_date: 2025-07-26 15:00:00
+      delivering_date: 2025-07-28 14:09:40
+      cancel_reason_id: 0
+      cancel_reason: 
+      cancellation_type: 
+      cancelled_after_ship: 0
+      affect_cancellation_rating: 0
+      cancellation_initiator: 
+      customer: None
+      addressee: None
+      barcodes: None
+      analytics_data: None
+      financial_data: None
+      is_express: 0
+      legal_info: {"company_name":"","inn":"","kpp":""}
+      products_requiring_gtd: []
+      products_requiring_country: []
+      products_requiring_mandatory_mark: []
+      products_requiring_rnpt: []
+      products_requiring_jw_uin: []
+      products_requiring_change_country: []
+      products_requiring_imei: []
+      products_requiring_weight: []
+      parent_posting_number: 
+      available_actions: []
+      multi_box_qty: 1
+      is_multibox: 0
+      prr_option: 
+      quantum_id: 0
+      current_tariff_rate: 0
+      current_tariff_type: 
+      current_tariff_charge: 
+      current_tariff_charge_currency_code: 
+      next_tariff_rate: 0.00
+      next_tariff_type: 
+      next_tariff_charge: 
+      next_tariff_starts_at: None
+      next_tariff_charge_currency_code: 
+      destination_place_id: 0
+      destination_place_name: 
+      is_presortable: 0
+      pickup_code_verified_at: None
+      optional: {"products_with_possible_mandatory_mark":[]}
+      create_time: 2025-09-19 18:26:52
+      update_time: 2025-09-19 19:36:40
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_product_stock_d]
+  字段 (16 列):
+    product_id                          bigint                                                   -- 主键ID，产品ID
+    seller_id                           bigint                                                   -- 卖家ID
+    offer_id                            varchar(255)                                             -- 报价ID
+    fbo_present                         int                                                      -- FBO库存可用数量
+    fbo_reserved                        int                                                      -- FBO库存预留数量
+    fbo_sku                             bigint                                                   -- FBO SKU
+    fbo_shipment_type                   varchar(255)                                             -- FBO发货类型
+    fbo_warehouse_ids                   text                                                     -- FBO仓库ID列表(JSON格式)
+    fbs_present                         int                                                      -- FBS库存可用数量
+    fbs_reserved                        int                                                      -- FBS库存预留数量
+    fbs_sku                             bigint                                                   -- FBS SKU
+    fbs_shipment_type                   varchar(255)                                             -- FBS发货类型
+    fbs_warehouse_ids                   text                                                     -- FBS仓库ID列表(JSON格式)
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+    batch_no                            varchar(100)                                             -- 批次号
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      product_id: 1903953946
+      seller_id: 3012909
+      offer_id: 15079-Y07U0007-B01
+      fbo_present: 177
+      fbo_reserved: 1
+      fbo_sku: 2238512937
+      fbo_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbo_warehouse_ids: []
+      fbs_present: 0
+      fbs_reserved: 0
+      fbs_sku: 2238512937
+      fbs_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbs_warehouse_ids: []
+      create_time: 2025-09-20 09:35:40
+      update_time: 2026-03-02 00:22:13
+      batch_no: 2026-03-02
+    --- 第 2 行 ---
+      product_id: 1903953946
+      seller_id: 3012909
+      offer_id: 15079-Y07U0007-B01
+      fbo_present: 178
+      fbo_reserved: 1
+      fbo_sku: 2238512937
+      fbo_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbo_warehouse_ids: []
+      fbs_present: 0
+      fbs_reserved: 0
+      fbs_sku: 2238512937
+      fbs_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbs_warehouse_ids: []
+      create_time: 2025-09-20 09:35:40
+      update_time: 2026-03-01 00:22:18
+      batch_no: 2026-03-01
+    --- 第 3 行 ---
+      product_id: 1903953946
+      seller_id: 3012909
+      offer_id: 15079-Y07U0007-B01
+      fbo_present: 180
+      fbo_reserved: 2
+      fbo_sku: 2238512937
+      fbo_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbo_warehouse_ids: []
+      fbs_present: 0
+      fbs_reserved: 0
+      fbs_sku: 2238512937
+      fbs_shipment_type: SHIPMENT_TYPE_GENERAL
+      fbs_warehouse_ids: []
+      create_time: 2025-09-20 09:35:40
+      update_time: 2026-02-28 00:22:21
+      batch_no: 2026-02-28
+
+  ────────────────────────────────────────────────────────────────────────────────
+  📋 [db_warehouse.ods_ozon_fbs_order_product_f]
+  字段 (13 列):
+    id                                  varchar(100)                                             -- ID
+    offer_id                            varchar(50)                                              -- 商品Offer ID
+    posting_number                      varchar(50)                                              -- 关联订单编号
+    price                               decimalv3(10,2)                                          -- 商品价格
+    name                                text                                                     -- 商品名称
+    sku                                 bigint                                                   -- 商品SKU
+    quantity                            int                                                      -- 商品数量
+    currency_code                       varchar(10)                                              -- 货币代码
+    is_blr_traceable                    boolean                                                  -- 是否白俄罗斯可追溯
+    is_marketplace_buyout               boolean                                                  -- 是否市场回购
+    imei                                text                                                     -- IMEI信息JSON
+    create_time                         datetimev2(0)                                            -- 创建时间
+    update_time                         datetimev2(0)                                            -- 更新时间
+  数据预览 (3 条):
+    --- 第 1 行 ---
+      id: 0102254031-0063-1_31746-Y07U0003-B01
+      offer_id: 31746-Y07U0003-B01
+      posting_number: 0102254031-0063-1
+      price: 6751.00
+      name: Складное ограждение на кровать для пожилых и инвалидов 98X50см,Регулируемый поручень-барьер от падения ,Перегородка для лежачих больных Без сверления Выдерживает до 200 кг
+      sku: 2398877017
+      quantity: 1
+      currency_code: RUB
+      is_blr_traceable: 0
+      is_marketplace_buyout: 0
+      imei: []
+      create_time: 2025-09-19 18:26:53
+      update_time: 2025-09-19 19:36:40
+    --- 第 2 行 ---
+      id: 0103992060-0066-2_30275-Y07U0001-A01
+      offer_id: 30275-Y07U0001-A01
+      posting_number: 0103992060-0066-2
+      price: 6600.00
+      name: Коврик-стол для пазлов с 6 ящиками,Стол коврик для сборки пазлов 1500PCS светло-серый
+      sku: 2259873371
+      quantity: 1
+      currency_code: RUB
+      is_blr_traceable: 0
+      is_marketplace_buyout: 0
+      imei: []
+      create_time: 2025-09-19 18:26:52
+      update_time: 2025-09-19 19:36:39
+    --- 第 3 行 ---
+      id: 0104198280-0028-1_29665-Y07U0002-A01
+      offer_id: 29665-Y07U0002-A01
+      posting_number: 0104198280-0028-1
+      price: 1618.00
+      name: Подвесной Органайзер для хранения вязальной пряжи Большой емкости с 5 отделениями на молнии
+      sku: 2385800919
+      quantity: 1
+      currency_code: RUB
+      is_blr_traceable: 0
+      is_marketplace_buyout: 0
+      imei: []
+      create_time: 2025-09-19 18:26:53
+      update_time: 2025-09-19 19:36:40
+
+
+====================================================================================================
+✅ 检查完毕

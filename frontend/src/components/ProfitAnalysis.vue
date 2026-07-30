@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import type { ProfitSkuItem, ProfitDailyItem, ProfitOverview } from '@/types'
 import { getProfitOverview, getProfitSkuRanking, getProfitSkuDaily } from '@/api'
 import { useStore } from '@/composables/useStore'
+import { useLocalDateRange } from '@/composables/useLocalDateRange'
 
 const props = defineProps<{
   dateRange: [string, string] | null
@@ -11,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const { selectedStoreId } = useStore()
+const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
 
 const overview = ref<ProfitOverview | null>(null)
 const skuItems = ref<ProfitSkuItem[]>([])
@@ -27,14 +29,12 @@ async function openSkuDetail(sku: ProfitSkuItem) {
   detailVisible.value = true
   detailLoading.value = true
   try {
-    if (props.dateRange) {
-      dailyDetail.value = await getProfitSkuDaily(
-        sku.sku_id,
-        props.dateRange[0],
-        props.dateRange[1],
-        selectedStoreId.value,
-      )
-    }
+    dailyDetail.value = await getProfitSkuDaily(
+      sku.sku_id,
+      localDateRange.value[0],
+      localDateRange.value[1],
+      selectedStoreId.value,
+    )
   } catch {
     dailyDetail.value = []
   } finally {
@@ -51,10 +51,9 @@ function formatMoneyShort(v: number): string {
 }
 
 async function loadData() {
-  if (!props.dateRange) return
   loading.value = true
   try {
-    const [d1, d2] = props.dateRange
+    const [d1, d2] = localDateRange.value
     const [ov, sku] = await Promise.all([
       getProfitOverview(d1, d2, selectedStoreId.value),
       getProfitSkuRanking(d1, d2, selectedStoreId.value),
@@ -69,17 +68,37 @@ async function loadData() {
   }
 }
 
-watch(() => props.dateRange, () => {
-  if (props.dateRange) loadData()
-})
+watch(localDateRange, () => { loadData() }, { immediate: true })
 
-watch(() => selectedStoreId.value, () => {
-  if (props.dateRange) loadData()
-})
+watch(() => selectedStoreId.value, () => { loadData() })
 </script>
 
 <template>
   <div v-loading="loading">
+    <!-- 独立日期筛选 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:#909399;">📅 时间筛选</span>
+      <el-select v-model="periodPreset" style="width:100px" size="small" @change="applyPreset">
+        <el-option label="昨天" value="yesterday" />
+        <el-option label="近7天" value="7days" />
+        <el-option label="近30天" value="30days" />
+        <el-option label="全部" value="all" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+      <el-date-picker
+        v-if="showCustomDate"
+        v-model="localDateRange"
+        type="daterange"
+        size="small"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="YYYY-MM-DD"
+        style="width:240px"
+        :disabled-date="disabledDate"
+      />
+    </div>
+
     <!-- KPI 卡片 -->
     <el-row :gutter="16">
       <el-col :span="6">

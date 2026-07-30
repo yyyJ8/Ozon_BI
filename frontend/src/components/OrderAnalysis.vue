@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Document, Van, Box, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
 import type { Product, OrderListItem } from '@/types'
 import { useOrders } from '@/composables/useOrders'
+import { useLocalDateRange } from '@/composables/useLocalDateRange'
 
 const props = defineProps<{
   dateRange: [string, string] | null
@@ -11,7 +12,7 @@ const props = defineProps<{
   activeTab: string
 }>()
 
-const dr = toRef(props, 'dateRange')
+const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
 const selectedSkuId = ref<number>()
 
 // ── 状态映射 ────────────────────────────────────────────
@@ -38,7 +39,7 @@ const {
   statusFilter, schemaFilter, searchFilter,
   viewMode, skuStats,
   selectedOrder, fetchDetail, clearDetail,
-} = useOrders(dr, selectedSkuId)
+} = useOrders(localDateRange, selectedSkuId)
 
 // ── 订单详情抽屉 ────────────────────────────────────────
 const drawerVisible = ref(false)
@@ -63,6 +64,7 @@ function onSkuRowClick(row: any) {
 }
 function clearSkuFilter() {
   selectedSkuId.value = undefined
+  viewMode.value = 'sku'
 }
 
 const selectedSkuName = computed(() => {
@@ -89,35 +91,20 @@ function renderTrendChart() {
         return h + '</div>'
       },
     },
-    legend: { data: ['订单总数', '待发货', '配送中', '已签收', '已取消', '签收后退'], bottom: 0 },
+    legend: { data: ['实际售出', '实际成交'], bottom: 0 },
     grid: { left: 50, right: 20, top: 20, bottom: 35 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
     yAxis: { type: 'value', minInterval: 1 },
     series: [
       {
-        name: '订单总数', type: 'line', data: trend.value.map(d => d.ordered),
+        name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered),
         lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
         symbol: 'circle', symbolSize: 4,
       },
       {
-        name: '待发货', type: 'line', data: trend.value.map(d => d.awaiting_deliver),
-        lineStyle: { width: 2 }, itemStyle: { color: '#e6a23c' }, symbolSize: 3,
-      },
-      {
-        name: '配送中', type: 'line', data: trend.value.map(d => d.delivering),
-        lineStyle: { width: 2 }, itemStyle: { color: '#909399' }, symbolSize: 3,
-      },
-      {
-        name: '已签收', type: 'line', data: trend.value.map(d => d.delivered),
-        lineStyle: { width: 2 }, itemStyle: { color: '#67c23a' }, symbolSize: 3,
-      },
-      {
-        name: '已取消', type: 'line', data: trend.value.map(d => d.cancelled),
-        lineStyle: { width: 2 }, itemStyle: { color: '#f56c6c' }, symbolSize: 3,
-      },
-      {
-        name: '签收后退', type: 'line', data: trend.value.map(d => d.client_return),
-        lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#e6a23c' }, symbolSize: 4,
+        name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.client_return),
+        lineStyle: { width: 3 }, itemStyle: { color: '#67c23a' },
+        symbol: 'diamond', symbolSize: 6, areaStyle: { color: 'rgba(103,194,58,0.1)' },
       },
     ],
   }, true)
@@ -164,6 +151,30 @@ const financeSummary = computed(() => {
 
 <template>
   <div v-loading="loading" style="min-height: 300px;">
+    <!-- 独立日期筛选 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:#909399;">📅 时间筛选</span>
+      <el-select v-model="periodPreset" style="width:100px" size="small" @change="applyPreset">
+        <el-option label="昨天" value="yesterday" />
+        <el-option label="近7天" value="7days" />
+        <el-option label="近30天" value="30days" />
+        <el-option label="全部" value="all" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+      <el-date-picker
+        v-if="showCustomDate"
+        v-model="localDateRange"
+        type="daterange"
+        size="small"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="YYYY-MM-DD"
+        style="width:240px"
+        :disabled-date="disabledDate"
+      />
+    </div>
+
     <!-- 概览卡片 6 张 -->
     <el-row :gutter="16" v-if="overview">
       <el-col :span="4">
@@ -255,7 +266,7 @@ const financeSummary = computed(() => {
     <el-card shadow="hover" style="margin-top: 16px;">
       <template #header>
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-weight:600;">订单趋势（按下单日期）</span>
+          <span style="font-weight:600;">实际售出 &amp; 实际成交（按下单日期）</span>
           <el-tag type="info" size="small">{{ trend.length }} 天</el-tag>
         </div>
       </template>
@@ -268,32 +279,13 @@ const financeSummary = computed(() => {
       <template #header>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-weight:600;">{{ viewMode === 'posting' ? '订单列表' : 'SKU 统计' }}</span>
-            <el-tag v-if="selectedSkuId" type="warning" closable size="small" @close="clearSkuFilter">
+            <span style="font-weight:600;">{{ viewMode === 'posting' ? '订单明细' : 'SKU 统计' }}</span>
+            <el-button v-if="viewMode === 'posting'" size="small" @click="clearSkuFilter">← 返回 SKU 统计</el-button>
+            <el-tag v-if="selectedSkuId && viewMode === 'posting'" type="warning" size="small">
               {{ selectedSkuName }}
             </el-tag>
-            <el-radio-group v-model="viewMode" size="small">
-              <el-radio-button value="posting">按订单</el-radio-button>
-              <el-radio-button value="sku">按 SKU</el-radio-button>
-            </el-radio-group>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <template v-if="viewMode === 'posting'">
-              <el-select v-model="selectedSkuId" placeholder="全部 SKU" clearable filterable size="small" style="width:180px;">
-                <el-option v-for="p in products" :key="p.sku_id" :label="`${p.sku_id} — ${p.offer_id || ''}`" :value="p.sku_id" />
-              </el-select>
-              <el-select v-model="statusFilter" placeholder="全部状态" clearable size="small" style="width:110px;">
-                <el-option label="待发货" value="awaiting_deliver" />
-                <el-option label="配送中" value="delivering" />
-                <el-option label="已签收" value="delivered" />
-                <el-option label="已取消" value="cancelled" />
-              </el-select>
-              <el-select v-model="schemaFilter" placeholder="全部配送" clearable size="small" style="width:100px;">
-                <el-option label="FBO" value="FBO" />
-                <el-option label="FBS" value="FBS" />
-              </el-select>
-              <el-input v-model="searchFilter" placeholder="搜索 SKU / 货号" clearable size="small" style="width:170px;" />
-            </template>
             <el-tag type="info" size="small">{{ viewMode === 'posting' ? listTotal + ' 单' : skuStats.length + ' SKU' }}</el-tag>
           </div>
         </div>

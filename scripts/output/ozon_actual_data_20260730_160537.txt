@@ -1,0 +1,1652 @@
+====================================================================================================
+PostgreSQL omsprod — 申购/采购/发货 6表 (Ozon平台)
+====================================================================================================
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【purchase_plan】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 1997929277938225154
+    → 例2: 1997929278089220098
+  po_plan_no  -- 采购申购单号
+    → 例1: PR2512080238
+    → 例2: PR2512080239
+  status  -- 状态 0：待提交、1：待审批、 2：待创建采购单 3：部分创建采购订单 4、已创建采购订单 5、已作废 6.审批中
+    → 例1: 5
+    → 例2: 5
+  memo  -- 备注
+    → 例1: NULL
+    → 例2: 
+  create_by
+    → 例1: 1899644388778872834
+    → 例2: 1899644388778872834
+  create_time
+    → 例1: 2025-12-08 15:20:34
+    → 例2: 2025-12-08 15:20:34
+  update_by
+    → 例1: 1899644388778872834
+    → 例2: 1899644388778872834
+  update_time
+    → 例1: 2025-12-09 13:51:12
+    → 例2: 2025-12-09 13:51:12
+  erp_id
+    → 例1: NULL
+    → 例2: NULL
+  sync_to_erp
+    → 例1: N
+    → 例2: N
+  erp_try_time
+    → 例1: 0
+    → 例2: 0
+  sync_erp_error_msg
+    → 例1: 
+    → 例2: 
+  erp_number
+    → 例1: NULL
+    → 例2: NULL
+  create_dept
+    → 例1: 1893840348941815810
+    → 例2: 1893840348941815810
+  tenant_id  -- 租户编号
+    → 例1: 000000
+    → 例2: 000000
+  approval_id  -- 下一审批人
+    → 例1: NULL
+    → 例2: NULL
+  head_id  -- 运营人员
+    → 例1: 1899644388778872834
+    → 例2: 1899644388778872834
+  approval_status  -- 审批状态 0：待审批 1：运营经理 2：计划员 3:计划经理
+    → 例1: NULL
+    → 例2: NULL
+  process_instance_id  -- 流程实例ID
+    → 例1: NULL
+    → 例2: NULL
+  approval_time  -- 最终审批时间
+    → 例1: NULL
+    → 例2: NULL
+  df_flag  -- 鼎发业务标识
+    → 例1: NULL
+    → 例2: NULL
+  sync_ding_flag  -- 同步到钉钉标识
+    → 例1: NULL
+    → 例2: NULL
+  sync_ding_error_msg  -- 同步到钉钉错误信息
+    → 例1: NULL
+    → 例2: NULL
+  pull_ding_flag  -- 拉取钉钉标识
+    → 例1: NULL
+    → 例2: NULL
+  pull_ding_error_msg  -- 拉取钉钉失败标志
+    → 例1: NULL
+    → 例2: NULL
+  plan_type  -- 申购类型:0-平台仓备货 1-海外仓备货 2-计划备货 3-组合备货
+    → 例1: 1
+    → 例2: 1
+  location_id  -- 收货仓id
+    → 例1: 1997192174623281154
+    → 例2: 1997192174623281154
+  stock_location_id  -- 备货仓id
+    → 例1: 1997916082041278465
+    → 例2: 1997916082041278465
+  plan_head_id
+    → 例1: NULL
+    → 例2: NULL
+  approval_desc
+    → 例1: NULL
+    → 例2: NULL
+  is_urgent  -- 是否紧急
+    → 例1: NULL
+    → 例2: NULL
+  logistics_method  -- 物流方式
+    → 例1: KAHANG
+    → 例2: KAHANG
+  customer_class_id  -- 自定义分类(oms_order_class.id)，多个用逗号分开
+    → 例1: NULL
+    → 例2: NULL
+  wms_status  -- 00初始，10已收货，20已质检，30已上架
+    → 例1: NULL
+    → 例2: NULL
+  wms_time  -- WMS执行完成时间
+    → 例1: NULL
+    → 例2: NULL
+  return_reason  -- 退回原因-只获取最新值
+    → 例1: 无采购预计交期
+    → 例2: 无采购预计交期
+  assembly_production_task_no  -- 组装生产任务编号
+    → 例1: NULL
+    → 例2: NULL
+  task_status  -- 组装生产任务状态:0:未到货,1:部分到货,2:已到货待打印拣货单,3:已打印待拣货,4:拣货中,5:生产中,6:已完成
+    → 例1: 0
+    → 例2: 0
+  purchase_application_review_time  -- 申购审核完成时间
+    → 例1: NULL
+    → 例2: NULL
+  production_starts_time  -- 生产开始时间/打印拣货单时间
+    → 例1: NULL
+    → 例2: NULL
+  is_rejected  -- 是否被驳回 0否 1是
+    → 例1: 0
+    → 例2: 0
+  parent_po_plan_no  -- 父申购单号
+    → 例1: 
+    → 例2: 
+  group_no  -- 组合销售单号
+    → 例1: 
+    → 例2: 
+  is_group  -- 是否组合销售单 Y是 N否
+    → 例1: N
+    → 例2: N
+  combo_flag  -- 组合产品标识 0非组合 1组合产品父 2组合产品子
+    → 例1: 0
+    → 例2: 0
+  plan_source  -- 单据来源 1采购申购单 2计划备货单
+    → 例1: 1
+    → 例2: 1
+  po_remark  -- 采购标识 0:全部采购 1:部分采购 2:全部库存
+    → 例1: 0
+    → 例2: 0
+  shooting_status  -- 拍摄状态 0无需拍摄 1待拍摄 2拍摄中 3已拍摄
+    → 例1: 0
+    → 例2: 0
+  is_new_product  -- 是否新品 Y是 N否
+    → 例1: N
+    → 例2: N
+  final_approval_id  -- 最终审批人
+    → 例1: NULL
+    → 例2: NULL
+  is_year_stock  -- 是否年底备货 0否 1是
+    → 例1: 0
+    → 例2: 0
+  is_need_purchase  -- 是否需要创建采购单 0否 1是
+    → 例1: 1
+    → 例2: 1
+  requisition_no  -- 备货需求单号
+    → 例1: 
+    → 例2: 
+  shipping_status  -- 发货状态
+    → 例1: NULL
+    → 例2: NULL
+  tax_free_flag  -- 税务标识：0-无票 1-退税 2-免税
+    → 例1: 0
+    → 例2: 0
+  cancel_reason  -- 作废原因
+    → 例1: NULL
+    → 例2: NULL
+  need_sample_shooting  -- 样品拍摄需求 0否 1是
+    → 例1: NULL
+    → 例2: NULL
+  is_combination_split  -- 单品补货标识
+    → 例1: NULL
+    → 例2: NULL
+  transfer_flag  -- 是否调拨
+    → 例1: 0
+    → 例2: 0
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【purchase_plan_item】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 2074425529881874434
+    → 例2: 2074426273016074241
+  po_plan_no  -- 采购计划单号
+    → 例1: PR2607070278
+    → 例2: PR2607070319
+  row_id  -- 行号
+    → 例1: 1
+    → 例2: 1
+  item_id  -- SKU编码
+    → 例1: 41987-Y07U0002-OB01
+    → 例2: 41605-Y07U0002-OB01
+  plan_qty  -- 计划采购数量
+    → 例1: 50
+    → 例2: 30
+  expect_date  -- 期望交货日期
+    → 例1: 2026-08-25
+    → 例2: 2026-08-22
+  planner_id  -- 计划员
+    → 例1: NULL
+    → 例2: NULL
+  store_id  -- 销售店铺
+    → 例1: 2038545809667805185
+    → 例2: 2038545809667805185
+  fn_sku  -- FNSKU
+    → 例1: NULL
+    → 例2: NULL
+  memo  -- 备注
+    → 例1: 直发单，按照直发表传递箱唛
+    → 例2: 直发单，按照直发表传递箱唛
+  create_by
+    → 例1: 2058758067173740545
+    → 例2: 2058758067173740545
+  create_time
+    → 例1: 2026-07-07 17:29:22
+    → 例2: 2026-07-07 17:32:19
+  update_by
+    → 例1: 10248
+    → 例2: 10248
+  update_time
+    → 例1: 2026-07-23 14:50:27
+    → 例2: 2026-07-23 14:50:27
+  already_qty  -- 已下单数量
+    → 例1: 50
+    → 例2: 30
+  create_dept
+    → 例1: 1893840348941815810
+    → 例2: 1893840348941815810
+  tenant_id  -- 租户编号
+    → 例1: 000000
+    → 例2: 000000
+  asin  -- Asin
+    → 例1: NULL
+    → 例2: NULL
+  new_flag  -- 是否首单 0：否 1：是
+    → 例1: 0
+    → 例2: 0
+  marketplace  -- 站点名称
+    → 例1: RU
+    → 例2: RU
+  order_type  -- 下单类型： 1、新品首单 2、新品返单 3、常规补货 4、集中备货 5、老品新上 6、凑起订量 7、备料订单
+    → 例1: NULL
+    → 例2: NULL
+  seller_sku
+    → 例1: 41987-Y07U0002-OB01
+    → 例2: 41605-Y07U0002-OB01
+  platform
+    → 例1: Ozon
+    → 例2: Ozon
+  package_qty
+    → 例1: 5
+    → 例2: 10
+  expect_arrive_date  -- 采购预计交期
+    → 例1: 2026-07-15
+    → 例2: 2026-07-12
+  created_shipping_plan_qty  -- 已创建发货计划数量
+    → 例1: 50
+    → 例2: 30
+  shipping_plan_status  -- 创建发货计划状态:0-待创建 1-部分创建 2-已创建
+    → 例1: 2
+    → 例2: 2
+  wms_rec_qty  -- WMS收货数量
+    → 例1: 50
+    → 例2: 30
+  wms_check_qty  -- WMS质检合格数量
+    → 例1: 50
+    → 例2: 30
+  wms_onstock_qty  -- WMS上架数量
+    → 例1: 50
+    → 例2: 30
+  expect_delivery_date  -- 期望仓库发货时间
+    → 例1: 2026-07-25
+    → 例2: 2026-07-22
+  warehouse_item_code  -- 海外仓条码
+    → 例1: 41987-Y07U0002-OB01
+    → 例2: 41605-Y07U0002-OB01
+  main_sku_id  -- 主sku
+    → 例1: 41987
+    → 例2: 41605
+  seller_sku_id  -- 平台SKUID
+    → 例1: 2074425054759505921
+    → 例2: 2074425948779597826
+  next_shipment_reason  -- 下次发货原因
+    → 例1: 
+    → 例2: 
+  match_qty  -- 匹配到公共库存的数量
+    → 例1: 0
+    → 例2: 0
+  match_exclusive_qty  -- 匹配到专属库存的数量
+    → 例1: 0
+    → 例2: 0
+  is_deduct  -- 是否可抵扣  0否 1是
+    → 例1: 0
+    → 例2: 0
+  direct_ship_arrival_qty  -- 直发采购到货数
+    → 例1: 50
+    → 例2: 30
+  direct_ship_arrival_time  -- 直发确认到货时间（多次确认覆盖）
+    → 例1: 2026-07-11 09:10:46
+    → 例2: 2026-07-11 11:02:19
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【purchase_order】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 1998256913843507201
+    → 例2: 1998256914195828738
+  po_no  -- 采购单号
+    → 例1: PO2512090222
+    → 例2: PO2512090223
+  vendor_id  -- 供应商
+    → 例1: 1928364813306425345
+    → 例2: 1895077140911927298
+  location_id  -- 仓库
+    → 例1: 1997192174623281154
+    → 例2: 1997192174623281154
+  po_type  -- 采购订单类型：1：计划采购
+    → 例1: 1
+    → 例2: 1
+  subsidiary_id  -- 公司
+    → 例1: 1951172199303630850
+    → 例2: 1951172199303630850
+  approval_status  -- 审批状态 0：待审批 1：待主管审批 2：待经理审批
+    → 例1: 3
+    → 例2: 3
+  dept_id  -- 部门
+    → 例1: 0
+    → 例2: 0
+  receipt_date  -- 收货日期-预计交货日期(期望交货日期)
+    → 例1: 2026-01-17
+    → 例2: 2025-12-17
+  sku_type  -- 采购订单SKU品类 1:玩具品类 2:非玩具品类
+    → 例1: 585
+    → 例2: 543
+  po_approverole  -- 审批人
+    → 例1: 10006
+    → 例2: 10006
+  trandate  -- 采购日期
+    → 例1: 2025-12-09
+    → 例2: 2025-12-09
+  po_purchaser_id  -- 采购员
+    → 例1: 1931880157193584642
+    → 例2: 1931880157193584642
+  untaxed_amount  -- 未税金额
+    → 例1: 1009.92
+    → 例2: 1000.00
+  tax_amount  -- 税额
+    → 例1: 0.00
+    → 例2: 0.00
+  template_memo  -- 模板修改说明
+    → 例1: NULL
+    → 例2: NULL
+  other_memo  -- 其他备注信息
+    → 例1: 
+    → 例2: 
+  memo  -- 备注
+    → 例1: 易仓切换到中台的订单，中台无需下单，只需走完流程。
+    → 例2: 易仓切换到中台的订单，中台无需下单，只需走完流程。
+  status  -- 状态 0：待提交 1：已提交 2：待审批 3:待入库 4：部分入库 5：异常  6 已作废 7 完结 21 待申请付款 22 待付款 31 已发货 32 已签收 6666 待下放
+    → 例1: 6
+    → 例2: 6
+  create_by
+    → 例1: 1990245100895883265
+    → 例2: 1990245100895883265
+  create_time
+    → 例1: 2025-12-09 13:02:29
+    → 例2: 2025-12-09 13:02:29
+  update_by
+    → 例1: 1980076729780948994
+    → 例2: 1980076729780948994
+  update_time
+    → 例1: 2025-12-15 18:20:14
+    → 例2: 2025-12-15 18:20:09
+  mode  -- (废弃)
+    → 例1: NULL
+    → 例2: NULL
+  tx_status  -- (废弃)
+    → 例1: NULL
+    → 例2: NULL
+  current_tx_status_msg  -- (废弃)
+    → 例1: NULL
+    → 例2: NULL
+  sync_to_wms
+    → 例1: NULL
+    → 例2: NULL
+  wms_try_time
+    → 例1: 0
+    → 例2: 0
+  sync_wms_error_msg
+    → 例1: NULL
+    → 例2: NULL
+  wms_id
+    → 例1: NULL
+    → 例2: NULL
+  wms_number
+    → 例1: NULL
+    → 例2: NULL
+  erp_id
+    → 例1: NULL
+    → 例2: NULL
+  sync_to_erp
+    → 例1: N
+    → 例2: N
+  erp_try_time
+    → 例1: 0
+    → 例2: 0
+  sync_erp_error_msg
+    → 例1: NULL
+    → 例2: NULL
+  erp_number
+    → 例1: NULL
+    → 例2: NULL
+  create_dept
+    → 例1: 1922140285248901121
+    → 例2: 1922140285248901121
+  currency_code  -- 币别
+    → 例1: CNY
+    → 例2: CNY
+  tenant_id  -- 租户编号
+    → 例1: 000000
+    → 例2: 000000
+  approve_desc  -- 审批描述
+    → 例1: 
+    → 例2: 
+  supplier_settlement  -- 结算方式
+    → 例1: 1928079381154885633
+    → 例2: 1933347218503671809
+  other_cost  -- 其它费用
+    → 例1: 0.00
+    → 例2: 0.00
+  already_pay_amount  -- 已出账金额
+    → 例1: 984.00
+    → 例2: 1000.00
+  amount  -- 总金额
+    → 例1: 984.00
+    → 例2: 1000.00
+  process_instance_id  -- 流程实例ID
+    → 例1: 2563975
+    → 例2: 2563957
+  is_push_success  -- 领星：是否推送成功
+    → 例1: NULL
+    → 例2: NULL
+  push_error_details  -- 领星：推送错误信息
+    → 例1: NULL
+    → 例2: NULL
+  df_flag  -- 鼎发业务标识
+    → 例1: NULL
+    → 例2: NULL
+  lx_number  -- 领星采购单号
+    → 例1: NULL
+    → 例2: NULL
+  if_in_transit_count  -- 是否参与在途计算 1：参加 0：不参加 (废弃)
+    → 例1: 1
+    → 例2: 1
+  customer_class_id  -- 自定义分类(oms_order_class.id)，多个用逗号分开
+    → 例1: NULL
+    → 例2: 1932051006236303362
+  prepayment_percent  -- 预付款比例
+    → 例1: 100.00
+    → 例2: 10.00
+  discount_amount  -- 折扣金额
+    → 例1: 12.00
+    → 例2: -160.00
+  prepayment_amount  -- 预付款金额
+    → 例1: 984.00
+    → 例2: 100.00
+  purchase_platform  -- 采购平台
+    → 例1: 0
+    → 例2: 0
+  platform_po_no  -- 平台单号
+    → 例1: NULL
+    → 例2: NULL
+  platform_po_status  -- 平台状态 未下单 待付款 待发货 部分发货 待收货 虚假发货  已收货 已完成 已关闭 等待还款 部分退款 全部退款
+    → 例1: 已关闭
+    → 例2: 已关闭
+  payment_status  -- 付款状态 0：待付款 1：审核不通过 2：已申请付款 3:部分付款 4:已全部付款
+    → 例1: 2
+    → 例2: 2
+  logistics_name  -- 物流公司
+    → 例1: 中通快运
+    → 例2: 安能物流
+  logistics_num  -- 物流单号
+    → 例1: ZY202452498279
+    → 例2: 610067232459
+  bill1688_status  -- 1688对账状态 0：异常 1：正常
+    → 例1: 1
+    → 例2: 1
+  exception_type  -- 异常类型 1：来错货 2：少来货 3：多来货
+    → 例1: NULL
+    → 例2: NULL
+  exception_desc  -- 来货异常说明
+    → 例1: NULL
+    → 例2: NULL
+  logistics_last_updtime  -- 物流最后更新时间
+    → 例1: 2025-12-11 10:40:06
+    → 例2: 2025-12-11 14:56:56
+  logistics_last_desc  -- 物流最后跟踪信息
+    → 例1: 【金华市】 本人签收
+    → 例2: 【金华市】 您的快件由本人签收，如有疑问请电联派件员【王士锋，18413488025】，网点电话：【057983529583】感谢使用安能，期待再次为您服务。
+  sync_platform_status  -- 同步平台状态 0:未同步 1：已同步
+    → 例1: 1
+    → 例2: 1
+  purchase_amount  -- 采购金额
+    → 例1: 984.000
+    → 例2: 1000.000
+  account_id  -- 下单子账号ID(oms_taobao_account.id)
+    → 例1: 1925740136287870978
+    → 例2: 1925740136287870978
+  expected_pay_time  -- 下单预计付款时间
+    → 例1: NULL
+    → 例2: NULL
+  shipping_fee  -- 运费
+    → 例1: 0.00
+    → 例2: 0.00
+  platform_amount  -- 平台金额
+    → 例1: 984.00
+    → 例2: 1000.00
+  red_discount_amount  -- 红包优惠
+    → 例1: 0.00
+    → 例2: 0.00
+  line_up_down_flag  -- 线上线下标识:1:线上 2:线下，
+    → 例1: 3
+    → 例2: 3
+  platform_order_notes  -- 1688下单备注
+    → 例1: 订单商品数量：12PCS
+——规格：带轮子，产品尺寸：79.5*50*43cm；6个脚轮，每个都带有刹车
+——单套空白出口纸盒+泡沫加固包装好 ;保质保量出货还要发国外销售。如有疑问请致电：147 9787 1171
+——【SKU：33047】箱唛；采购单必贴外箱、需条形码入库、不贴仓库会拒签
+采购单：PO2512090222
+    → 例2: 订单商品数量：20PCS
+——规格：60x90cm双面海报架+黑色+60x90+114*24*26+金属+2.02
+——单套空白出口纸盒+泡沫加固包装好 ;保质保量出货还要发国外销售。如有疑问请致电：147 9787 1171
+——【SKU：31972】箱唛；采购单必贴外箱、需条形码入库、不贴仓库会拒签
+采购单：PO2512090223
+  is_send_affirm  -- 是否发送送货单 1:已发送 0:未发送
+    → 例1: 0
+    → 例2: 0
+  is_confirm_message  -- 是否确认留言 0：未确认 1：已确认
+    → 例1: 1
+    → 例2: 1
+  is_confirm_date  -- 是否确认交期 0 否 1 是
+    → 例1: 1
+    → 例2: 1
+  purchase_expect_date  -- 采购期望交期
+    → 例1: 2025-12-12
+    → 例2: 2025-12-12
+  approval_time  -- 审批通过时间
+    → 例1: 2025-12-11 11:30:47
+    → 例2: 2025-12-11 11:30:47
+  purchase_order_status  -- 采购订单状态,数据字典：purchase_order_status，供应商点击触发，暂时不用
+    → 例1: NULL
+    → 例2: NULL
+  is_more_purchase_plan  -- 是否多申购单 0否 1是
+    → 例1: 0
+    → 例2: 0
+  is_match_stock_exception  -- 是否匹配库存异常 0否 1是
+    → 例1: 0
+    → 例2: 0
+  is_less_min_order  -- 满足订量 0否1是
+    → 例1: 1
+    → 例2: 1
+  is_new_warehouse  -- 是否新仓库 0否1是
+    → 例1: 3
+    → 例2: 3
+  is_year_stock  -- 是否年底备货 0否 1是
+    → 例1: 0
+    → 例2: 0
+  price_time  -- 核价时间
+    → 例1: NULL
+    → 例2: NULL
+  is_split  -- 拆分产品采购单标识，0-否，1-是
+    → 例1: 0
+    → 例2: 0
+  cancel_by  -- 作废人
+    → 例1: NULL
+    → 例2: NULL
+  cancel_time  -- 作废时间
+    → 例1: NULL
+    → 例2: NULL
+  cancel_type  -- 作废类型
+    → 例1: NULL
+    → 例2: NULL
+  cancel_reason  -- 作废原因
+    → 例1: NULL
+    → 例2: NULL
+  is_new_purchase  -- 是否新采，0-否，1-是
+    → 例1: 0
+    → 例2: 0
+  new_amazon_product  -- amazon新品标签，0-否，1-是
+    → 例1: 0
+    → 例2: 0
+  contract_no  -- 合同编号
+    → 例1: 
+    → 例2: 
+  tax_free_flag  -- 税务标识：0-无票 1-退税 2-免税
+    → 例1: 0
+    → 例2: 0
+  purchase_dept_type  -- 采购部门类型  1 家具事业部 2供应链中心
+    → 例1: 2
+    → 例2: 2
+  sample_version  -- 样品次样(样品申购专有，数字为几表示几次样)
+    → 例1: NULL
+    → 例2: NULL
+  approval_deadline  -- 审批截止时间
+    → 例1: NULL
+    → 例2: NULL
+  pay_way  -- 1688订单支持的支付方式编码列表，逗号分隔
+    → 例1: NULL
+    → 例2: NULL
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【purchase_order_item】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 2038822242319355905
+    → 例2: 2039163902433710082
+  create_by
+    → 例1: 2038436314107211778
+    → 例2: 2038436314107211778
+  create_time
+    → 例1: 2026-03-31 11:34:37
+    → 例2: 2026-04-01 10:12:15
+  update_by
+    → 例1: 10054
+    → 例2: 1931880157193584642
+  update_time
+    → 例1: 2026-04-07 13:38:24
+    → 例2: 2026-04-07 13:42:57
+  package_qty  -- 单箱数量
+    → 例1: 7
+    → 例2: 10
+  create_dept
+    → 例1: 1922140285248901121
+    → 例2: 1922140285248901121
+  po_no  -- 采购单号
+    → 例1: PO2603310062
+    → 例2: PO2604010029
+  row_id  -- 行号
+    → 例1: 1
+    → 例2: 1
+  item_id  -- SKU编码
+    → 例1: NULL
+    → 例2: NULL
+  price  -- 未税单价
+    → 例1: 26.00
+    → 例2: 29.00
+  qty  -- 采购数量
+    → 例1: 35
+    → 例2: 30
+  tax_rate  -- 税率(%)
+    → 例1: 0.00
+    → 例2: 0.00
+  untaxed_amount  -- 未税金额
+    → 例1: 910.00
+    → 例2: 870.00
+  tax_amount  -- 税额
+    → 例1: NULL
+    → 例2: NULL
+  labor_cost  -- 分摊人工费
+    → 例1: 1.00
+    → 例2: 1.00
+  mold_cost  -- 分摊开模费
+    → 例1: 0.00
+    → 例2: 0.00
+  risk_value  -- 分摊风险系数费用
+    → 例1: 0.00
+    → 例2: 0.00
+  expect_receipt_date  -- 采购预计交期
+    → 例1: 2026-04-22
+    → 例2: 2026-04-14
+  receipt_qty  -- 采购收货数量
+    → 例1: 35
+    → 例2: 30
+  source_price  -- 原未税单价
+    → 例1: 26.00
+    → 例2: 30.00
+  cut_price  -- 扣减单价
+    → 例1: 0.00
+    → 例2: 0.00
+  expect_date  -- 计划要求到货日期
+    → 例1: 2026-04-30
+    → 例2: 2026-04-30
+  po_plan_no  -- 采购计划单号
+    → 例1: PR2603230395
+    → 例2: PR2603310266
+  plan_row_id  -- 采购计划明细行号
+    → 例1: 1
+    → 例2: 1
+  memo  -- 备注
+    → 例1: 直发单，根据直发表传递标签数据
+    → 例2: 直发单 按照直发单专递数据
+  already_pay_amount  -- 已生成账单金额
+    → 例1: 0.00
+    → 例2: 0.00
+  return_qty  -- 已退货数量
+    → 例1: 0
+    → 例2: 0
+  bg_price  -- 报关价
+    → 例1: 0.0000
+    → 例2: 0.0000
+  bg_chinesename  -- 中文报关品名(开票名称)
+    → 例1: NULL
+    → 例2: NULL
+  bg_model  -- 出口报关型号(开票型号)
+    → 例1: NULL
+    → 例2: NULL
+  bg_unit  -- 成交单位(开票单位)
+    → 例1: NULL
+    → 例2: NULL
+  tax_rate_kingdee  -- 税率(%)(金蝶)
+    → 例1: 0.00
+    → 例2: 0.00
+  price_tax_kingdee  -- 含税单价(金蝶)
+    → 例1: 26.00
+    → 例2: 30.00
+  amount_kingdee  -- 金额(金蝶)
+    → 例1: 910.00
+    → 例2: 900.00
+  tax_amount_kingdee  -- 税额(金蝶)
+    → 例1: 910.00
+    → 例2: 900.00
+  notified_flag  -- 已通知收标： 1.已通知 2.未通知
+    → 例1: 0
+    → 例2: 0
+  if_doc  -- 是否加DOC符合性声明：0：否  1：是 
+    → 例1: 0
+    → 例2: 0
+  if_product_compliance_ifm  -- 是否加产品上的合规信息: 0：否 1：是
+    → 例1: 0
+    → 例2: 0
+  if_instructions_compliant  -- 说明书是否合规：0：否 1：是
+    → 例1: 0
+    → 例2: 0
+  if_color_box_compliant  -- 彩盒是否合规：0：否 1：是
+    → 例1: 0
+    → 例2: 0
+  if_europe_britain  -- 是否欧代英代
+    → 例1: 0
+    → 例2: 0
+  if_version_four  -- 是否采用第四版合规2024-11-7
+    → 例1: NULL
+    → 例2: NULL
+  platform_qty  -- 平台下单数量
+    → 例1: NULL
+    → 例2: NULL
+  last_price  -- 上次采购单价
+    → 例1: NULL
+    → 例2: NULL
+  discount_amount  -- 折扣金额
+    → 例1: 0.00
+    → 例2: 0.00
+  platform_price  -- 平台1688单价
+    → 例1: NULL
+    → 例2: NULL
+  reject_qty  -- 次品数量
+    → 例1: 0
+    → 例2: 0
+  offer_id  -- 1688接口-商品对应的offer id
+    → 例1: 554451376948
+    → 例2: NULL
+  spec_id  -- 1688接口-商品规格id
+    → 例1: 9f0cf049adbbf7e432282a8eaea66bba
+    → 例2: NULL
+  sku_purchase_rul  -- 采购链接
+    → 例1: NULL
+    → 例2: NULL
+  location_id  -- 仓库
+    → 例1: NULL
+    → 例2: NULL
+  tax  -- 税额
+    → 例1: 0.000
+    → 例2: 0.000
+  amount_with_tax  -- 含税价格
+    → 例1: 910.000
+    → 例2: 870.000
+  track_status  -- 跟踪状态 待收货、已验收、已质检、已上架
+    → 例1: 3
+    → 例2: 3
+  platform_sub_item_id  -- 平台子订单id
+    → 例1: NULL
+    → 例2: NULL
+  shipping_plan_status  -- 发货计划创建状态 0-待创建 1-部分创建 2-已创建
+    → 例1: 0
+    → 例2: 0
+  marketplace_code  -- 站点
+    → 例1: RU
+    → 例2: RU
+  sale_platform  -- 销售平台
+    → 例1: Ozon
+    → 例2: Ozon
+  third_location_id  -- 第三方仓/平台仓
+    → 例1: 1999007091043094530
+    → 例2: 1999007091043094530
+  head_id  -- 运营人员/申购人
+    → 例1: 10028
+    → 例2: 10028
+  sale_store_id  -- 销售店铺
+    → 例1: NULL
+    → 例2: NULL
+  accepted_time  -- wms回传的验收时间
+    → 例1: 2026-04-07 13:38:23
+    → 例2: 2026-04-07 13:42:56
+  check_date  -- Wms回传的质检时间
+    → 例1: 2026-04-07 13:38:23
+    → 例2: 2026-04-07 13:42:56
+  already_listed_time  -- Wms回传的上架时间
+    → 例1: 2026-04-07 13:38:23
+    → 例2: 2026-04-07 13:42:56
+  pending_shipment_qty  -- 发货单待发货数量
+    → 例1: 35
+    → 例2: 30
+  other_cost  -- 其他费用
+    → 例1: 0.00
+    → 例2: 0.00
+  main_sku_id  -- 主sku
+    → 例1: 20162
+    → 例2: 40243
+  tax_price  -- 含税单价
+    → 例1: 26.00
+    → 例2: 29.00
+  other_tax_rate  -- 其他税率
+    → 例1: 0.00
+    → 例2: 0.00
+  vendor_tax_type  -- 供应商税务类型:0无票 1退税 2免税
+    → 例1: 0
+    → 例2: 0
+  price_with_freight  -- 含运单价（未税）
+    → 例1: 26.00
+    → 例2: 29.00
+  tax_price_with_freight  -- 含运单价（含税）
+    → 例1: 26.00
+    → 例2: 29.00
+  amount_with_tax_new  -- 含税单价(最新)
+    → 例1: 26.0000
+    → 例2: 30.0000
+  untaxed_amount_new  -- 不含税单价(最新)
+    → 例1: 26.0000
+    → 例2: 30.0000
+  freight  -- 运费(最新)
+    → 例1: 0.0000
+    → 例2: 0.0000
+  tax_new  -- 税额(最新)
+    → 例1: 0.0000
+    → 例2: 0.0000
+  receive_qty_sum  -- 收货数量总和
+    → 例1: 35
+    → 例2: 30
+  return_qty_sum  -- 退货数量总和
+    → 例1: 0
+    → 例2: 0
+  put_completed_qty_sum  -- 上架数量总和
+    → 例1: 35
+    → 例2: 30
+  receipt_time  -- 收货时间（最后一次收货时间）
+    → 例1: 2026-04-07 13:38:23
+    → 例2: 2026-04-07 13:42:56
+  put_no  -- 上架单号
+    → 例1: NULL
+    → 例2: NULL
+  put_time  -- 上架时间(最后一次上架时间)
+    → 例1: NULL
+    → 例2: NULL
+  sample_price  -- 样品价
+    → 例1: NULL
+    → 例2: NULL
+  percent_change  -- 涨跌幅度：相对上一张同主SKU非作废采购单含税单价的百分比变化
+    → 例1: NULL
+    → 例2: NULL
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【first_leg_shipping_order】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 1999402724723806209
+    → 例2: 1999403497843085314
+  order_code  -- 发货单编号
+    → 例1: DE202512120054
+    → 例2: DE202512120055
+  plan_code  -- 发货计划编号
+    → 例1: SP202512120022
+    → 例2: SP202512120023
+  shipment_plan_id  -- 货件计划id
+    → 例1: 1999402724635725825
+    → 例2: 1999403497759199234
+  plan_type  -- 计划类型: 0-平台仓备货 1-海外仓备货 2-海外仓中转
+    → 例1: 1
+    → 例2: 1
+  channel_code  -- 物流方式
+    → 例1: KAHANG
+    → 例2: KAHANG
+  shipping_warehouse_id  -- 发货仓
+    → 例1: 1997192174623281154
+    → 例2: 1997192174623281154
+  destination_warehouse_id  -- 目的仓
+    → 例1: 1997916082041278465
+    → 例2: 1997916082041278465
+  destination_country_code  -- 目的国
+    → 例1: RU
+    → 例2: RU
+  store_id  -- 店铺id
+    → 例1: NULL
+    → 例2: NULL
+  receiving_platform  -- 收货平台
+    → 例1: Ozon-SDK
+    → 例2: Ozon-SDK
+  third_order_code  -- 货件号(第三方入库单号)
+    → 例1: 
+    → 例2: 
+  shipping_plan_time  -- 计划发货时间
+    → 例1: 2025-12-12 00:00:00
+    → 例2: 2025-12-12 00:00:00
+  ship_date  -- 船期
+    → 例1: NULL
+    → 例2: NULL
+  picking_exception_status  -- 拣货异常状态: 0-无 1-异常待处理 2-继续发货 3-停止发货
+    → 例1: 0
+    → 例2: 0
+  order_status  -- 发货单状态(1-待推送到仓 2-待拣货 3-拣货完成,待装箱  4-装箱完成,待上传头程物流箱唛 5-待质检  6-待上传海外仓入库箱唛 7-待物流专员发货 8-待复核 10-复核完成,待发货 11-已发货 12-已到仓 13-部分到仓 9-已作废 )
+    → 例1: 9
+    → 例2: 11
+  warehouse_arrival_status  -- 到仓状态:0-未到仓 1-部分到仓 2-全部到仓
+    → 例1: 0
+    → 例2: 0
+  create_by
+    → 例1: 1901456830391554049
+    → 例2: 1901456830391554049
+  create_time
+    → 例1: 2025-12-12 16:55:31
+    → 例2: 2025-12-12 16:58:36
+  update_by
+    → 例1: 1901456830391554049
+    → 例2: 1901456830391554049
+  update_time
+    → 例1: 2025-12-18 10:01:56
+    → 例2: 2025-12-18 10:01:56
+  create_dept
+    → 例1: 1859854423610265602
+    → 例2: 1859854423610265602
+  remark  -- 备注
+    → 例1: 
+    → 例2: 
+  logistics_order  -- 物流单号
+    → 例1: LG202512180004
+    → 例2: LG202512180003
+  merge_tag  -- 是否合并: 0-否 1-是
+    → 例1: 1
+    → 例2: 1
+  package_type  -- 装箱类型 0-一箱一种sku 1-混装
+    → 例1: 0
+    → 例2: 0
+  packing_exception_status  -- 装箱异常状态: 0-无 1-异常待处理 2-继续发货 3-停止发货
+    → 例1: 0
+    → 例2: 0
+  sync_to_wms
+    → 例1: Y
+    → 例2: Y
+  wms_try_time
+    → 例1: 0
+    → 例2: 0
+  sync_wms_error_msg
+    → 例1: 
+    → 例2: 
+  packing_exception_remark  -- 装箱异常处理备注
+    → 例1: 
+    → 例2: 
+  picking_exception_remark  -- 拣货异常处理备注
+    → 例1: 
+    → 例2: 
+  is_agl  -- 是否AGL
+    → 例1: 0
+    → 例2: 0
+  shipping_time  -- 发货时间
+    → 例1: NULL
+    → 例2: 2026-02-25 15:47:19
+  pushed_time  -- 推送完成时间
+    → 例1: 2025-12-18 10:01:56
+    → 例2: 2025-12-18 10:01:56
+  picked_time  -- 拣货完成时间
+    → 例1: 2025-12-18 10:05:07
+    → 例2: 2025-12-18 10:05:21
+  packed_time  -- 装箱完成时间
+    → 例1: NULL
+    → 例2: 2026-01-21 17:05:26
+  qc_exception_status  -- 质检异常状态
+    → 例1: 0
+    → 例2: 0
+  qc_exception_remark  -- 质检异常处理备注
+    → 例1: 
+    → 例2: 
+  arrived_time  -- 到仓时间
+    → 例1: NULL
+    → 例2: NULL
+  shelving_time  -- 上架时间
+    → 例1: NULL
+    → 例2: NULL
+  is_official_provider  -- 是否官方物流商(0-否 1-是)
+    → 例1: 0
+    → 例2: 0
+  reference_id  -- 货件跟踪码
+    → 例1: 
+    → 例2: 
+  inbound_time  -- 创建入库单时间
+    → 例1: NULL
+    → 例2: NULL
+  shipment_status  -- 货件状态
+    → 例1: NULL
+    → 例2: NULL
+  tax_free_flag  -- 税务标识：0-无票 1-退税 2-免税
+    → 例1: 0
+    → 例2: 0
+  product_qc_finish_time  -- 产品质检完成时间
+    → 例1: NULL
+    → 例2: NULL
+  box_label_qc_finish_time  -- 外箱标质检完成时间
+    → 例1: NULL
+    → 例2: NULL
+  packer_id  -- 装箱人
+    → 例1: NULL
+    → 例2: NULL
+  is_direct_ship  -- 是否供应商直发,0-不直发 1-直发
+    → 例1: 1
+    → 例2: 1
+  label_provided  -- 是否提供物流标签,0-否 1-是
+    → 例1: 0
+    → 例2: 0
+  form_id  -- 来源编号(批次号),多个货件可能是统一批次创建的
+    → 例1: NULL
+    → 例2: NULL
+  cancel_reason  -- 标记不发货原因
+    → 例1: 
+    → 例2: 
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【first_leg_shipping_order_item】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 2065005072652980225
+    → 例2: 2065005072657174529
+  item_id  -- 系统SKU
+    → 例1: 33645-Y07U0003-B01
+    → 例2: 38799-Y07U0001-A01
+  source_order_code  -- 来源单据号
+    → 例1: PR2606080147
+    → 例2: PR2606080149
+  fnsku  -- fnsku
+    → 例1: B01
+    → 例2: A01
+  update_reason  -- 修改理由
+    → 例1: 
+    → 例2: 
+  package_qty  -- 箱规-单箱数量
+    → 例1: 1
+    → 例2: 1
+  package_volume  -- 箱规-单箱体积: 格式 50*20*30 cm
+    → 例1: 39.00*29.50*7.00
+    → 例2: 35.00*40.00*5.00
+  package_weight  -- 箱规-单箱重量 kg
+    → 例1: 2.12
+    → 例2: 0.70
+  warehouse_qty  -- 仓库-单箱数量
+    → 例1: 1
+    → 例2: 1
+  warehouse_volume  -- 仓库-单箱体积: 格式 50*20*30 cm
+    → 例1: 
+    → 例2: 
+  warehouse_weight  -- 仓库-单箱重量 kg
+    → 例1: 0.00
+    → 例2: 0.00
+  final_shipping_num  -- 最终发货数
+    → 例1: 40
+    → 例2: 120
+  planed_shipping_num  -- 计划发货数量
+    → 例1: 40
+    → 例2: 120
+  operation_shipping_num  -- 运营发货数量
+    → 例1: 40
+    → 例2: 120
+  source_order_type  -- 来源单据类型:PR-申购单
+    → 例1: PR
+    → 例2: PR
+  create_by
+    → 例1: 1901456830391554049
+    → 例2: 1901456830391554049
+  create_time
+    → 例1: 2026-06-11 17:35:50
+    → 例2: 2026-06-11 17:35:50
+  update_by
+    → 例1: 1901456830391554049
+    → 例2: 1901456830391554049
+  update_time
+    → 例1: 2026-06-11 17:35:50
+    → 例2: 2026-06-11 17:35:50
+  create_dept
+    → 例1: 1859854423610265602
+    → 例2: 1859854423610265602
+  shipping_order_id  -- 发货单id
+    → 例1: NULL
+    → 例2: NULL
+  category_id  -- 品类id
+    → 例1: 615
+    → 例2: 394
+  order_plan_id  -- 申购商品行id
+    → 例1: 2063859345323216897
+    → 例2: 2063859947507830785
+  shipping_order_code  -- 发货单编号
+    → 例1: DE202606110109
+    → 例2: DE202606110109
+  row_id  -- 行号
+    → 例1: 3
+    → 例2: 1
+  store_id  -- 店铺id
+    → 例1: 2038545917302034433
+    → 例2: 2038545917302034433
+  material  -- 材质
+    → 例1: 亚克力
+    → 例2: 毛毡
+  asin  -- ASIN
+    → 例1: 
+    → 例2: 
+  warehouse_item_code  -- 第三方商品条码
+    → 例1: 33645-Y07U0003-B01
+    → 例2: 38799-Y07U0001-A01
+  seller_sku  -- 销售Sku
+    → 例1: 33645-Y07U0003-B01
+    → 例2: 38799-Y07U0001-A01
+  main_sku_id  -- 主sku
+    → 例1: 33645
+    → 例2: 38799
+  final_planed_shipping_num  -- 最终计划确认数量
+    → 例1: 40
+    → 例2: 120
+  head_id  -- 运营人员
+    → 例1: 2058758067173740545
+    → 例2: 2058758067173740545
+  head_dept_id  -- 运营人员部门
+    → 例1: 1893840348941815810
+    → 例2: 1893840348941815810
+  inbound_putaway_qty  -- 海外仓上架数量
+    → 例1: 0
+    → 例2: 0
+  po_no  -- 采购单号
+    → 例1: PO2606090674
+    → 例2: PO2606090672
+  vendor_id  -- 供应商
+    → 例1: 1895077368167706641
+    → 例2: 1924631494521425922
+  po_purchaser_id  -- 采购员
+    → 例1: 1931880157193584642
+    → 例2: 1931880157193584642
+  qc_status  -- 质检状态:0-待质检 1-已质检
+    → 例1: 1
+    → 例2: 1
+
+
+====================================================================================================
+MySQL db_warehouse — Ozon 6表
+====================================================================================================
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_product_f】
+──────────────────────────────────────────────────────────────────────────────────────────
+  product_id
+    → 例1: 1954467090
+    → 例2: 1954467258
+  seller_id
+    → 例1: 3013635
+    → 例2: 3013635
+  offer_id
+    → 例1: 30278-Y07U0001-A01
+    → 例2: 22641-Y07U0004-A01
+  archived
+    → 例1: 0
+    → 例2: 0
+  has_fbo_stocks
+    → 例1: 0
+    → 例2: 0
+  has_fbs_stocks
+    → 例1: 1
+    → 例2: 1
+  quants
+    → 例1: []
+    → 例2: []
+  barcodes
+    → 例1: []
+    → 例2: []
+  color_image
+    → 例1: []
+    → 例2: []
+  commissions
+    → 例1: [{"delivery_amount":2.22,"percent":14,"return_amount":11.17,"sale_schema":"FBO","value":18.9},{"delivery_amount":2.22,"percent":14,"return_amount":18.44,"sale_schema":"FBS","value":18.9},{"percent":14...
+    → 例2: [{"delivery_amount":2.27,"percent":14,"return_amount":30.49,"sale_schema":"FBO","value":53.2},{"delivery_amount":2.27,"percent":14,"return_amount":48.09,"sale_schema":"FBS","value":53.2},{"percent":14...
+  description_category_id
+    → 例1: 17028665
+    → 例2: 17028665
+  discounted_fbo_stocks
+    → 例1: 0
+    → 例2: 0
+  has_discounted_fbo_item
+    → 例1: 0
+    → 例2: 0
+  is_autoarchived
+    → 例1: 0
+    → 例2: 0
+  is_discounted
+    → 例1: 0
+    → 例2: 0
+  is_kgt
+    → 例1: 0
+    → 例2: 0
+  is_prepayment_allowed
+    → 例1: 1
+    → 例2: 1
+  is_super
+    → 例1: 0
+    → 例2: 0
+  marketing_price
+    → 例1: 135.00
+    → 例2: 380.00
+  min_price
+    → 例1: 
+    → 例2: 
+  model_id
+    → 例1: 490618036
+    → 例2: 481273585
+  model_count
+    → 例1: 7
+    → 例2: 1
+  name
+    → 例1: Коврик для пазлов на 500, 1000, 1500 , 2000деталей, коврик и аксессуары для сборки пазлов
+    → 例2: Переносной Коврик Для Пазлов До 1000 Деталей
+  old_price
+    → 例1: 146.99
+    → 例2: 599.90
+  price
+    → 例1: 135.00
+    → 例2: 380.00
+  price_indexes
+    → 例1: {"color_index":"COLOR_INDEX_WITHOUT_INDEX","external_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"ozon_index_data":{"minimal_price":"","minimal_price_currency...
+    → 例2: {"color_index":"COLOR_INDEX_GREEN","external_index_data":{"minimal_price":"","minimal_price_currency":"RUB","price_index_value":0},"ozon_index_data":{"minimal_price":"4635.73","minimal_price_currency"...
+  primary_image
+    → 例1: ["https://cdn1.ozone.ru/s3/multimedia-1-m/7316625190.jpg"]
+    → 例2: ["https://cdn1.ozone.ru/s3/multimedia-1-5/7353669173.jpg"]
+  promotions
+    → 例1: [{"is_enabled":false,"type":"REVIEWS_PROMO"}]
+    → 例2: [{"is_enabled":false,"type":"REVIEWS_PROMO"}]
+  sku
+    → 例1: 2276167271
+    → 例2: 2276166992
+  sources
+    → 例1: [{"sku":2276167271,"source":"sds","created_at":"2025-06-12T02:11:18.729194Z","shipment_type":"SHIPMENT_TYPE_GENERAL","quant_code":""}]
+    → 例2: [{"sku":2276166992,"source":"sds","created_at":"2025-06-12T02:11:16.809112Z","shipment_type":"SHIPMENT_TYPE_GENERAL","quant_code":""}]
+  statuses
+    → 例1: {"status":"price_sent","status_failed":"","moderate_status":"approved","validation_status":"success","status_name":"Не продается","status_description":"Убран из продажи","is_created":true,"status_tool...
+    → 例2: {"status":"price_sent","status_failed":"","moderate_status":"approved","validation_status":"success","status_name":"Продается","status_description":"","is_created":true,"status_tooltip":"","status_upd...
+  stocks
+    → 例1: {"has_stock":true,"stocks":[{"present":200,"reserved":0,"sku":2276167271,"source":"fbs"}]}
+    → 例2: {"has_stock":true,"stocks":[{"present":100,"reserved":0,"sku":2276166992,"source":"fbs"}]}
+  type_id
+    → 例1: 92941
+    → 例2: 92941
+  updated_at
+    → 例1: 2025-06-12 02:22:35
+    → 例2: 2025-06-12 02:23:53
+  vat
+    → 例1: 0.00
+    → 例2: 0.00
+  visibility_details
+    → 例1: {"has_price":true,"has_stock":true}
+    → 例2: {"has_price":true,"has_stock":true}
+  volume_weight
+    → 例1: 1.40
+    → 例2: 4.10
+  create_time
+    → 例1: 2025-09-20 10:45:13
+    → 例2: 2025-09-20 10:45:13
+  update_time
+    → 例1: 2025-10-15 03:45:03
+    → 例2: 2025-10-17 03:45:03
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_product_stock_d】
+──────────────────────────────────────────────────────────────────────────────────────────
+  product_id
+    → 例1: 1903953946
+    → 例2: 1903953946
+  seller_id
+    → 例1: 3012909
+    → 例2: 3012909
+  offer_id
+    → 例1: 15079-Y07U0007-B01
+    → 例2: 15079-Y07U0007-B01
+  fbo_present
+    → 例1: 177
+    → 例2: 178
+  fbo_reserved
+    → 例1: 1
+    → 例2: 1
+  fbo_sku
+    → 例1: 2238512937
+    → 例2: 2238512937
+  fbo_shipment_type
+    → 例1: SHIPMENT_TYPE_GENERAL
+    → 例2: SHIPMENT_TYPE_GENERAL
+  fbo_warehouse_ids
+    → 例1: []
+    → 例2: []
+  fbs_present
+    → 例1: 0
+    → 例2: 0
+  fbs_reserved
+    → 例1: 0
+    → 例2: 0
+  fbs_sku
+    → 例1: 2238512937
+    → 例2: 2238512937
+  fbs_shipment_type
+    → 例1: SHIPMENT_TYPE_GENERAL
+    → 例2: SHIPMENT_TYPE_GENERAL
+  fbs_warehouse_ids
+    → 例1: []
+    → 例2: []
+  create_time
+    → 例1: 2025-09-20 09:35:40
+    → 例2: 2025-09-20 09:35:40
+  update_time
+    → 例1: 2026-03-02 00:22:13
+    → 例2: 2026-03-01 00:22:18
+  batch_no
+    → 例1: 2026-03-02
+    → 例2: 2026-03-01
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_fbo_order_f】
+──────────────────────────────────────────────────────────────────────────────────────────
+  posting_number
+    → 例1: 00395513-0358-1
+    → 例2: 00451598-0260-1
+  seller_id
+    → 例1: 3018128
+    → 例2: 3012909
+  order_id
+    → 例1: 31811442297
+    → 例2: 30100641038
+  order_number
+    → 例1: 00395513-0358
+    → 例2: 00451598-0260
+  status
+    → 例1: delivered
+    → 例2: delivered
+  cancel_reason_id
+    → 例1: 0
+    → 例2: 0
+  created_at
+    → 例1: 2025-11-03 16:32:58
+    → 例2: 2025-08-20 18:13:51
+  in_process_at
+    → 例1: 2025-11-03 16:33:07
+    → 例2: 2025-08-20 18:13:59
+  legal_info
+    → 例1: {"company_name":"","inn":"","kpp":""}
+    → 例2: {"company_name":"","inn":"","kpp":""}
+  analytics_data
+    → 例1: NULL
+    → 例2: NULL
+  additional_data
+    → 例1: []
+    → 例2: []
+  create_time
+    → 例1: 2025-11-05 00:22:03
+    → 例2: 2025-09-19 20:17:28
+  update_time
+    → 例1: 2025-12-03 00:22:07
+    → 例2: 2025-09-19 20:17:28
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_fbo_order_product_f】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 00395513-0358-1_31243-Y07U0002-B03
+    → 例2: 00483672-0197-1_31826-Y07U0003-B01
+  posting_number
+    → 例1: 00395513-0358-1
+    → 例2: 00483672-0197-1
+  sku
+    → 例1: 2393838701
+    → 例2: 2401725779
+  name
+    → 例1: Опора под спину регулируемая с подлокотниками для лежачих больных: Ортопедическая подставка для кровати, фиксация, безопасность
+    → 例2: Прикроватный поручень для пожилых и инвалидов регулируемая опора для подъема с кровати, стальная конструкция
+  quantity
+    → 例1: 1
+    → 例2: 1
+  offer_id
+    → 例1: 31243-Y07U0002-B03
+    → 例2: 31826-Y07U0003-B01
+  price
+    → 例1: 4700.00
+    → 例2: 5063.00
+  is_marketplace_buyout
+    → 例1: 0
+    → 例2: 0
+  digital_codes
+    → 例1: []
+    → 例2: []
+  currency_code
+    → 例1: RUB
+    → 例2: RUB
+  create_time
+    → 例1: 2025-11-05 00:22:04
+    → 例2: 2025-09-19 20:17:28
+  update_time
+    → 例1: 2025-12-03 00:22:07
+    → 例2: 2025-10-07 03:40:03
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_fbs_order_f】
+──────────────────────────────────────────────────────────────────────────────────────────
+  posting_number
+    → 例1: 00308364-0495-1
+    → 例2: 0100701034-0165-1
+  seller_id
+    → 例1: 3012909
+    → 例2: 3018151
+  order_id
+    → 例1: 30462605260
+    → 例2: 30660374970
+  order_number
+    → 例1: 00308364-0495
+    → 例2: 0100701034-0165
+  status
+    → 例1: delivered
+    → 例2: cancelled
+  substatus
+    → 例1: posting_received
+    → 例2: posting_canceled
+  delivery_id
+    → 例1: 1020005000204760
+    → 例2: 1020005000205887
+  delivery_name
+    → 例1: Доставка Ozon самостоятельно, Balashikha
+    → 例2: Доставка Ozon самостоятельно, Balashikha
+  delivery_warehouse_id
+    → 例1: 1020005000204760
+    → 例2: 1020005000205887
+  delivery_warehouse
+    → 例1: EY-FBS
+    → 例2: EY-FBS
+  delivery_tpl_provider_id
+    → 例1: 24
+    → 例2: 24
+  delivery_tpl_provider
+    → 例1: Доставка Ozon
+    → 例2: Доставка Ozon
+  tracking_number
+    → 例1: 
+    → 例2: 
+  tpl_integration_type
+    → 例1: ozon
+    → 例2: ozon
+  in_process_at
+    → 例1: 2025-08-06 17:09:22
+    → 例2: 2025-08-09 19:40:23
+  shipment_date
+    → 例1: 2025-08-06 15:00:00
+    → 例2: 2025-08-09 15:00:00
+  delivering_date
+    → 例1: 2025-08-07 15:16:43
+    → 例2: NULL
+  cancel_reason_id
+    → 例1: 0
+    → 例2: 352
+  cancel_reason
+    → 例1: 
+    → 例2: Товар закончился на складе
+  cancellation_type
+    → 例1: 
+    → 例2: seller
+  cancelled_after_ship
+    → 例1: 0
+    → 例2: 1
+  affect_cancellation_rating
+    → 例1: 0
+    → 例2: 1
+  cancellation_initiator
+    → 例1: 
+    → 例2: Продавец
+  customer
+    → 例1: NULL
+    → 例2: NULL
+  addressee
+    → 例1: NULL
+    → 例2: NULL
+  barcodes
+    → 例1: NULL
+    → 例2: NULL
+  analytics_data
+    → 例1: NULL
+    → 例2: NULL
+  financial_data
+    → 例1: NULL
+    → 例2: NULL
+  is_express
+    → 例1: 0
+    → 例2: 0
+  legal_info
+    → 例1: {"company_name":"","inn":"","kpp":""}
+    → 例2: {"company_name":"","inn":"","kpp":""}
+  products_requiring_gtd
+    → 例1: []
+    → 例2: []
+  products_requiring_country
+    → 例1: []
+    → 例2: []
+  products_requiring_mandatory_mark
+    → 例1: []
+    → 例2: []
+  products_requiring_rnpt
+    → 例1: []
+    → 例2: []
+  products_requiring_jw_uin
+    → 例1: []
+    → 例2: []
+  products_requiring_change_country
+    → 例1: []
+    → 例2: []
+  products_requiring_imei
+    → 例1: []
+    → 例2: []
+  products_requiring_weight
+    → 例1: []
+    → 例2: []
+  parent_posting_number
+    → 例1: 
+    → 例2: 
+  available_actions
+    → 例1: []
+    → 例2: []
+  multi_box_qty
+    → 例1: 1
+    → 例2: 1
+  is_multibox
+    → 例1: 0
+    → 例2: 0
+  prr_option
+    → 例1: 
+    → 例2: 
+  quantum_id
+    → 例1: 0
+    → 例2: 0
+  current_tariff_rate
+    → 例1: 0
+    → 例2: 0
+  current_tariff_type
+    → 例1: 
+    → 例2: 
+  current_tariff_charge
+    → 例1: 
+    → 例2: 
+  current_tariff_charge_currency_code
+    → 例1: 
+    → 例2: 
+  next_tariff_rate
+    → 例1: 0.00
+    → 例2: 0.00
+  next_tariff_type
+    → 例1: 
+    → 例2: 
+  next_tariff_charge
+    → 例1: 
+    → 例2: 
+  next_tariff_starts_at
+    → 例1: NULL
+    → 例2: NULL
+  next_tariff_charge_currency_code
+    → 例1: 
+    → 例2: 
+  destination_place_id
+    → 例1: 0
+    → 例2: 0
+  destination_place_name
+    → 例1: 
+    → 例2: 
+  is_presortable
+    → 例1: 0
+    → 例2: 0
+  pickup_code_verified_at
+    → 例1: NULL
+    → 例2: NULL
+  optional
+    → 例1: {"products_with_possible_mandatory_mark":[]}
+    → 例2: {"products_with_possible_mandatory_mark":[]}
+  create_time
+    → 例1: 2025-09-19 18:26:52
+    → 例2: 2025-09-19 18:21:02
+  update_time
+    → 例1: 2025-09-19 19:36:40
+    → 例2: 2025-09-19 19:36:35
+
+──────────────────────────────────────────────────────────────────────────────────────────
+【ods_ozon_fbs_order_product_f】
+──────────────────────────────────────────────────────────────────────────────────────────
+  id
+    → 例1: 0100701034-0165-1_31826-Y07U0002-B02
+    → 例2: 0106615625-0327-1_30271-Y07U0001-A01
+  offer_id
+    → 例1: 31826-Y07U0002-B02
+    → 例2: 30271-Y07U0001-A01
+  posting_number
+    → 例1: 0100701034-0165-1
+    → 例2: 0106615625-0327-1
+  price
+    → 例1: 5588.00
+    → 例2: 1366.00
+  name
+    → 例1: Прикроватные подлокотники, подлокотники, помогающие пожилым людям и беременным женщинам вставать, регулируемые
+    → 例2: 5шт Комплект форсунок для канализации, форсунка из нержавеющей стали 1/4 дюйма NPT для мойки высокого давления, инструмент для очистки канализации с вращающимся носом, 5000PSI
+  sku
+    → 例1: 2388807686
+    → 例2: 2528573482
+  quantity
+    → 例1: 1
+    → 例2: 1
+  currency_code
+    → 例1: RUB
+    → 例2: RUB
+  is_blr_traceable
+    → 例1: 0
+    → 例2: 0
+  is_marketplace_buyout
+    → 例1: 0
+    → 例2: 0
+  imei
+    → 例1: []
+    → 例2: []
+  create_time
+    → 例1: 2025-09-19 18:21:02
+    → 例2: 2025-09-19 18:26:55
+  update_time
+    → 例1: 2025-09-19 19:36:36
+    → 例2: 2025-09-29 03:41:03
+
+
+====================================================================================================
+✅ 完成

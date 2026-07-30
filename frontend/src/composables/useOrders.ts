@@ -19,7 +19,7 @@ export function useOrders(
   const statusFilter = ref<string | undefined>(undefined)
   const schemaFilter = ref<string | undefined>(undefined)
   const searchFilter = ref<string | undefined>(undefined)
-  const viewMode = ref<'posting' | 'sku'>('posting')
+  const viewMode = ref<'posting' | 'sku'>('sku')
   const skuStats = ref<OrderSkuStats[]>([])
 
   async function fetchAll() {

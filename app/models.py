@@ -337,7 +337,74 @@ class AdSkuDailyStats(Base):
     drr_total: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(8, 4), comment="推广花费占总收入比 %%（CSV 字段: ДРР (общий), %%）")
     date_added: Mapped[Optional[date]] = mapped_column(
-        Date, comment="SKU 加入活动的日期（CSV 字段: Дата добавления）")
+        Date, comment="SKU 加入活动的日期")
     synced_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now,
         comment="最后同步时间")
+
+
+class SkuManagement(Base):
+    """SKU 手动管理数据"""
+    __tablename__ = "sku_management"
+    __table_args__ = {"schema": "ozon"}
+
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    main_sku: Mapped[Optional[str]] = mapped_column(String(50))
+    source_url_1688: Mapped[Optional[str]] = mapped_column(Text)
+    specification: Mapped[Optional[str]] = mapped_column(Text)
+    sales_manager: Mapped[Optional[str]] = mapped_column(String(50))
+    listed_stores: Mapped[Optional[str]] = mapped_column(String(50))
+    product_status: Mapped[Optional[str]] = mapped_column(String(50))
+    key_notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    length_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    width_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    height_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    actual_weight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    volume_cbm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 4))
+    density: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+
+    first_leg_unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    units_per_carton: Mapped[Optional[int]] = mapped_column(Integer)
+    carton_length_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    carton_width_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    carton_height_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    gross_weight_kg: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    volume_liters: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+
+    purchase_cost_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    warehousing_fee_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    fbo_delivery_fee_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
+    first_leg_cost_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+
+    acquiring_fee_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    fbo_commission_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    logistics_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    delivery_pickup_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    advertising_rate_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    return_rate_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    tax_and_fee_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    risk_reserve_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+
+    exchange_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4))
+    green_price_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+
+    competitor_1: Mapped[Optional[str]] = mapped_column(String(200))
+    competitor_2: Mapped[Optional[str]] = mapped_column(String(200))
+    competitor_sales: Mapped[Optional[int]] = mapped_column(Integer)
+
+    purchase_cost_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    first_leg_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    last_mile_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    product_cost_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    discount_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    platform_payout_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    actual_payout_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_margin_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)

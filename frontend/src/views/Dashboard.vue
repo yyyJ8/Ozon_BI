@@ -15,6 +15,7 @@ import CostAnalysis from '@/components/CostAnalysis.vue'
 import OrderAnalysis from '@/components/OrderAnalysis.vue'
 import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
 import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
+import SkuManagement from '@/components/SkuManagement.vue'
 import { useStore } from '@/composables/useStore'
 
 const { selectedStoreId, stores, fetchStores, setStoreId } = useStore()
@@ -375,6 +376,12 @@ onMounted(() => {
         <!-- 商品分析 Tab 面板 -->
         <el-card shadow="hover" style="margin-top: 20px;">
           <el-tabs v-model="activeTab" style="padding: 0 4px;">
+            <el-tab-pane label="SKU管理" name="sku-mgmt">
+              <template #label>
+                <span><el-icon><EditPen /></el-icon> SKU管理</span>
+              </template>
+              <SkuManagement />
+            </el-tab-pane>
             <el-tab-pane label="全部数据" name="all">
               <template #label>
                 <span><el-icon><DataBoard /></el-icon> 全部数据</span>

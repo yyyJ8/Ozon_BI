@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Failed, Remove, CircleCloseFilled, TrendCharts, Timer } from '@element-plus/icons-vue'
 import type { Product, ReturnDetailItem } from '@/types'
 import { useReturns } from '@/composables/useReturns'
+import { useLocalDateRange } from '@/composables/useLocalDateRange'
 import { getReturnsDetails } from '@/api'
 
 const props = defineProps<{
@@ -12,9 +13,9 @@ const props = defineProps<{
   activeTab: string
 }>()
 
-const dr = toRef(props, 'dateRange')
+const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
 const selectedSkuId = ref<number>()
-const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(dr, selectedSkuId)
+const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(localDateRange, selectedSkuId)
 
 function onSkuRowClick(row: any) {
   if (selectedSkuId.value === row.sku_id) {
@@ -41,8 +42,8 @@ async function onExpandChange(row: any, expandedRowsList: any) {
     try {
       const data = await getReturnsDetails(
         sku,
-        props.dateRange?.[0],
-        props.dateRange?.[1],
+        localDateRange.value[0],
+        localDateRange.value[1],
       )
       detailsMap.value[sku] = data
     } finally {
@@ -148,6 +149,30 @@ const minReturnOptions = [1, 2, 3, 5]
 
 <template>
   <div v-loading="loading" style="min-height: 300px;">
+    <!-- 独立日期筛选 -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <span style="font-size:12px;color:#909399;">📅 时间筛选</span>
+      <el-select v-model="periodPreset" style="width:100px" size="small" @change="applyPreset">
+        <el-option label="昨天" value="yesterday" />
+        <el-option label="近7天" value="7days" />
+        <el-option label="近30天" value="30days" />
+        <el-option label="全部" value="all" />
+        <el-option label="自定义" value="custom" />
+      </el-select>
+      <el-date-picker
+        v-if="showCustomDate"
+        v-model="localDateRange"
+        type="daterange"
+        size="small"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="YYYY-MM-DD"
+        style="width:240px"
+        :disabled-date="disabledDate"
+      />
+    </div>
+
     <!-- 概览卡片 5 张 -->
     <el-row :gutter="16" v-if="overview">
       <el-col :span="4">

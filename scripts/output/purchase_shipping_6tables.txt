@@ -1,0 +1,428 @@
+================================================================================
+PostgreSQL omsprod — 申购/采购/发货 6表结构
+服务器: pgm-7xvui1j4600t1u27-l2.pg.rds.aliyuncs.com:5432  数据库: omsprod
+================================================================================
+
+1. purchase_plan — 申购单 (23 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+po_plan_no                     varchar           申购单号
+status                         varchar           状态 (4=已完成)
+memo                           text              备注
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+erp_id                         bigint            ERP ID
+sync_to_erp                    varchar           是否同步ERP
+erp_try_time                   int               ERP同步尝试次数
+sync_erp_error_msg             text              ERP同步错误信息
+erp_number                     varchar           ERP编号
+create_dept                    bigint            创建部门
+tenant_id                      varchar           租户ID
+approval_id                    bigint            审批人ID
+head_id                        bigint            负责人ID
+approval_status                varchar           审批状态 (2=已通过)
+process_instance_id            varchar           流程实例ID
+approval_time                  datetime          审批时间
+df_flag                        varchar           是否大卖
+sync_ding_flag                 varchar           是否同步钉钉
+sync_ding_error_msg            text              钉钉同步错误
+pull_ding_flag                 varchar           是否拉取钉钉
+pull_ding_error_msg            text              钉钉拉取错误
+plan_type                      varchar           计划类型 (0=普通,1=紧急)
+location_id                    bigint            仓位ID
+stock_location_id              bigint            库存仓位ID
+plan_head_id                   bigint            计划负责人ID
+approval_desc                  text              审批说明
+is_urgent                      varchar           是否紧急
+logistics_method               varchar           物流方式 (HAIYUN=海运)
+customer_class_id              varchar           客户分类ID
+wms_status                     varchar           WMS状态
+wms_time                       datetime          WMS时间
+return_reason                  text              退货原因
+assembly_production_task_no    varchar           组装生产任务号
+task_status                    varchar           任务状态
+purchase_application_review_time datetime        采购申请审核时间
+production_starts_time         datetime          生产开始时间
+is_rejected                    int               是否被驳回
+parent_po_plan_no              varchar           父申购单号
+group_no                       varchar           分组号
+is_group                       varchar           是否组合
+combo_flag                     varchar           组合标识
+plan_source                    varchar           计划来源
+po_remark                      text              采购备注
+shooting_status                varchar           拍摄状态
+is_new_product                 int               是否新品
+final_approval_id              int               最终审批人
+is_year_stock                  int               是否年货备货
+is_need_purchase               int               是否需要采购
+requisition_no                 varchar           请购单号
+shipping_status                int               发货状态
+tax_free_flag                  int               免税标识
+cancel_reason                  text              取消原因
+need_sample_shooting           int               是否需要样品拍摄
+is_combination_split           int               是否组合拆分
+transfer_flag                  int               转移标识
+
+
+2. purchase_plan_item — 申购单明细 (48 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+po_plan_no                     varchar           申购单号 (关联purchase_plan)
+row_id                         int               行号
+item_id                        varchar           商品ID (SKU编码)
+plan_qty                       int               计划数量
+expect_date                    date              预计日期
+planner_id                     bigint            计划员ID
+store_id                       bigint            店铺ID
+fn_sku                         varchar           FNSKU (Amazon配送SKU)
+memo                           text              备注
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+already_qty                    int               已采购数量
+create_dept                    bigint            创建部门
+tenant_id                      varchar           租户ID
+asin                           varchar           Amazon ASIN
+new_flag                       varchar           是否新品
+marketplace                    varchar           市场 (US/UK/DE/ID)
+order_type                     varchar           订单类型
+seller_sku                     varchar           卖家SKU
+platform                       varchar           平台 (Amazon/Shopee/Temu)
+package_qty                    int               包装数量
+expect_arrive_date             date              预计到货日期
+created_shipping_plan_qty      int               已创建发货计划数量
+shipping_plan_status           varchar           发货计划状态
+wms_rec_qty                    int               WMS收货数量
+wms_check_qty                  int               WMS质检数量
+wms_onstock_qty                int               WMS上架数量
+expect_delivery_date           date              预计交货日期
+warehouse_item_code            varchar           仓库商品编码
+main_sku_id                    varchar           主SKU ID
+seller_sku_id                  bigint            卖家SKU ID
+next_shipment_reason           varchar           下次发货原因
+match_qty                      int               匹配数量
+match_exclusive_qty            int               独占匹配数量
+is_deduct                      int               是否扣减
+direct_ship_arrival_qty        int               直发到货数量
+direct_ship_arrival_time       datetime          直发到货时间
+
+
+3. purchase_order — 采购单 (57 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+po_no                          varchar           采购单号 (如PO2603170440)
+vendor_id                      bigint            供应商ID
+location_id                    bigint            收货仓位ID
+po_type                        varchar           采购类型 (1=普通)
+subsidiary_id                  bigint            子公司ID
+approval_status                varchar           审批状态 (3=已通过)
+dept_id                        bigint            部门ID
+receipt_date                   date              预计收货日期
+sku_type                       varchar           SKU类型
+po_approverole                 varchar           审批角色
+trandate                       date              交易日期
+po_purchaser_id                bigint            采购员ID
+untaxed_amount                 decimal           不含税金额
+tax_amount                     decimal           税额
+template_memo                  text              模板备注
+other_memo                     text              其他备注
+memo                           text              备注
+status                         varchar           状态 (7=已完成)
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+mode                           varchar           模式
+tx_status                      varchar           事务状态
+current_tx_status_msg          text              当前事务状态消息
+sync_to_wms                    varchar           是否同步WMS
+wms_try_time                   int               WMS同步尝试次数
+sync_wms_error_msg             text              WMS同步错误
+wms_id                         bigint            WMS ID
+wms_number                     varchar           WMS编号
+erp_id                         bigint            ERP ID
+sync_to_erp                    varchar           是否同步ERP
+erp_try_time                   int               ERP同步尝试次数
+sync_erp_error_msg             text              ERP同步错误
+erp_number                     varchar           ERP编号
+create_dept                    bigint            创建部门
+currency_code                  varchar           货币代码 (CNY)
+tenant_id                      varchar           租户ID
+approve_desc                   text              审批说明
+supplier_settlement            bigint            供应商结算方式
+other_cost                     decimal           其他费用
+already_pay_amount             decimal           已付金额
+amount                         decimal           总金额
+process_instance_id            varchar           流程实例ID
+is_push_success                varchar           是否推送成功
+push_error_details             text              推送错误详情
+df_flag                        varchar           大卖标识
+lx_number                      varchar           理想编号
+if_in_transit_count            int               在途数量
+customer_class_id              varchar           客户分类
+prepayment_percent             decimal           预付比例
+discount_amount                decimal           折扣金额
+prepayment_amount              decimal           预付金额
+purchase_platform              varchar           采购平台 (0=线下, 1=1688)
+platform_po_no                 varchar           平台采购单号 (1688订单号)
+platform_po_status             varchar           平台订单状态 (waitbuyerreceive等)
+payment_status                 varchar           支付状态 (3=待支付, 4=已支付)
+logistics_name                 varchar           物流名称
+logistics_num                  varchar           物流单号
+bill1688_status                varchar           1688账单状态
+exception_type                 varchar           异常类型
+exception_desc                 text              异常描述
+logistics_last_updtime         datetime          物流最后更新时间
+logistics_last_desc            text              物流最后描述
+sync_platform_status           varchar           同步平台状态
+purchase_amount                decimal           采购金额
+account_id                     bigint            账户ID
+expected_pay_time              datetime          预计付款时间
+shipping_fee                   decimal           运费
+platform_amount                decimal           平台金额
+red_discount_amount            decimal           红字折扣金额
+line_up_down_flag              varchar           行上下线标识
+platform_order_notes           text              平台订单备注
+is_send_affirm                 int               是否发送确认
+is_confirm_message             int               是否确认消息
+is_confirm_date                int               是否确认日期
+purchase_expect_date           date              采购预计日期
+approval_time                  datetime          审批时间
+purchase_order_status          varchar           采购订单状态
+is_more_purchase_plan          int               是否多采购计划
+is_match_stock_exception       int               是否库存匹配异常
+is_less_min_order              int               是否低于最小起订量
+is_new_warehouse               int               是否新仓库
+is_year_stock                  int               是否年货备货
+price_time                     datetime          报价时间
+is_split                       int               是否拆分
+cancel_by                      bigint            取消人
+cancel_time                    datetime          取消时间
+cancel_type                    varchar           取消类型
+cancel_reason                  text              取消原因
+is_new_purchase                int               是否新采购
+new_amazon_product             int               是否Amazon新品
+contract_no                    varchar           合同号
+tax_free_flag                  int               免税标识
+purchase_dept_type             varchar           采购部门类型
+sample_version                 varchar           样品版本
+approval_deadline              datetime          审批截止时间
+pay_way                        varchar           付款方式
+
+
+4. purchase_order_item — 采购单明细 (49 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+package_qty                    int               包装数量
+create_dept                    bigint            创建部门
+po_no                          varchar           采购单号 (关联purchase_order)
+row_id                         int               行号
+item_id                        varchar           商品ID
+price                          decimal           单价
+qty                            int               数量
+tax_rate                       decimal           税率
+untaxed_amount                 decimal           不含税金额
+tax_amount                     decimal           税额
+labor_cost                     decimal           人工成本
+mold_cost                      decimal           模具成本
+risk_value                     decimal           风险金额
+expect_receipt_date            date              预计收货日期
+receipt_qty                    int               已收货数量
+source_price                   decimal           原始单价
+cut_price                      decimal           砍后单价
+expect_date                    date              预计日期
+po_plan_no                     varchar           申购单号 (关联purchase_plan)
+plan_row_id                    int               申购单行号 (关联purchase_plan_item)
+memo                           text              备注
+already_pay_amount             decimal           已付金额
+return_qty                     int               退货数量
+bg_price                       decimal           报关单价
+bg_chinesename                 varchar           报关中文名
+bg_model                       varchar           报关型号
+bg_unit                        varchar           报关单位
+tax_rate_kingdee               decimal           金蝶税率
+price_tax_kingdee              decimal           金蝶含税单价
+amount_kingdee                 decimal           金蝶金额
+tax_amount_kingdee             decimal           金蝶税额
+notified_flag                  varchar           通知标识
+if_doc                         varchar           是否有文件
+if_product_compliance_ifm      varchar           产品合规信息
+if_instructions_compliant      varchar           说明书合规
+if_color_box_compliant         varchar           彩盒合规
+if_europe_britain              varchar           是否欧洲英国
+if_version_four                varchar           是否第四版
+platform_qty                   int               平台数量
+last_price                     decimal           上次价格
+discount_amount                decimal           折扣金额
+platform_price                 decimal           平台价格
+reject_qty                     int               拒收数量
+offer_id                       varchar           1688商品ID
+spec_id                        varchar           1688规格ID
+sku_purchase_rul               text              SKU采购规则链接
+location_id                    bigint            仓位ID
+tax                            decimal           税额(新)
+amount_with_tax                decimal           含税金额
+track_status                   varchar           跟踪状态
+platform_sub_item_id           varchar           平台子商品ID
+shipping_plan_status           varchar           发货计划状态
+marketplace_code               varchar           市场代码
+sale_platform                  varchar           销售平台 (Amazon/Ebay)
+third_location_id              bigint            第三方仓位ID
+head_id                        bigint            负责人ID
+sale_store_id                  bigint            销售店铺ID
+accepted_time                  datetime          接收时间
+check_date                     datetime          检查日期
+already_listed_time            datetime          已上架时间
+pending_shipment_qty           int               待发货数量
+other_cost                     decimal           其他成本
+main_sku_id                    varchar           主SKU ID
+tax_price                      decimal           含税单价
+other_tax_rate                 decimal           其他税率
+vendor_tax_type                int               供应商税务类型
+price_with_freight             decimal           含运费单价
+tax_price_with_freight         decimal           含税含运费单价
+amount_with_tax_new            decimal           含税金额(新)
+untaxed_amount_new             decimal           不含税金额(新)
+freight                        decimal           运费
+tax_new                        decimal           税额(新)
+receive_qty_sum                int               累计收货数量
+return_qty_sum                 int               累计退货数量
+put_completed_qty_sum          int               累计上架完成数量
+receipt_time                   datetime          收货时间
+put_no                         varchar           上架单号
+put_time                       datetime          上架时间
+sample_price                   decimal           样品价格
+percent_change                 decimal           比例变动
+
+
+5. first_leg_shipping_order — 头程发货单 (64 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+order_code                     varchar           发货单号 (如DE202605190055)
+plan_code                      varchar           发货计划单号 (如SP202605180006)
+shipment_plan_id               bigint            发货计划ID
+plan_type                      varchar           计划类型
+channel_code                   varchar           渠道代码 (HAIYUN=海运, AMP_HAYUN=加急海运)
+shipping_warehouse_id          bigint            发货仓库ID
+destination_warehouse_id       bigint            目的仓库ID (FBA仓)
+destination_country_code       varchar           目的国家 (US/DE)
+store_id                       bigint            店铺ID
+receiving_platform             varchar           接收平台 (Amazon)
+third_order_code               varchar           第三方订单号 (FBA shipment ID)
+shipping_plan_time             datetime          发货计划时间
+ship_date                      date              发货日期
+picking_exception_status       varchar           拣货异常状态
+order_status                   varchar           订单状态 (11=进行中, 13=已关闭)
+warehouse_arrival_status       varchar           仓库到达状态
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+create_dept                    bigint            创建部门
+remark                         text              备注
+logistics_order                varchar           物流单号
+merge_tag                      varchar           合并标识
+package_type                   varchar           包装类型
+packing_exception_status       varchar           打包异常状态
+sync_to_wms                    varchar           是否同步WMS
+wms_try_time                   int               WMS同步尝试次数
+sync_wms_error_msg             text              WMS同步错误
+packing_exception_remark       text              打包异常备注
+picking_exception_remark       text              拣货异常备注
+is_agl                         varchar           是否Amazon全球物流
+shipping_time                  datetime          发货时间
+pushed_time                    datetime          推送时间
+picked_time                    datetime          拣货完成时间
+packed_time                    datetime          打包完成时间
+qc_exception_status            varchar           QC异常状态
+qc_exception_remark            text              QC异常备注
+arrived_time                   datetime          到达时间
+shelving_time                  datetime          上架时间
+is_official_provider           varchar           是否官方物流商
+reference_id                   varchar           参考ID (FBA shipment ID)
+inbound_time                   datetime          入库时间
+shipment_status                varchar           货运状态 (WORKING/CLOSED)
+tax_free_flag                  int               免税标识
+product_qc_finish_time         datetime          产品QC完成时间
+box_label_qc_finish_time       datetime          箱唛QC完成时间
+packer_id                      bigint            打包员ID
+is_direct_ship                 varchar           是否直发
+label_provided                 int               标签是否已提供
+form_id                        varchar           表单ID
+cancel_reason                  text              取消原因
+
+
+6. first_leg_shipping_order_item — 头程发货明细 (41 MB)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             bigint            主键
+item_id                        varchar           商品ID (SKU)
+source_order_code              varchar           来源单号 (申购单号)
+fnsku                          varchar           FNSKU (Amazon配送标签)
+update_reason                  varchar           更新原因
+package_qty                    int               包装数量(箱)
+package_volume                 varchar           包装体积 (长*宽*高)
+package_weight                 decimal           包装重量(kg)
+warehouse_qty                  int               仓库数量
+warehouse_volume               varchar           仓库体积
+warehouse_weight               decimal           仓库重量
+final_shipping_num             int               最终发货数量
+planed_shipping_num            int               计划发货数量
+operation_shipping_num         int               操作发货数量
+source_order_type              varchar           来源单类型 (PR=申购单)
+create_by                      bigint            创建人
+create_time                    datetime          创建时间
+update_by                      bigint            更新人
+update_time                    datetime          更新时间
+create_dept                    bigint            创建部门
+shipping_order_id              bigint            发货单ID (关联first_leg_shipping_order)
+category_id                    int               类目ID
+order_plan_id                  bigint            订单计划ID
+shipping_order_code            varchar           发货单号
+row_id                         int               行号
+store_id                       bigint            店铺ID
+material                       varchar           材质 (铁/金属)
+asin                           varchar           Amazon ASIN
+warehouse_item_code            varchar           仓库商品编码
+seller_sku                     varchar           卖家SKU
+main_sku_id                    varchar           主SKU ID
+final_planed_shipping_num      int               最终计划发货数
+head_id                        bigint            负责人ID
+head_dept_id                   bigint            负责部门ID
+inbound_putaway_qty            int               入库上架数量
+po_no                          varchar           采购单号 (关联purchase_order)
+vendor_id                      bigint            供应商ID
+po_purchaser_id                bigint            采购员ID
+qc_status                      varchar           QC状态
+
+
+================================================================================
+表关系（申购 → 采购 → 发货）
+================================================================================
+
+purchase_plan (申购单)
+  └── purchase_plan_item (申购明细)  [po_plan_no 关联]
+        │
+        └── purchase_order_item (采购明细)  [po_plan_no + plan_row_id 关联]
+              │
+              └── purchase_order (采购单)  [po_no 关联]
+                    │
+                    └── first_leg_shipping_order_item (发货明细)  [po_no 关联]
+                          │
+                          └── first_leg_shipping_order (发货单)  [shipping_order_code 关联]
+
+同时：
+purchase_plan_item.source_order_code → first_leg_shipping_order_item.source_order_code (申购单号直接关联)
+first_leg_shipping_order.plan_code → first_leg_shipping_order_item.order_plan_id 关联

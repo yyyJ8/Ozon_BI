@@ -1,0 +1,199 @@
+================================================================================
+MySQL Ozon 数据表结构
+服务器: 223.84.201.140:9030  数据库: db_warehouse
+================================================================================
+
+1. ods_ozon_product_f — Ozon 产品表 (532 行, 39 列)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+product_id                     bigint            产品ID
+seller_id                      bigint            卖家ID
+offer_id                       varchar(255)      报价ID（对应SKU编码）
+archived                       boolean           是否已归档
+has_fbo_stocks                 boolean           是否有FBO库存
+has_fbs_stocks                 boolean           是否有FBS库存
+quants                         text              数量信息(JSON)
+barcodes                       text              条形码(JSON)
+color_image                    text              颜色图片(JSON)
+commissions                    text              佣金信息(JSON)
+description_category_id        bigint            描述分类ID
+discounted_fbo_stocks          int               折扣FBO库存数量
+has_discounted_fbo_item        boolean           是否有折扣FBO商品
+is_autoarchived                boolean           是否自动归档
+is_discounted                  boolean           是否有折扣
+is_kgt                         boolean           是否KGT商品
+is_prepayment_allowed          boolean           是否允许预付款
+is_super                       boolean           是否超级商品
+marketing_price                varchar(255)      营销价格
+min_price                      varchar(255)      最低价格
+model_id                       bigint            模型ID
+model_count                    int               模型数量
+name                           varchar(800)      商品名称（俄文）
+old_price                      varchar(255)      旧价格
+price                          varchar(255)      当前价格
+price_indexes                  text              价格指数(JSON)
+primary_image                  text              主图(JSON)
+promotions                     text              促销信息(JSON)
+sku                            bigint            Ozon SKU
+sources                        text              来源信息(JSON)
+statuses                       text              状态信息(JSON)
+stocks                         text              库存信息(JSON)
+type_id                        bigint            类型ID
+updated_at                     datetime          更新时间(Ozon平台)
+vat                            varchar(255)      增值税
+visibility_details             text              可见性详情(JSON)
+volume_weight                  decimal(10,2)     体积重量
+create_time                    datetime          创建时间
+update_time                    datetime          更新时间
+
+
+2. ods_ozon_product_stock_d — Ozon 库存表 (20,122 行, 16 列)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+product_id                     bigint            产品ID
+seller_id                      bigint            卖家ID
+offer_id                       varchar(255)      报价ID
+fbo_present                    int               FBO可用库存
+fbo_reserved                   int               FBO预留库存
+fbo_sku                        bigint            FBO SKU
+fbo_shipment_type              varchar(255)      FBO发货类型
+fbo_warehouse_ids              text              FBO仓库ID列表(JSON)
+fbs_present                    int               FBS可用库存
+fbs_reserved                   int               FBS预留库存
+fbs_sku                        bigint            FBS SKU
+fbs_shipment_type              varchar(255)      FBS发货类型
+fbs_warehouse_ids              text              FBS仓库ID列表(JSON)
+create_time                    datetime          创建时间
+update_time                    datetime          更新时间
+batch_no                       varchar(100)      批次号（按天快照日期）
+
+
+3. ods_ozon_fbo_order_f — FBO订单主表 (5,124 行, 13 列)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+posting_number                 varchar(50)       订单唯一标识号（发货编号）
+seller_id                      bigint            卖家ID
+order_id                       varchar(50)       平台订单ID
+order_number                   varchar(50)       订单编号（商家可见）
+status                         varchar(30)       订单状态(delivering/awaiting_packaging等)
+cancel_reason_id               bigint            取消原因ID(0表示未取消)
+created_at                     datetime          订单创建时间(Ozon平台)
+in_process_at                  datetime          订单开始处理时间
+legal_info                     text              法律信息(JSON)
+analytics_data                 text              分析数据(JSON)
+additional_data                text              附加数据(JSON)
+create_time                    datetime          创建时间
+update_time                    datetime          更新时间
+
+
+4. ods_ozon_fbo_order_product_f — FBO订单商品明细 (4,755 行, 12 列)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             varchar(50)       主键ID
+posting_number                 varchar(50)       关联订单编号(外键)
+sku                            bigint            商品SKU编码
+name                           text              商品名称
+quantity                       int               商品数量
+offer_id                       varchar(50)       商家商品编号
+price                          varchar(20)       商品价格
+is_marketplace_buyout          boolean           是否平台回购商品
+digital_codes                  text              数字商品码(JSON)
+currency_code                  varchar(10)       货币代码(RUB/USD)
+create_time                    datetime          创建时间
+update_time                    datetime          更新时间
+
+
+5. ods_ozon_fbs_order_f — FBS订单主表 (965 行, 60 列)
+--------------------------------------------------------------------------------
+字段名                              类型               说明
+posting_number                      varchar(50)       订单唯一标识号
+seller_id                           bigint            卖家ID
+order_id                            bigint            订单ID
+order_number                        varchar(50)       订单编号
+status                              varchar(30)       订单状态
+substatus                           varchar(100)      子状态
+delivery_id                         bigint            配送方式ID
+delivery_name                       varchar(100)      配送方式名称
+delivery_warehouse_id               bigint            发货仓库ID
+delivery_warehouse                  varchar(100)      发货仓库名称
+delivery_tpl_provider_id            bigint            物流供应商ID
+delivery_tpl_provider               varchar(100)      物流供应商名称
+tracking_number                     varchar(100)      物流跟踪号
+tpl_integration_type                varchar(50)       物流集成类型
+in_process_at                       datetime          开始处理时间
+shipment_date                       datetime          发货时间
+delivering_date                     datetime          配送时间
+cancel_reason_id                    bigint            取消原因ID
+cancel_reason                       varchar(255)      取消原因描述
+cancellation_type                   varchar(50)       取消类型
+cancelled_after_ship                boolean           是否发货后取消
+affect_cancellation_rating          boolean           是否影响取消评级
+cancellation_initiator              varchar(50)       取消发起方
+customer                            varchar(500)      客户信息(JSON)
+addressee                           varchar(500)      收件人信息(JSON)
+barcodes                            varchar(500)      条形码信息
+analytics_data                      text              分析数据(JSON)
+financial_data                      text              财务数据(JSON)
+is_express                          boolean           是否加急订单
+legal_info                          text              法律信息(JSON)
+products_requiring_gtd              text              需要GTD的商品
+products_requiring_country          text              需要原产国信息的商品
+products_requiring_mandatory_mark   text              需要强制标记的商品
+products_requiring_rnpt             text              需要RNPT信息的商品
+products_requiring_jw_uin           text              需要JW UIN信息的商品
+products_requiring_change_country   text              需要更改原产国的商品
+products_requiring_imei             text              需要IMEI信息的商品
+products_requiring_weight           text              需要重量信息的商品
+parent_posting_number               varchar(50)       父订单编号
+available_actions                   text              可用操作(JSON)
+multi_box_qty                       int               多箱数量
+is_multibox                         boolean           是否多箱订单
+prr_option                          varchar(50)       PRR选项
+quantum_id                          bigint            Quantum ID
+current_tariff_rate                 int               当前费率
+current_tariff_type                 varchar(50)       当前费率类型
+current_tariff_charge               varchar(50)       当前费用
+current_tariff_charge_currency_code varchar(10)       当前费用货币代码
+next_tariff_rate                    decimal(10,2)     下一费率
+next_tariff_type                    varchar(50)       下一费率类型
+next_tariff_charge                  varchar(50)       下一费用
+next_tariff_starts_at               datetime          下一费率开始时间
+next_tariff_charge_currency_code    varchar(10)       下一费用货币代码
+destination_place_id                bigint            目的地ID
+destination_place_name              varchar(100)      目的地名称
+is_presortable                      boolean           是否可预分拣
+pickup_code_verified_at             datetime          取件码验证时间
+optional                            text              可选信息(JSON)
+create_time                         datetime          创建时间
+update_time                         datetime          更新时间
+
+
+6. ods_ozon_fbs_order_product_f — FBS订单商品明细 (971 行, 13 列)
+--------------------------------------------------------------------------------
+字段名                         类型               说明
+id                             varchar(100)      主键ID
+offer_id                       varchar(50)       商品Offer ID
+posting_number                 varchar(50)       关联订单编号
+price                          decimal(10,2)     商品价格
+name                           text              商品名称
+sku                            bigint            商品SKU
+quantity                       int               商品数量
+currency_code                  varchar(10)       货币代码
+is_blr_traceable               boolean           是否白俄罗斯可追溯
+is_marketplace_buyout          boolean           是否市场回购
+imei                           text              IMEI信息(JSON)
+create_time                    datetime          创建时间
+update_time                    datetime          更新时间
+
+
+================================================================================
+关系说明
+================================================================================
+product_f ──< product_stock_d       (product_id 关联, 库存按天快照)
+product_f ──< fbo_order_product_f   (offer_id/sku 关联)
+product_f ──< fbs_order_product_f   (offer_id/sku 关联)
+fbo_order_f ──< fbo_order_product_f (posting_number 关联)
+fbs_order_f ──< fbs_order_product_f (posting_number 关联)
+
+FBO = Fulfillment by Ozon（平台仓发货）
+FBS = Fulfillment by Seller（商家自发货）
