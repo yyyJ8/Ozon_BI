@@ -199,18 +199,27 @@ def orders_trend(
     """), params).fetchall()
     cr_map = {row[0]: int(row[1]) for row in cr_rows}
 
-    return [
-        OrderTrendItem(
-            date=row[0],
-            ordered=int(row[1]),
-            awaiting_deliver=int(row[2]),
-            delivering=int(row[3]),
-            delivered=int(row[4]),
-            cancelled=int(row[5]),
-            client_return=cr_map.get(row[0], 0),
-        )
-        for row in rows
-    ]
+    # 按日期索引
+    by_date = {}
+    for row in rows:
+        by_date[row[0]] = (int(row[1]), int(row[2]), int(row[3]), int(row[4]), int(row[5]))
+
+    # 补全日期范围内每一天（没有数据的填 0）
+    result = []
+    d = date_from
+    while d < date_to + timedelta(days=1):
+        vals = by_date.get(d, (0, 0, 0, 0, 0))
+        result.append(OrderTrendItem(
+            date=d,
+            ordered=vals[0],
+            awaiting_deliver=vals[1],
+            delivering=vals[2],
+            delivered=vals[3],
+            cancelled=vals[4],
+            client_return=cr_map.get(d, 0),
+        ))
+        d += timedelta(days=1)
+    return result
 
 
 @router.get("/list", response_model=OrderListResponse)

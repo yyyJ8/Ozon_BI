@@ -5,7 +5,6 @@ import {
   TrendCharts,
   ShoppingCart,
   Failed,
-  DataAnalysis,
 } from '@element-plus/icons-vue'
 import type { SummaryStats } from '@/types'
 
@@ -13,18 +12,9 @@ const props = defineProps<{
   stats: SummaryStats
 }>()
 
-const totalCosts =
-  props.stats.total_commissions +
-  props.stats.total_logistics +
-  props.stats.total_storage +
-  props.stats.total_advertising +
-  props.stats.total_promotion +
-  props.stats.total_returns +
-  props.stats.total_other_costs
-
 const cards = [
   {
-    label: '总收入',
+    label: 'GMV',
     value: props.stats.total_revenue,
     prefix: '₽',
     color: '#409eff',
@@ -35,7 +25,7 @@ const cards = [
     }),
   },
   {
-    label: '净利润',
+    label: '毛利',
     value: props.stats.total_net_profit,
     prefix: '₽',
     color: props.stats.total_net_profit >= 0 ? '#67c23a' : '#f56c6c',
@@ -69,23 +59,6 @@ const cards = [
     icon: Failed,
     display: props.stats.total_returns_units.toLocaleString('ru-RU') + ' 件',
   },
-  {
-    label: '总费用',
-    value: totalCosts,
-    prefix: '₽',
-    color: '#f56c6c',
-    icon: Failed,
-    display: '₽ ' + Math.abs(totalCosts).toLocaleString('ru-RU', {
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
-    }),
-  },
-  {
-    label: '覆盖',
-    value: `${props.stats.day_count} 天 / ${props.stats.sku_count} SKU`,
-    color: '#409eff',
-    icon: DataAnalysis,
-    display: `${props.stats.day_count} 天 / ${props.stats.sku_count} SKU`,
-  },
 ]
 </script>
 
@@ -93,7 +66,7 @@ const cards = [
   <div
     style="
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 16px;
     "
   >

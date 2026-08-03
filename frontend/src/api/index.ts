@@ -8,6 +8,9 @@ import type {
   ProfitOverview, ProfitTrendItem, ProfitSkuItem, ProfitDailyItem,
   AnomalyResponse,
   SkuManagementRow, SkuManagementUpdate,
+  PlanOverview, PlanListItem, PlanListResponse, PlanDetail,
+  PurOrderOverview, PurOrderListItem, PurOrderListResponse, PurOrderDetail,
+  ShippingOverview, ShippingListItem, ShippingListResponse, ShippingDetail,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -343,4 +346,67 @@ export async function batchUpdateSkuManagement(
       body: JSON.stringify({ items }),
     },
   )
+}
+
+// ── 供应链 API（中台数据）──
+
+function procurementParams(dateFrom?: string, dateTo?: string): string {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return p.toString()
+}
+
+// 申购计划
+export async function getPlanOverview(dateFrom?: string, dateTo?: string): Promise<PlanOverview> {
+  return fetchJson<PlanOverview>(`${BASE}/procurement/plan/overview?${procurementParams(dateFrom, dateTo)}`)
+}
+export async function getPlanList(
+  dateFrom?: string, dateTo?: string, page?: number, pageSize?: number,
+): Promise<PlanListResponse> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  return fetchJson<PlanListResponse>(`${BASE}/procurement/plan/list?${p.toString()}`)
+}
+export async function getPlanDetail(poPlanNo: string): Promise<PlanDetail> {
+  return fetchJson<PlanDetail>(`${BASE}/procurement/plan/${encodeURIComponent(poPlanNo)}`)
+}
+
+// 采购订单
+export async function getPurOrderOverview(dateFrom?: string, dateTo?: string): Promise<PurOrderOverview> {
+  return fetchJson<PurOrderOverview>(`${BASE}/procurement/order/overview?${procurementParams(dateFrom, dateTo)}`)
+}
+export async function getPurOrderList(
+  dateFrom?: string, dateTo?: string, page?: number, pageSize?: number,
+): Promise<PurOrderListResponse> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  return fetchJson<PurOrderListResponse>(`${BASE}/procurement/order/list?${p.toString()}`)
+}
+export async function getPurOrderDetail(poNo: string): Promise<PurOrderDetail> {
+  return fetchJson<PurOrderDetail>(`${BASE}/procurement/order/${encodeURIComponent(poNo)}`)
+}
+
+// 头程发货
+export async function getShippingOverview(dateFrom?: string, dateTo?: string): Promise<ShippingOverview> {
+  return fetchJson<ShippingOverview>(`${BASE}/procurement/shipping/overview?${procurementParams(dateFrom, dateTo)}`)
+}
+export async function getShippingList(
+  dateFrom?: string, dateTo?: string, page?: number, pageSize?: number,
+): Promise<ShippingListResponse> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  return fetchJson<ShippingListResponse>(`${BASE}/procurement/shipping/list?${p.toString()}`)
+}
+export async function getShippingDetail(orderCode: string): Promise<ShippingDetail> {
+  return fetchJson<ShippingDetail>(`${BASE}/procurement/shipping/${encodeURIComponent(orderCode)}`)
 }

@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue'
 import type { Store } from '@/types'
 
-const selectedStoreId = ref<number>(1)
+const selectedStoreId = ref<number>(0)
 const stores = ref<Store[]>([])
 
 export function useStore() {

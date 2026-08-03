@@ -408,3 +408,29 @@ class SkuManagement(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class SkuDailySnapshot(Base):
+    """SKU 每日快照 — 每日同步时从 products + stocks 表快照价格和库存"""
+    __tablename__ = "sku_daily_snapshot"
+    __table_args__ = {"schema": "ozon"}
+
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
+    sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, comment="SKU 编号")
+    record_date: Mapped[date] = mapped_column(Date, primary_key=True, comment="记录日期")
+    offer_id: Mapped[Optional[str]] = mapped_column(String(255), comment="商品编码（冗余）")
+
+    price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="当前售价 RUB")
+    old_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="原价/划线价 RUB")
+    marketing_seller_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="促销价 RUB")
+    min_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="最低允许售价 RUB")
+    retail_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="零售价 RUB（v5 接口，通常为 0）")
+    net_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="净价 RUB（v5 接口，通常为 0）")
+    vat: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="增值税 RUB（v5 接口，通常为 0）")
+
+    green_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="绿标价格/买家展示价 RUB（待定数据源）")
+
+    stock_present: Mapped[int] = mapped_column(Integer, default=0, comment="可售库存件数")
+    stock_reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留库存件数")
+
+    synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")

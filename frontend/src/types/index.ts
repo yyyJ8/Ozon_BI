@@ -544,3 +544,276 @@ export interface SkuManagementUpdate {
 export interface SkuManagementBatchUpdate {
   items: SkuManagementUpdate[]
 }
+
+// ── 供应链：申购计划 ──
+
+export interface PlanOverview {
+  total: number
+  status_0_pending_submit: number
+  status_1_pending_approval: number
+  status_2_pending_create_po: number
+  status_3_partial_create: number
+  status_4_created: number
+  status_5_cancelled: number
+  status_6_approving: number
+  total_plan_qty: number
+}
+
+export interface PlanListItem {
+  po_plan_no: string
+  status: string | null
+  status_label: string
+  plan_type: string | null
+  plan_type_label: string
+  logistics_method: string | null
+  stock_location_id: string | null
+  location_id: string | null
+  create_time: string | null
+  memo: string | null
+  item_count: number
+  total_plan_qty: number
+  return_reason: string | null
+}
+
+export interface PlanListResponse {
+  items: PlanListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface PlanItemDetail {
+  row_id: number
+  item_id: string | null
+  seller_sku: string | null
+  plan_qty: number
+  already_qty: number
+  created_shipping_plan_qty: number
+  expect_date: string | null
+  expect_delivery_date: string | null
+  store_id: string | null
+  fn_sku: string | null
+  marketplace: string | null
+  new_flag: string | null
+  order_type: string | null
+  memo: string | null
+  package_qty: number
+  wms_rec_qty: number
+  wms_check_qty: number
+  wms_onstock_qty: number
+  direct_ship_arrival_qty: number
+  direct_ship_arrival_time: string | null
+  main_sku_id: string | null
+  warehouse_item_code: string | null
+}
+
+export interface PlanDetail {
+  po_plan_no: string
+  status: string | null
+  status_label: string
+  plan_type: string | null
+  plan_type_label: string
+  logistics_method: string | null
+  stock_location_id: string | null
+  location_id: string | null
+  create_time: string | null
+  update_time: string | null
+  memo: string | null
+  return_reason: string | null
+  plan_source: string | null
+  is_urgent: string | null
+  is_new_product: string | null
+  is_year_stock: string | null
+  is_group: string | null
+  combo_flag: string | null
+  wms_status: string | null
+  task_status: string | null
+  shipping_status: string | null
+  cancel_reason: string | null
+  tax_free_flag: string | null
+  items: PlanItemDetail[]
+}
+
+// ── 供应链：采购订单 ──
+
+export interface PurOrderOverview {
+  total: number
+  status_0_pending_submit: number
+  status_1_submitted: number
+  status_2_pending_approval: number
+  status_3_pending_receipt: number
+  status_4_partial_receipt: number
+  status_5_exception: number
+  status_6_cancelled: number
+  status_7_completed: number
+  total_amount: number
+}
+
+export interface PurOrderListItem {
+  po_no: string
+  status: string | null
+  status_label: string
+  vendor_id: string | null
+  amount: number
+  currency_code: string | null
+  create_time: string | null
+  receipt_date: string | null
+  item_count: number
+  total_qty: number
+  memo: string | null
+  logistics_name: string | null
+  logistics_num: string | null
+}
+
+export interface PurOrderListResponse {
+  items: PurOrderListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface PurOrderItemDetail {
+  row_id: number
+  item_id: string | null
+  price: number
+  qty: number
+  untaxed_amount: number
+  tax_rate: number
+  receipt_qty: number
+  return_qty: number
+  expect_receipt_date: string | null
+  expect_date: string | null
+  po_plan_no: string | null
+  plan_row_id: number
+  memo: string | null
+  package_qty: number
+  marketplace_code: string | null
+  sale_platform: string | null
+  main_sku_id: string | null
+  track_status: string | null
+  pending_shipment_qty: number
+  accepted_time: string | null
+  check_date: string | null
+  already_listed_time: string | null
+}
+
+export interface PurOrderDetail {
+  po_no: string
+  status: string | null
+  status_label: string
+  vendor_id: string | null
+  location_id: string | null
+  subsidiary_id: string | null
+  amount: number
+  untaxed_amount: number
+  tax_amount: number
+  currency_code: string | null
+  create_time: string | null
+  update_time: string | null
+  receipt_date: string | null
+  trandate: string | null
+  memo: string | null
+  sku_type: string | null
+  purchase_platform: string | null
+  logistics_name: string | null
+  logistics_num: string | null
+  payment_status: string | null
+  is_year_stock: string | null
+  cancel_reason: string | null
+  tax_free_flag: string | null
+  purchase_dept_type: string | null
+  items: PurOrderItemDetail[]
+}
+
+// ── 供应链：头程发货 ──
+
+export interface ShippingOverview {
+  total: number
+  status_1_pending_push: number
+  status_2_pending_pick: number
+  status_3_4_picked_packed: number
+  status_7_8_10_pending_ship: number
+  status_11_shipped: number
+  status_12_13_arrived: number
+  status_9_cancelled: number
+  total_item_qty: number
+}
+
+export interface ShippingListItem {
+  order_code: string
+  order_status: string | null
+  status_label: string
+  channel_code: string | null
+  shipping_warehouse_id: string | null
+  destination_warehouse_id: string | null
+  destination_country_code: string | null
+  create_time: string | null
+  shipping_time: string | null
+  arrived_time: string | null
+  item_count: number
+  plan_code: string | null
+  logistics_order: string | null
+  is_direct_ship: string | null
+  remark: string | null
+}
+
+export interface ShippingListResponse {
+  items: ShippingListItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface ShippingItemDetail {
+  row_id: number
+  item_id: string | null
+  seller_sku: string | null
+  final_shipping_num: number
+  planed_shipping_num: number
+  operation_shipping_num: number
+  package_qty: number
+  package_volume: string | null
+  package_weight: string | null
+  source_order_code: string | null
+  source_order_type: string | null
+  po_no: string | null
+  store_id: string | null
+  fnsku: string | null
+  material: string | null
+  main_sku_id: string | null
+  warehouse_item_code: string | null
+  inbound_putaway_qty: number
+  qc_status: string | null
+}
+
+export interface ShippingDetail {
+  order_code: string
+  order_status: string | null
+  status_label: string
+  plan_code: string | null
+  plan_type: string | null
+  channel_code: string | null
+  shipping_warehouse_id: string | null
+  destination_warehouse_id: string | null
+  destination_country_code: string | null
+  receiving_platform: string | null
+  third_order_code: string | null
+  create_time: string | null
+  update_time: string | null
+  shipping_time: string | null
+  arrived_time: string | null
+  shelving_time: string | null
+  logistics_order: string | null
+  remark: string | null
+  merge_tag: string | null
+  package_type: string | null
+  is_agl: string | null
+  is_official_provider: string | null
+  is_direct_ship: string | null
+  cancel_reason: string | null
+  tax_free_flag: string | null
+  shipping_plan_time: string | null
+  ship_date: string | null
+  form_id: string | null
+  items: ShippingItemDetail[]
+}

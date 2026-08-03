@@ -67,6 +67,16 @@ function clearSkuFilter() {
   viewMode.value = 'sku'
 }
 
+// ── SKU 搜索 ────────────────────────────────────────────
+const skuSearch = ref('')
+const filteredSkuStats = computed(() => {
+  const q = skuSearch.value.trim().toLowerCase()
+  if (!q) return skuStats.value
+  return skuStats.value.filter(s =>
+    String(s.sku_id).includes(q) || (s.offer_id || '').toLowerCase().includes(q)
+  )
+})
+
 const selectedSkuName = computed(() => {
   if (!selectedSkuId.value) return ''
   const s = skuStats.value.find(s => s.sku_id === selectedSkuId.value)
@@ -94,7 +104,7 @@ function renderTrendChart() {
     legend: { data: ['实际售出', '实际成交'], bottom: 0 },
     grid: { left: 50, right: 20, top: 20, bottom: 35 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
-    yAxis: { type: 'value', minInterval: 1 },
+    yAxis: { type: 'value', min: 0, minInterval: 1 },
     series: [
       {
         name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered),
@@ -286,7 +296,8 @@ const financeSummary = computed(() => {
             </el-tag>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <el-tag type="info" size="small">{{ viewMode === 'posting' ? listTotal + ' 单' : skuStats.length + ' SKU' }}</el-tag>
+            <el-input v-if="viewMode === 'sku'" v-model="skuSearch" placeholder="搜索 SKU / 货号" clearable size="small" style="width:180px;" />
+            <el-tag type="info" size="small">{{ viewMode === 'posting' ? listTotal + ' 单' : filteredSkuStats.length + ' / ' + skuStats.length }}</el-tag>
           </div>
         </div>
       </template>
@@ -353,7 +364,7 @@ const financeSummary = computed(() => {
       </el-table>
 
       <!-- SKU 视图 -->
-      <el-table v-else :data="skuStats" stripe size="small" style="width:100%" max-height="500"
+      <el-table v-else :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500"
         :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
         @row-click="onSkuRowClick">
         <el-table-column label="图片" width="50">

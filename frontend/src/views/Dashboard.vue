@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import { useDashboard } from '@/composables/useDashboard'
 import type { ProductSummary } from '@/types'
 import type { SummaryRow, FinanceTransaction } from '@/types'
-import { getFinanceTransactions, getTransactionsByPostings } from '@/api'
+import { getFinanceTransactions, getTransactionsByPostings, getSummary } from '@/api'
 import SummaryCards from '@/components/SummaryCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
 import TopProducts from '@/components/TopProducts.vue'
@@ -16,6 +16,9 @@ import OrderAnalysis from '@/components/OrderAnalysis.vue'
 import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
 import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
 import SkuManagement from '@/components/SkuManagement.vue'
+import ProcurementPlan from '@/components/ProcurementPlan.vue'
+import PurchaseOrder from '@/components/PurchaseOrder.vue'
+import ShippingOrder from '@/components/ShippingOrder.vue'
 import { useStore } from '@/composables/useStore'
 
 const { selectedStoreId, stores, fetchStores, setStoreId } = useStore()
@@ -53,7 +56,45 @@ function openProductDetail(product: ProductSummary) {
 // 展开行：加载当日订单流水
 const transactionsMap = ref<Record<string, FinanceTransaction[]>>({})
 const loadingTx = ref<Record<string, boolean>>({})
+const cardsCollapsed = ref(false)
 const activeTab = ref('all')
+
+// ─── 趋势图（独立数据源，始终全部店铺）──────────────────────
+const trendSummaryRows = ref<SummaryRow[]>([])
+const trendLoading = ref(false)
+
+const trendDailyAggregation = computed(() => {
+  const map = new Map<string, { revenue: number; net_profit: number; ordered_units: number }>()
+  for (const row of trendSummaryRows.value) {
+    const d = map.get(row.date) || { revenue: 0, net_profit: 0, ordered_units: 0 }
+    d.revenue += Number(row.revenue) || 0
+    d.net_profit += Number(row.net_profit) || 0
+    d.ordered_units += Number(row.ordered_units) || 0
+    map.set(row.date, d)
+  }
+  return Array.from(map.entries())
+    .map(([date, v]) => ({ date, ...v }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+})
+
+async function fetchTrendData() {
+  if (!dateRange.value) return
+  trendLoading.value = true
+  try {
+    trendSummaryRows.value = await getSummary(
+      dateRange.value[0],
+      dateRange.value[1],
+      undefined,
+      0,  // store_id=0 始终全部店铺
+    )
+  } catch { /* 趋势图加载失败不阻塞主流程 */ }
+  finally { trendLoading.value = false }
+}
+
+// 日期范围变化时刷新趋势图（不随店铺切换变化）
+watch(dateRange, () => {
+  if (dateRange.value) fetchTrendData()
+})
 
 // ─── 日期预设 ──────────────────────────────────────────────
 const periodPreset = ref('30days')
@@ -297,20 +338,6 @@ onMounted(() => {
         Ozon BI Dashboard
       </h2>
 
-      <el-select
-        :model-value="selectedStoreId"
-        style="width: 180px"
-        @change="(val: number) => setStoreId(val)"
-      >
-        <el-option label="全部店铺" :value="0" />
-        <el-option
-          v-for="s in stores"
-          :key="s.id"
-          :label="s.name"
-          :value="s.id"
-        />
-      </el-select>
-
       <div style="flex: 1; min-width: 20px" />
 
       <el-select
@@ -361,21 +388,34 @@ onMounted(() => {
     <el-main style="padding: 20px 24px;">
       <div v-loading="loading" style="min-height: 400px;">
         <!-- 汇总卡片 -->
-        <SummaryCards v-if="stats" :stats="stats" />
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <el-button
+            size="small"
+            text
+            @click="cardsCollapsed = !cardsCollapsed"
+          >
+            <el-icon>
+              <ArrowUp v-if="cardsCollapsed" />
+              <ArrowDown v-else />
+            </el-icon>
+            {{ cardsCollapsed ? '展开汇总' : '收起汇总' }}
+          </el-button>
+        </div>
+        <SummaryCards v-if="stats && !cardsCollapsed" :stats="stats" />
 
         <!-- 趋势图 -->
         <el-card shadow="hover" style="margin-top: 20px;">
           <template #header>
-            <span style="font-weight: 600">收入 &amp; 利润趋势</span>
+            <span style="font-weight: 600">销售趋势</span>
           </template>
-          <TrendChart :data="dailyAggregation" />
+          <TrendChart :data="trendDailyAggregation" />
         </el-card>
 
         <!-- 商品排行榜（预留） -->
 
         <!-- 商品分析 Tab 面板 -->
-        <el-card shadow="hover" style="margin-top: 20px;">
-          <el-tabs v-model="activeTab" style="padding: 0 4px;">
+        <el-card shadow="hover" style="margin-top: 20px; position: relative;">
+          <el-tabs v-model="activeTab">
             <el-tab-pane label="SKU管理" name="sku-mgmt">
               <template #label>
                 <span><el-icon><EditPen /></el-icon> SKU管理</span>
@@ -462,7 +502,50 @@ onMounted(() => {
                 :active-tab="activeTab"
               />
             </el-tab-pane>
+            <el-tab-pane label="申购计划" name="plan">
+              <template #label>
+                <span><el-icon><List /></el-icon> 申购计划</span>
+              </template>
+              <ProcurementPlan
+                :date-range="dateRange"
+                :products="products"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="采购订单" name="purchase">
+              <template #label>
+                <span><el-icon><Goods /></el-icon> 采购订单</span>
+              </template>
+              <PurchaseOrder
+                :date-range="dateRange"
+                :products="products"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
+            <el-tab-pane label="头程发货" name="shipping">
+              <template #label>
+                <span><el-icon><Van /></el-icon> 头程发货</span>
+              </template>
+              <ShippingOrder
+                :date-range="dateRange"
+                :products="products"
+                :active-tab="activeTab"
+              />
+            </el-tab-pane>
           </el-tabs>
+          <el-select
+            :model-value="selectedStoreId"
+            style="position: absolute; top: 14px; right: 16px; width: 160px; z-index: 1;"
+            @change="(val: number) => setStoreId(val)"
+          >
+            <el-option label="全部店铺" :value="0" />
+            <el-option
+              v-for="s in stores"
+              :key="s.id"
+              :label="s.name"
+              :value="s.id"
+            />
+          </el-select>
         </el-card>
       </div>
     </el-main>
