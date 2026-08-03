@@ -20,6 +20,15 @@ import ProcurementPlan from '@/components/ProcurementPlan.vue'
 import PurchaseOrder from '@/components/PurchaseOrder.vue'
 import ShippingOrder from '@/components/ShippingOrder.vue'
 import { useStore } from '@/composables/useStore'
+import { Notebook } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function openOzonDirect() {
+  const route = router.resolve('/ozon-direct')
+  window.open(route.href, '_blank')
+}
 
 const { selectedStoreId, stores, fetchStores, setStoreId } = useStore()
 
@@ -337,6 +346,11 @@ onMounted(() => {
       <h2 style="margin: 0; font-size: 20px; color: #303133; white-space: nowrap;">
         Ozon BI Dashboard
       </h2>
+
+      <el-button size="small" @click="openOzonDirect">
+        <el-icon><Notebook /></el-icon>
+        OZON 直发信息
+      </el-button>
 
       <div style="flex: 1; min-width: 20px" />
 

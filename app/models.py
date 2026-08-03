@@ -12,7 +12,7 @@ from typing import Optional
 from sqlalchemy import (
     JSON, BigInteger, Boolean, Date, DateTime, ForeignKey,
     ForeignKeyConstraint,
-    Integer, Numeric, String, Text,
+    Integer, LargeBinary, Numeric, String, Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -434,3 +434,96 @@ class SkuDailySnapshot(Base):
     stock_reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留库存件数")
 
     synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")
+
+
+# ============================================================
+# OZON 直发信息模块
+# ============================================================
+
+class OzonDirectSku(Base):
+    """OZON 直发 — SKU 基础数据（来源 OZON直发信息.xlsx Sheet1）"""
+    __tablename__ = "ozon_direct_sku"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
+    sku: Mapped[str] = mapped_column(String(100), nullable=False, comment="SKU 编码")
+    product_name: Mapped[Optional[str]] = mapped_column(Text, comment="产品名称")
+    supplier: Mapped[Optional[str]] = mapped_column(Text, comment="供应商")
+    store_name: Mapped[Optional[str]] = mapped_column(String(50), comment="店铺")
+    label_file: Mapped[Optional[str]] = mapped_column(String(255), comment="标签文件（关联文件名）")
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="软删除标记")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="记录更新时间")
+
+
+class OzonDirectShipment(Base):
+    """OZON 直发 — 直发跟进表（来源 OZON直发信息.xlsx Sheet2）"""
+    __tablename__ = "ozon_direct_shipment"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
+
+    # 申购信息
+    pr_no: Mapped[Optional[str]] = mapped_column(String(100), comment="申购单号")
+    sku: Mapped[Optional[str]] = mapped_column(String(100), comment="SKU 编码")
+    product_cn_name: Mapped[Optional[str]] = mapped_column(Text, comment="产品中文名")
+    pr_date: Mapped[Optional[date]] = mapped_column(Date, comment="申购时间")
+    pr_person: Mapped[Optional[str]] = mapped_column(String(50), comment="申购人员")
+    supplier: Mapped[Optional[str]] = mapped_column(Text, comment="供应商")
+    po_no: Mapped[Optional[str]] = mapped_column(String(100), comment="采购单号")
+    online_po_no: Mapped[Optional[str]] = mapped_column(String(200), comment="网采单号")
+    is_received: Mapped[Optional[str]] = mapped_column(String(20), comment="是否收货上架")
+
+    # 数量/包装
+    total_qty: Mapped[Optional[int]] = mapped_column(Integer, comment="总数")
+    total_boxes: Mapped[Optional[int]] = mapped_column(Integer, comment="总箱数")
+    product_label: Mapped[Optional[str]] = mapped_column(Text, comment="产品标签")
+    carton_mark: Mapped[Optional[str]] = mapped_column(Text, comment="外箱箱唛")
+    warehouse_receipt: Mapped[Optional[str]] = mapped_column(String(500), comment="入库清单（关联文件）")
+
+    # 发货信息
+    receiving_address: Mapped[Optional[str]] = mapped_column(Text, comment="收货地址")
+    labeling_notes: Mapped[Optional[str]] = mapped_column(Text, comment="贴标发货说明")
+    logistics_provider: Mapped[Optional[str]] = mapped_column(String(100), comment="物流商")
+    first_leg_tracking: Mapped[Optional[str]] = mapped_column(String(200), comment="物流商头程单号")
+
+    # 箱规
+    total_boxes_2: Mapped[Optional[int]] = mapped_column(Integer, comment="总箱数（重复列）")
+    length_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="长（cm）")
+    width_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="宽（cm）")
+    height_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="高（cm）")
+    gross_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="毛重（kg）")
+    total_cbm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 4), comment="总方数（CBM）")
+    density: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2), comment="密度")
+
+    # 物流跟踪
+    plan_no: Mapped[Optional[str]] = mapped_column(String(100), comment="计划单号")
+    ship_date: Mapped[Optional[date]] = mapped_column(Date, comment="发货时间")
+    tracking_no: Mapped[Optional[str]] = mapped_column(String(500), comment="物流单号")
+    logistics_company: Mapped[Optional[str]] = mapped_column(String(200), comment="物流公司")
+
+    # 备注/售后
+    special_notes: Mapped[Optional[str]] = mapped_column(Text, comment="特殊情况备注")
+    previous_aftersales: Mapped[Optional[str]] = mapped_column(Text, comment="上期售后情况")
+    qty_total_2: Mapped[Optional[int]] = mapped_column(Integer, comment="总数（重复列）")
+    receiving_status: Mapped[Optional[str]] = mapped_column(Text, comment="货物收货情况")
+    shipment_no: Mapped[Optional[str]] = mapped_column(String(200), comment="货件单号")
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="软删除标记")
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="记录更新时间")
+
+
+class OzonDirectFile(Base):
+    """OZON 直发 — 附件文件（标签PDF、入库清单、上传图片等）"""
+    __tablename__ = "ozon_direct_files"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
+    source_table: Mapped[str] = mapped_column(String(50), nullable=False, comment="来源表: sku / shipment")
+    source_id: Mapped[int] = mapped_column(Integer, nullable=False, comment="来源记录 ID")
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="原始文件名")
+    file_data: Mapped[Optional[bytes]] = mapped_column(LargeBinary, comment="文件二进制内容")
+    file_size: Mapped[Optional[int]] = mapped_column(Integer, comment="文件大小（字节）")
+    file_type: Mapped[Optional[str]] = mapped_column(String(20), comment="文件扩展名")
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="上传时间")

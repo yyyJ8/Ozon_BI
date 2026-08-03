@@ -12,6 +12,11 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('@/views/Dashboard.vue'),
     },
+    {
+      path: '/ozon-direct',
+      name: 'ozon-direct',
+      component: () => import('@/views/OzonDirect.vue'),
+    },
   ],
 })
 

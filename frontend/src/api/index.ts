@@ -11,6 +11,8 @@ import type {
   PlanOverview, PlanListItem, PlanListResponse, PlanDetail,
   PurOrderOverview, PurOrderListItem, PurOrderListResponse, PurOrderDetail,
   ShippingOverview, ShippingListItem, ShippingListResponse, ShippingDetail,
+  DirectSkuItem, DirectSkuUpdate, DirectShipmentItem, DirectShipmentUpdate,
+  DirectFileItem, DirectListResponse,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -409,4 +411,93 @@ export async function getShippingList(
 }
 export async function getShippingDetail(orderCode: string): Promise<ShippingDetail> {
   return fetchJson<ShippingDetail>(`${BASE}/procurement/shipping/${encodeURIComponent(orderCode)}`)
+}
+
+// ============================================================
+// OZON 直发信息
+// ============================================================
+
+// SKU 基础数据
+export async function getDirectSkuList(
+  page?: number, pageSize?: number, search?: string,
+): Promise<DirectListResponse<DirectSkuItem>> {
+  const p = new URLSearchParams()
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  if (search) p.set('search', search)
+  return fetchJson<DirectListResponse<DirectSkuItem>>(`${BASE}/ozon-direct/sku?${p.toString()}`)
+}
+export async function getDirectSku(id: number): Promise<DirectSkuItem> {
+  return fetchJson<DirectSkuItem>(`${BASE}/ozon-direct/sku/${id}`)
+}
+export async function createDirectSku(body: DirectSkuUpdate): Promise<DirectSkuItem> {
+  return fetchJson<DirectSkuItem>(`${BASE}/ozon-direct/sku`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+}
+export async function updateDirectSku(id: number, body: DirectSkuUpdate): Promise<DirectSkuItem> {
+  return fetchJson<DirectSkuItem>(`${BASE}/ozon-direct/sku/${id}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+}
+export async function deleteDirectSku(id: number): Promise<{ ok: boolean }> {
+  return fetchJson<{ ok: boolean }>(`${BASE}/ozon-direct/sku/${id}`, { method: 'DELETE' })
+}
+
+// 直发跟进表
+export async function getDirectShipmentList(
+  page?: number, pageSize?: number, search?: string, dateFrom?: string, dateTo?: string, receivingStatus?: string,
+): Promise<DirectListResponse<DirectShipmentItem>> {
+  const p = new URLSearchParams()
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  if (search) p.set('search', search)
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (receivingStatus) p.set('receiving_status', receivingStatus)
+  return fetchJson<DirectListResponse<DirectShipmentItem>>(`${BASE}/ozon-direct/shipment?${p.toString()}`)
+}
+export async function getDirectShipment(id: number): Promise<DirectShipmentItem> {
+  return fetchJson<DirectShipmentItem>(`${BASE}/ozon-direct/shipment/${id}`)
+}
+export async function createDirectShipment(body: DirectShipmentUpdate): Promise<DirectShipmentItem> {
+  return fetchJson<DirectShipmentItem>(`${BASE}/ozon-direct/shipment`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+}
+export async function updateDirectShipment(id: number, body: DirectShipmentUpdate): Promise<DirectShipmentItem> {
+  return fetchJson<DirectShipmentItem>(`${BASE}/ozon-direct/shipment/${id}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  })
+}
+export async function deleteDirectShipment(id: number): Promise<{ ok: boolean }> {
+  return fetchJson<{ ok: boolean }>(`${BASE}/ozon-direct/shipment/${id}`, { method: 'DELETE' })
+}
+
+// 文件
+export async function getDirectFiles(sourceTable: string, sourceId: number): Promise<DirectFileItem[]> {
+  return fetchJson<DirectFileItem[]>(`${BASE}/ozon-direct/files/by-source?source_table=${sourceTable}&source_id=${sourceId}`)
+}
+export async function uploadDirectFile(file: File, sourceTable: string, sourceId: number): Promise<DirectFileItem> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return fetchJson<DirectFileItem>(`${BASE}/ozon-direct/files/upload?source_table=${sourceTable}&source_id=${sourceId}`, {
+    method: 'POST', body: formData,
+  })
+}
+export async function deleteDirectFile(id: number): Promise<{ ok: boolean }> {
+  return fetchJson<{ ok: boolean }>(`${BASE}/ozon-direct/files/${id}`, { method: 'DELETE' })
+}
+export function getDirectFileUrl(fileId: number): string {
+  return `${BASE}/ozon-direct/files/${fileId}`
+}
+
+// 导入导出
+export async function importDirectExcel(file: File): Promise<{ ok: boolean; sku_count: number; shipment_count: number }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return fetchJson(`${BASE}/ozon-direct/import`, { method: 'POST', body: formData })
+}
+export function getExportUrl(): string {
+  return `${BASE}/ozon-direct/export`
 }

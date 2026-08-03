@@ -107,12 +107,12 @@ function renderTrendChart() {
     yAxis: { type: 'value', min: 0, minInterval: 1 },
     series: [
       {
-        name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered),
+        name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled),
         lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
         symbol: 'circle', symbolSize: 4,
       },
       {
-        name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.client_return),
+        name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled - d.client_return),
         lineStyle: { width: 3 }, itemStyle: { color: '#67c23a' },
         symbol: 'diamond', symbolSize: 6, areaStyle: { color: 'rgba(103,194,58,0.1)' },
       },

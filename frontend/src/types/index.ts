@@ -817,3 +817,120 @@ export interface ShippingDetail {
   form_id: string | null
   items: ShippingItemDetail[]
 }
+
+// ============================================================
+// OZON 直发信息
+// ============================================================
+
+export interface DirectSkuItem {
+  id: number
+  sku: string
+  product_name: string | null
+  supplier: string | null
+  store_name: string | null
+  label_file: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface DirectSkuUpdate {
+  sku?: string
+  product_name?: string | null
+  supplier?: string | null
+  store_name?: string | null
+  label_file?: string | null
+}
+
+export interface DirectShipmentItem {
+  id: number
+  pr_no: string | null
+  sku: string | null
+  product_cn_name: string | null
+  pr_date: string | null
+  pr_person: string | null
+  supplier: string | null
+  po_no: string | null
+  online_po_no: string | null
+  is_received: string | null
+  total_qty: number | null
+  total_boxes: number | null
+  product_label: string | null
+  carton_mark: string | null
+  warehouse_receipt: string | null
+  receiving_address: string | null
+  labeling_notes: string | null
+  logistics_provider: string | null
+  first_leg_tracking: string | null
+  total_boxes_2: number | null
+  length_cm: number | null
+  width_cm: number | null
+  height_cm: number | null
+  gross_weight: number | null
+  total_cbm: number | null
+  density: number | null
+  plan_no: string | null
+  ship_date: string | null
+  tracking_no: string | null
+  logistics_company: string | null
+  special_notes: string | null
+  previous_aftersales: string | null
+  qty_total_2: number | null
+  receiving_status: string | null
+  shipment_no: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface DirectShipmentUpdate {
+  pr_no?: string | null
+  sku?: string | null
+  product_cn_name?: string | null
+  pr_date?: string | null
+  pr_person?: string | null
+  supplier?: string | null
+  po_no?: string | null
+  online_po_no?: string | null
+  is_received?: string | null
+  total_qty?: number | null
+  total_boxes?: number | null
+  product_label?: string | null
+  carton_mark?: string | null
+  warehouse_receipt?: string | null
+  receiving_address?: string | null
+  labeling_notes?: string | null
+  logistics_provider?: string | null
+  first_leg_tracking?: string | null
+  total_boxes_2?: number | null
+  length_cm?: number | null
+  width_cm?: number | null
+  height_cm?: number | null
+  gross_weight?: number | null
+  total_cbm?: number | null
+  density?: number | null
+  plan_no?: string | null
+  ship_date?: string | null
+  tracking_no?: string | null
+  logistics_company?: string | null
+  special_notes?: string | null
+  previous_aftersales?: string | null
+  qty_total_2?: number | null
+  receiving_status?: string | null
+  shipment_no?: string | null
+}
+
+export interface DirectFileItem {
+  id: number
+  source_table: string
+  source_id: number
+  file_name: string
+  file_size: number | null
+  file_type: string | null
+  uploaded_at: string | null
+}
+
+export interface DirectListResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+}

@@ -14,6 +14,7 @@ from app.api.profit import router as profit_router
 from app.api.anomalies import router as anomalies_router
 from app.api.sku_management import router as sku_management_router
 from app.api.procurement import router as procurement_router
+from app.api.ozon_direct import router as ozon_direct_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(products_router)
@@ -29,3 +30,4 @@ api_router.include_router(profit_router)
 api_router.include_router(anomalies_router)
 api_router.include_router(sku_management_router)
 api_router.include_router(procurement_router)
+api_router.include_router(ozon_direct_router)
