@@ -59,7 +59,6 @@ function onSkuRowClick(row: any) {
     selectedSkuId.value = undefined
   } else {
     selectedSkuId.value = row.sku_id
-    viewMode.value = 'posting'  // 切回订单视图看具体订单
   }
 }
 function clearSkuFilter() {
@@ -101,10 +100,13 @@ function renderTrendChart() {
         return h + '</div>'
       },
     },
-    legend: { data: ['实际售出', '实际成交'], bottom: 0 },
+    legend: { data: ['实际售出', '实际成交', '售价'], bottom: 0 },
     grid: { left: 50, right: 20, top: 20, bottom: 35 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
-    yAxis: { type: 'value', min: 0, minInterval: 1 },
+    yAxis: [
+      { type: 'value', min: 0, minInterval: 1, name: '单' },
+      { type: 'value', min: 0, name: '₽', axisLabel: { formatter: (v: number) => v >= 1000 ? (v/1000).toFixed(0)+'k' : String(v) } },
+    ],
     series: [
       {
         name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled),
@@ -115,6 +117,11 @@ function renderTrendChart() {
         name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled - d.client_return),
         lineStyle: { width: 3 }, itemStyle: { color: '#67c23a' },
         symbol: 'diamond', symbolSize: 6, areaStyle: { color: 'rgba(103,194,58,0.1)' },
+      },
+      {
+        name: '售价', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.price),
+        lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#e6a23c' },
+        symbol: 'triangle', symbolSize: 6,
       },
     ],
   }, true)
@@ -185,37 +192,75 @@ const financeSummary = computed(() => {
       />
     </div>
 
-    <!-- 概览卡片 6 张 -->
-    <el-row :gutter="16" v-if="overview">
-      <el-col :span="4">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><Document /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">订单总数</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.total_orders) }} 单</div>
+    <!-- 概览卡片 -->
+    <el-row :gutter="16" v-if="overview" style="flex-wrap:wrap;">
+      <el-col v-for="col in 5" :key="col" :style="{ flex: '1 1 0', minWidth: '140px' }">
+        <template v-if="col === 1">
+          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><Document /></el-icon></div>
+              <div>
+                <div style="font-size:12px;color:#909399;">实际成交数</div>
+                <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.total_orders - overview.cancelled_count - overview.client_return_count) }} 单</div>
+              </div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="4">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><Van /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">FBO（官方仓）</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.fbo_count) }} 单</div>
+          </el-card>
+        </template>
+        <template v-if="col === 2">
+          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width:40px;height:40px;border-radius:8px;background:#67c23a18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#67c23a;"><el-icon><CircleCheck /></el-icon></div>
+              <div>
+                <div style="font-size:12px;color:#909399;">已签收</div>
+                <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.delivered_count) }}</div>
+              </div>
             </div>
-          </div>
-        </el-card>
+          </el-card>
+        </template>
+        <template v-if="col === 3">
+          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width:40px;height:40px;border-radius:8px;background:#f56c6c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#f56c6c;"><el-icon><CircleClose /></el-icon></div>
+              <div>
+                <div style="font-size:12px;color:#909399;">已取消</div>
+                <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.cancelled_count) }}</div>
+              </div>
+            </div>
+          </el-card>
+        </template>
+        <template v-if="col === 4">
+          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width:40px;height:40px;border-radius:8px;background:#90939918;display:flex;align-items:center;justify-content:center;font-size:18px;color:#909399;"><el-icon><Document /></el-icon></div>
+              <div>
+                <div style="font-size:12px;color:#909399;">总件数</div>
+                <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.total_ordered_units) }}</div>
+              </div>
+            </div>
+          </el-card>
+        </template>
+        <template v-if="col === 5">
+          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><TrendCharts /></el-icon></div>
+              <div>
+                <div style="font-size:12px;color:#909399;">广告占比</div>
+                <div style="font-size:20px;font-weight:700;color:#c0c4cc;">—</div>
+              </div>
+            </div>
+          </el-card>
+        </template>
       </el-col>
-      <el-col :span="4">
+    </el-row>
+    <!-- SKU 选中时额外卡片 -->
+    <el-row :gutter="16" v-if="selectedSkuId" style="margin-top:12px;">
+      <el-col :span="3">
         <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><Box /></el-icon></div>
+            <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><TrendCharts /></el-icon></div>
             <div>
-              <div style="font-size:12px;color:#909399;">FBS（自发货）</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.fbs_count) }} 单</div>
+              <div style="font-size:12px;color:#909399;">售价</div>
+              <div style="font-size:20px;font-weight:700;color:#c0c4cc;">—</div>
             </div>
           </div>
         </el-card>
@@ -223,43 +268,10 @@ const financeSummary = computed(() => {
       <el-col :span="3">
         <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#67c23a18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#67c23a;"><el-icon><CircleCheck /></el-icon></div>
+            <div style="width:40px;height:40px;border-radius:8px;background:#67c23a18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#67c23a;"><el-icon><TrendCharts /></el-icon></div>
             <div>
-              <div style="font-size:12px;color:#909399;">已签收</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.delivered_count) }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="3">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#f56c6c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#f56c6c;"><el-icon><CircleClose /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">已取消</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.cancelled_count) }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="3">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><TrendCharts /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">取消率</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ overview.cancellation_rate.toFixed(1) }}%</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="3">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#90939918;display:flex;align-items:center;justify-content:center;font-size:18px;color:#909399;"><el-icon><Document /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">总件数</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">{{ fmtInt(overview.total_ordered_units) }}</div>
+              <div style="font-size:12px;color:#909399;">预估毛利率</div>
+              <div style="font-size:20px;font-weight:700;color:#c0c4cc;">—</div>
             </div>
           </div>
         </el-card>
@@ -315,13 +327,6 @@ const financeSummary = computed(() => {
             <span style="font-family:monospace;font-size:12px;color:#909399;">{{ row.order_number || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="配送" width="70" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" effect="plain" :type="row.delivery_schema === 'FBO' ? 'primary' : 'warning'">
-              {{ row.delivery_schema || '—' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="sku" label="SKU" min-width="130" show-overflow-tooltip>
           <template #default="{ row }">
             <span style="font-family:monospace;font-size:12px;color:#909399;">{{ row.sku || '—' }}</span>
@@ -354,13 +359,6 @@ const financeSummary = computed(() => {
             <span style="font-size:12px;">{{ row.total_price > 0 ? '₽ ' + formatMoney(row.total_price) : '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="actual_revenue" label="结算" width="110" align="right" sortable>
-          <template #default="{ row }">
-            <span :style="{ color: row.actual_revenue > 0 ? '#67c23a' : '#c0c4cc', fontWeight: row.actual_revenue > 0 ? 600 : 400 }">
-              {{ row.actual_revenue > 0 ? '₽ ' + formatMoney(row.actual_revenue) : '—' }}
-            </span>
-          </template>
-        </el-table-column>
       </el-table>
 
       <!-- SKU 视图 -->
@@ -385,44 +383,32 @@ const financeSummary = computed(() => {
             <span style="font-size:12px;">{{ row.offer_id || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="order_count" label="订单数" width="70" align="right" sortable>
+        <el-table-column prop="order_count" label="实际成交数" width="80" align="right" sortable>
           <template #default="{ row }">
             <span style="font-weight:600;">{{ fmtInt(row.order_count) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_quantity" label="总件数" width="70" align="right" sortable>
+        <el-table-column prop="current_price" label="售价" width="100" align="right" sortable>
           <template #default="{ row }">
-            <span style="font-weight:600;">{{ fmtInt(row.total_quantity) }}</span>
+            <span style="font-size:12px;">{{ row.current_price > 0 ? '₽ ' + formatMoney(row.current_price) : '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="total_revenue" label="售价" width="110" align="right" sortable>
-          <template #default="{ row }">
-            <span style="font-size:12px;">{{ row.total_revenue > 0 ? '₽ ' + formatMoney(row.total_revenue) : '—' }}</span>
+        <el-table-column label="绿标价" width="100" align="right">
+          <template #default>
+            <span style="color:#c0c4cc;">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="actual_revenue" label="结算" width="110" align="right" sortable>
+        <el-table-column label="退货" width="70" align="center">
           <template #default="{ row }">
-            <span :style="{ color: row.actual_revenue > 0 ? '#67c23a' : '#c0c4cc', fontWeight: row.actual_revenue > 0 ? 600 : 400 }">
-              {{ row.actual_revenue > 0 ? '₽ ' + formatMoney(row.actual_revenue) : '—' }}
+            <span :style="{ color: row.return_count > 0 ? '#e6a23c' : '#303133', fontWeight: row.return_count > 0 ? 600 : 400 }">
+              {{ row.return_count }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="状态分布" width="165" align="center">
+        <el-table-column label="库存" width="70" align="right">
           <template #default="{ row }">
-            <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
-              <el-tag size="small" type="success" effect="plain">签收 {{ row.delivered_count }}</el-tag>
-              <el-tag v-if="row.cancelled_count" size="small" type="danger" effect="plain">取消 {{ row.cancelled_count }}</el-tag>
-              <el-tag v-if="row.return_count" size="small" type="warning" effect="plain">退货 {{ row.return_count }}</el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="配送" width="110" align="center">
-          <template #default="{ row }">
-            <span style="font-size:12px;white-space:nowrap;">
-              <span v-if="row.fbo_count" style="color:#409eff;">FBO {{ row.fbo_count }}</span>
-              <span v-if="row.fbo_count && row.fbs_count" style="color:#c0c4cc;"> / </span>
-              <span v-if="row.fbs_count" style="color:#e6a23c;">FBS {{ row.fbs_count }}</span>
-              <span v-if="!row.fbo_count && !row.fbs_count" style="color:#c0c4cc;">—</span>
+            <span :style="{ color: row.stock > 0 ? '#303133' : '#f56c6c', fontWeight: 600 }">
+              {{ fmtInt(row.stock) }}
             </span>
           </template>
         </el-table-column>

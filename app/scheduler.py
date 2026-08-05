@@ -5,6 +5,7 @@
   5:00  (固定) — 广告 SKU 明细（异步报告极慢，凌晨 Ozon 队列空闲）
   9:00  (.env)  — 全量同步（商品/销售/财务/履约/退货/广告活动级）
   19:00 (.env)  — 全量同步（同上）
+  5:00  (固定) — 每日快照（价格+库存 → sku_daily_snapshot，Ozon 莫斯科 24:00 = 北京 5:00）
 """
 from datetime import date, timedelta
 
@@ -20,6 +21,44 @@ from app.services.sync_service import run_full_sync
 from app.services.advertising_sync import sync_sku_advertising
 
 scheduler = AsyncIOScheduler()
+
+
+def daily_snapshot():
+    """每日快照: 遍历所有启用店铺，将 products + stocks 快照写入 sku_daily_snapshot
+    运行时间: 北京时间 5:00（= 莫斯科 0:00），记录日期 = 莫斯科日期（北京时间 -1 天）"""
+    db = SessionLocal()
+    try:
+        from sqlalchemy import text
+        stores = db.query(Store).filter_by(is_active=True).all()
+        today = date.today() - timedelta(days=1)  # Ozon 莫斯科日期
+        for store in stores:
+            try:
+                result = db.execute(text("""
+                    INSERT INTO ozon.sku_daily_snapshot
+                        (store_id, sku_id, record_date, offer_id,
+                         price, old_price, marketing_seller_price, min_price,
+                         stock_present, stock_reserved, synced_at)
+                    SELECT
+                        p.store_id, p.sku_id, :today, p.offer_id,
+                        p.price, p.old_price, p.marketing_seller_price, p.min_price,
+                        COALESCE(s.present, 0), COALESCE(s.reserved, 0), now()
+                    FROM ozon.products p
+                    LEFT JOIN (
+                        SELECT store_id, sku_id, SUM(present) AS present, SUM(reserved) AS reserved
+                        FROM ozon.stocks GROUP BY store_id, sku_id
+                    ) s ON p.store_id = s.store_id AND p.sku_id = s.sku_id
+                    WHERE p.store_id = :sid
+                    ON CONFLICT (store_id, sku_id, record_date) DO NOTHING
+                """), {"today": today, "sid": store.id})
+                db.commit()
+                logger.info(f"[快照] 店铺 {store.id} ({store.name}): 日期={today} 记录={result.rowcount}")
+            except Exception as e:
+                logger.error(f"[快照] 店铺 {store.id} 失败: {e}")
+                db.rollback()
+    except Exception as e:
+        logger.error(f"[快照] 调度失败: {e}")
+    finally:
+        db.close()
 
 
 def sync_sku_detail():
@@ -81,6 +120,17 @@ def start_scheduler():
         hour=5,
         minute=0,
         id="sku_detail_at_05h",
+        replace_existing=True,
+        misfire_grace_time=600,
+    )
+
+    # 每天 5:00 — 价格+库存每日快照（Ozon 莫斯科 24:00 = 北京 5:00）
+    scheduler.add_job(
+        daily_snapshot,
+        trigger="cron",
+        hour=5,
+        minute=0,
+        id="daily_snapshot_at_05h",
         replace_existing=True,
         misfire_grace_time=600,
     )

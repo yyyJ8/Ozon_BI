@@ -30,6 +30,7 @@ class OrderTrendItem(BaseModel):
     delivered: int
     cancelled: int
     client_return: int = 0
+    price: float | None = None
 
 
 class OrderListItem(BaseModel):
@@ -111,10 +112,12 @@ class OrderSkuStats(BaseModel):
     primary_image: str | None = None
     order_count: int = 0
     total_quantity: int = 0
-    total_revenue: float = 0.0       # 标价（products.price × quantity）
-    actual_revenue: float = 0.0      # 实际收入（finance_transactions.accruals_for_sale）
+    total_revenue: float = 0.0
+    actual_revenue: float = 0.0
+    current_price: float = 0.0       # products 表当前售价
+    stock: int = 0
     delivered_count: int = 0
     cancelled_count: int = 0
-    return_count: int = 0            # ClientReturn 退货数
+    return_count: int = 0
     fbo_count: int = 0
     fbs_count: int = 0

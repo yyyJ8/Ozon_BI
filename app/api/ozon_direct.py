@@ -29,10 +29,13 @@ def list_sku(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=0, ge=0, le=5000, description="0=不分页返回全部"),
     search: Optional[str] = Query(default=None, description="搜索 SKU/产品名/供应商"),
+    store_name: Optional[str] = Query(default=None, description="店铺筛选"),
     db: Session = Depends(get_db),
 ):
-    """SKU 列表（分页+搜索，page_size=0 返回全部）"""
+    """SKU 列表（分页+搜索+店铺筛选，page_size=0 返回全部）"""
     q = db.query(OzonDirectSku).filter_by(is_deleted=False)
+    if store_name:
+        q = q.filter(OzonDirectSku.store_name == store_name)
     if search:
         like = f"%{search}%"
         q = q.filter(
@@ -198,7 +201,8 @@ def delete_shipment(ship_id: int, db: Session = Depends(get_db)):
 def upload_file(
     file: UploadFile = File(...),
     source_table: str = Query(default="shipment", description="来源表: sku / shipment"),
-    source_id: int = Query(default=0, description="来源记录 ID，0 表示暂不关联"),
+    sku: str = Query(default="", description="关联 SKU"),
+    pr_no: str = Query(default="", description="关联申购单号（shipment 时用）"),
     db: Session = Depends(get_db),
 ):
     """上传文件（存入数据库）"""
@@ -207,7 +211,8 @@ def upload_file(
 
     record = OzonDirectFile(
         source_table=source_table,
-        source_id=source_id,
+        sku=sku or None,
+        pr_no=pr_no or None,
         file_name=file.filename or "unknown",
         file_data=content,
         file_size=len(content),
@@ -216,23 +221,24 @@ def upload_file(
     db.add(record)
     db.commit()
     db.refresh(record)
-    log_operation("UPLOAD FILE", f"id={record.id} name={record.file_name} source={source_table}:{source_id}")
+    log_operation("UPLOAD FILE", f"id={record.id} name={record.file_name} source={source_table} sku={sku} pr_no={pr_no}")
     return record
 
 
 @router.get("/files/by-source")
 def list_files(
     source_table: str = Query(...),
-    source_id: int = Query(...),
+    sku: str = Query(default=""),
+    pr_no: str = Query(default=""),
     db: Session = Depends(get_db),
 ):
     """查询某条记录的关联文件列表"""
-    records = (
-        db.query(OzonDirectFile)
-        .filter_by(source_table=source_table, source_id=source_id)
-        .order_by(OzonDirectFile.uploaded_at.desc())
-        .all()
-    )
+    q = db.query(OzonDirectFile).filter_by(source_table=source_table)
+    if sku:
+        q = q.filter_by(sku=sku)
+    if pr_no:
+        q = q.filter_by(pr_no=pr_no)
+    records = q.order_by(OzonDirectFile.uploaded_at.desc()).all()
     return [DirectFileItem.model_validate(r) for r in records]
 
 
@@ -245,10 +251,12 @@ def download_file(file_id: int, db: Session = Depends(get_db)):
     if not record.file_data:
         raise HTTPException(status_code=404, detail="文件内容为空")
     import io
+    import urllib.parse
+    safe_name = urllib.parse.quote(record.file_name)
     return StreamingResponse(
         io.BytesIO(record.file_data),
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f"inline; filename={record.file_name}"},
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{safe_name}"},
     )
 
 
@@ -404,6 +412,7 @@ def export_all(db: Session = Depends(get_db)):
     link_font = Font(color="0000FF", underline="single")
 
     LABEL_DIR = "OZON直发信息-FILE/SKU基础数据/标签文件"
+    CARTON_DIR = "OZON直发信息-FILE/直发跟进表-N/外箱箱唛"
     RECEIPT_DIR = "OZON直发信息-FILE/直发跟进表-N/入库清单"
 
     sku_count = 0
@@ -413,15 +422,16 @@ def export_all(db: Session = Depends(get_db)):
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "SKU基础数据"
-        ws.append(["SKU", "产品名称", "供应商", "店铺", "标签文件", ""])
+        ws.append(["SKU", "产品名称", "供应商", "销售负责人", "店铺", "标签文件"])
         items = db.query(OzonDirectSku).filter_by(is_deleted=False).order_by(OzonDirectSku.id).all()
         sku_count = len(items)
         for r, it in enumerate(items, 2):
             ws.cell(row=r, column=1, value=it.sku)
             ws.cell(row=r, column=2, value=it.product_name)
             ws.cell(row=r, column=3, value=it.supplier)
-            ws.cell(row=r, column=4, value=it.store_name)
-            cell = ws.cell(row=r, column=5, value=it.label_file)
+            ws.cell(row=r, column=4, value=it.sales_manager)
+            ws.cell(row=r, column=5, value=it.store_name)
+            cell = ws.cell(row=r, column=6, value=it.label_file)
             if it.label_file:
                 cell.hyperlink = f"{LABEL_DIR}/{it.label_file}"
                 cell.font = link_font
@@ -429,59 +439,62 @@ def export_all(db: Session = Depends(get_db)):
         # ── Sheet 2: 直发跟进表-N ──
         ws2 = wb.create_sheet("直发跟进表-N")
         headers = [
-            "申购单号", "SKU", "产品中文名", "申购时间", "申购人员", "供应商",
-            "采购单号", "网采单号", "是否收货上架", "总数", "总箱数",
-            "产品标签", "外箱箱唛", "", "入库清单", "",
-            "收货地址", "贴标发货说明", "物流商", "物流商头程单号", "总箱数.",
-            "长", "宽", "高", "毛重", "总方数", "密度",
-            "计划单号", "发货时间", "物流单号", "物流公司",
-            "特殊情况备注", "上期售后情况", "总数.", "货物收货情况", "货件单号",
+            "申购时间", "申购单号", "SKU", "申购人员", "产品中文名",
+            "上期售后情况", "供应商", "物流商", "物流商头程单号",
+            "总数", "总箱数", "收货地址", "贴标发货说明",
+            "产品标签", "外箱箱唛", "入库清单",
+            "采购单号", "网采单号", "是否收货上架",
+            "发货时间", "备注", "计划单号", "货件单号",
+            "货物收货状态", "收货时间",
         ]
         for c, h in enumerate(headers, 1):
             ws2.cell(row=1, column=c, value=h)
 
         shipments = db.query(OzonDirectShipment).filter_by(is_deleted=False).order_by(OzonDirectShipment.id).all()
+        # 构建 SKU → label_file 映射（产品标签超链接用）
+        sku_label_map: dict[str, str] = {}
+        for it in items:
+            if it.label_file:
+                sku_label_map[it.sku] = it.label_file
+
         ship_count = len(shipments)
         for r, it in enumerate(shipments, 2):
-            ws2.cell(row=r, column=1, value=it.pr_no)
-            ws2.cell(row=r, column=2, value=it.sku)
-            ws2.cell(row=r, column=3, value=it.product_cn_name)
-            ws2.cell(row=r, column=4, value=it.pr_date.strftime("%Y-%m-%d") if it.pr_date else None)
-            ws2.cell(row=r, column=5, value=it.pr_person)
-            ws2.cell(row=r, column=6, value=it.supplier)
-            ws2.cell(row=r, column=7, value=it.po_no)
-            ws2.cell(row=r, column=8, value=it.online_po_no)
-            ws2.cell(row=r, column=9, value=it.is_received)
+            ws2.cell(row=r, column=1, value=it.pr_date.strftime("%Y-%m-%d") if it.pr_date else None)
+            ws2.cell(row=r, column=2, value=it.pr_no)
+            ws2.cell(row=r, column=3, value=it.sku)
+            ws2.cell(row=r, column=4, value=it.pr_person)
+            ws2.cell(row=r, column=5, value=it.product_cn_name)
+            ws2.cell(row=r, column=6, value=it.previous_aftersales)
+            ws2.cell(row=r, column=7, value=it.supplier)
+            ws2.cell(row=r, column=8, value=it.logistics_provider)
+            ws2.cell(row=r, column=9, value=it.first_leg_tracking)
             ws2.cell(row=r, column=10, value=it.total_qty)
             ws2.cell(row=r, column=11, value=it.total_boxes)
-            ws2.cell(row=r, column=12, value=it.product_label)
-            ws2.cell(row=r, column=13, value=it.carton_mark)
-            # col 14 — 空（原始 Excel 合并单元格）
-            cell = ws2.cell(row=r, column=15, value=it.warehouse_receipt)
+            ws2.cell(row=r, column=12, value=it.receiving_address)
+            ws2.cell(row=r, column=13, value=it.labeling_notes)
+            # 产品标签 → 优先用 SKU 表的 label_file，设置超链接
+            label_file = sku_label_map.get(it.sku) or it.product_label
+            cell_label = ws2.cell(row=r, column=14, value=label_file)
+            if label_file:
+                cell_label.hyperlink = f"{LABEL_DIR}/{label_file}"
+                cell_label.font = link_font
+            cell_carton = ws2.cell(row=r, column=15, value=it.carton_mark)
+            if it.carton_mark:
+                cell_carton.hyperlink = f"{CARTON_DIR}/{it.carton_mark}"
+                cell_carton.font = link_font
+            cell = ws2.cell(row=r, column=16, value=it.warehouse_receipt)
             if it.warehouse_receipt:
                 cell.hyperlink = f"{RECEIPT_DIR}/{it.warehouse_receipt}"
                 cell.font = link_font
-            # col 16 — 空
-            ws2.cell(row=r, column=17, value=it.receiving_address)
-            ws2.cell(row=r, column=18, value=it.labeling_notes)
-            ws2.cell(row=r, column=19, value=it.logistics_provider)
-            ws2.cell(row=r, column=20, value=it.first_leg_tracking)
-            ws2.cell(row=r, column=21, value=it.total_boxes_2)
-            ws2.cell(row=r, column=22, value=float(it.length_cm) if it.length_cm else None)
-            ws2.cell(row=r, column=23, value=float(it.width_cm) if it.width_cm else None)
-            ws2.cell(row=r, column=24, value=float(it.height_cm) if it.height_cm else None)
-            ws2.cell(row=r, column=25, value=float(it.gross_weight) if it.gross_weight else None)
-            ws2.cell(row=r, column=26, value=float(it.total_cbm) if it.total_cbm else None)
-            ws2.cell(row=r, column=27, value=float(it.density) if it.density else None)
-            ws2.cell(row=r, column=28, value=it.plan_no)
-            ws2.cell(row=r, column=29, value=it.ship_date.strftime("%Y-%m-%d") if it.ship_date else None)
-            ws2.cell(row=r, column=30, value=it.tracking_no)
-            ws2.cell(row=r, column=31, value=it.logistics_company)
-            ws2.cell(row=r, column=32, value=it.special_notes)
-            ws2.cell(row=r, column=33, value=it.previous_aftersales)
-            ws2.cell(row=r, column=34, value=it.qty_total_2)
-            ws2.cell(row=r, column=35, value=it.receiving_status)
-            ws2.cell(row=r, column=36, value=it.shipment_no)
+            ws2.cell(row=r, column=17, value=it.po_no)
+            ws2.cell(row=r, column=18, value=it.online_po_no)
+            ws2.cell(row=r, column=19, value=it.is_received)
+            ws2.cell(row=r, column=20, value=it.ship_date.strftime("%Y-%m-%d") if it.ship_date else None)
+            ws2.cell(row=r, column=21, value=it.special_notes)
+            ws2.cell(row=r, column=22, value=it.plan_no)
+            ws2.cell(row=r, column=23, value=it.shipment_no)
+            ws2.cell(row=r, column=24, value=it.receiving_status)
+            ws2.cell(row=r, column=25, value=it.receiving_date.strftime("%Y-%m-%d") if it.receiving_date else None)
 
         xl_buf = io.BytesIO()
         wb.save(xl_buf)
@@ -493,9 +506,15 @@ def export_all(db: Session = Depends(get_db)):
             if f.file_data:
                 zf.writestr(f"{LABEL_DIR}/{f.file_name}", f.file_data)
 
-        # ── 入库清单 ──
+        # ── 外箱箱唛 / 入库清单（按文件名分类）──
+        carton_names = {it.carton_mark for it in shipments if it.carton_mark}
+        receipt_names = {it.warehouse_receipt for it in shipments if it.warehouse_receipt}
         for f in db.query(OzonDirectFile).filter_by(source_table="shipment").all():
-            if f.file_data:
+            if not f.file_data:
+                continue
+            if f.file_name in carton_names:
+                zf.writestr(f"{CARTON_DIR}/{f.file_name}", f.file_data)
+            elif f.file_name in receipt_names:
                 zf.writestr(f"{RECEIPT_DIR}/{f.file_name}", f.file_data)
 
     zip_buf.seek(0)

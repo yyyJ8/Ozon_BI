@@ -19,6 +19,7 @@ class DirectSkuItem(BaseModel):
     product_name: Optional[str] = None
     supplier: Optional[str] = None
     store_name: Optional[str] = None
+    sales_manager: Optional[str] = None
     label_file: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -30,6 +31,7 @@ class DirectSkuCreate(BaseModel):
     product_name: Optional[str] = None
     supplier: Optional[str] = None
     store_name: Optional[str] = None
+    sales_manager: Optional[str] = None
     label_file: Optional[str] = None
 
 
@@ -39,6 +41,7 @@ class DirectSkuUpdate(BaseModel):
     product_name: Optional[str] = None
     supplier: Optional[str] = None
     store_name: Optional[str] = None
+    sales_manager: Optional[str] = None
     label_file: Optional[str] = None
 
 
@@ -84,6 +87,7 @@ class DirectShipmentItem(BaseModel):
     previous_aftersales: Optional[str] = None
     qty_total_2: Optional[int] = None
     receiving_status: Optional[str] = None
+    receiving_date: Optional[date] = None
     shipment_no: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -109,21 +113,20 @@ class DirectShipmentCreate(BaseModel):
     labeling_notes: Optional[str] = None
     logistics_provider: Optional[str] = None
     first_leg_tracking: Optional[str] = None
-    total_boxes_2: Optional[int] = None
     length_cm: Optional[Decimal] = None
     width_cm: Optional[Decimal] = None
     height_cm: Optional[Decimal] = None
     gross_weight: Optional[Decimal] = None
     total_cbm: Optional[Decimal] = None
     density: Optional[Decimal] = None
+    logistics_company: Optional[str] = None
     plan_no: Optional[str] = None
     ship_date: Optional[date] = None
     tracking_no: Optional[str] = None
-    logistics_company: Optional[str] = None
     special_notes: Optional[str] = None
     previous_aftersales: Optional[str] = None
-    qty_total_2: Optional[int] = None
     receiving_status: Optional[str] = None
+    receiving_date: Optional[date] = None
     shipment_no: Optional[str] = None
 
 
@@ -147,21 +150,20 @@ class DirectShipmentUpdate(BaseModel):
     labeling_notes: Optional[str] = None
     logistics_provider: Optional[str] = None
     first_leg_tracking: Optional[str] = None
-    total_boxes_2: Optional[int] = None
     length_cm: Optional[Decimal] = None
     width_cm: Optional[Decimal] = None
     height_cm: Optional[Decimal] = None
     gross_weight: Optional[Decimal] = None
     total_cbm: Optional[Decimal] = None
     density: Optional[Decimal] = None
+    logistics_company: Optional[str] = None
     plan_no: Optional[str] = None
     ship_date: Optional[date] = None
     tracking_no: Optional[str] = None
-    logistics_company: Optional[str] = None
     special_notes: Optional[str] = None
     previous_aftersales: Optional[str] = None
-    qty_total_2: Optional[int] = None
     receiving_status: Optional[str] = None
+    receiving_date: Optional[date] = None
     shipment_no: Optional[str] = None
 
 
@@ -175,7 +177,8 @@ class DirectFileItem(BaseModel):
 
     id: int
     source_table: str
-    source_id: int
+    sku: Optional[str] = None
+    pr_no: Optional[str] = None
     file_name: str
     file_size: Optional[int] = None
     file_type: Optional[str] = None

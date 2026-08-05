@@ -13,6 +13,7 @@ import type {
   ShippingOverview, ShippingListItem, ShippingListResponse, ShippingDetail,
   DirectSkuItem, DirectSkuUpdate, DirectShipmentItem, DirectShipmentUpdate,
   DirectFileItem, DirectListResponse,
+  SkuPipelineItem, SkuPipelineListResponse, SkuPipelineDetail,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -419,12 +420,13 @@ export async function getShippingDetail(orderCode: string): Promise<ShippingDeta
 
 // SKU 基础数据
 export async function getDirectSkuList(
-  page?: number, pageSize?: number, search?: string,
+  page?: number, pageSize?: number, search?: string, storeName?: string,
 ): Promise<DirectListResponse<DirectSkuItem>> {
   const p = new URLSearchParams()
   if (page) p.set('page', String(page))
   if (pageSize) p.set('page_size', String(pageSize))
   if (search) p.set('search', search)
+  if (storeName) p.set('store_name', storeName)
   return fetchJson<DirectListResponse<DirectSkuItem>>(`${BASE}/ozon-direct/sku?${p.toString()}`)
 }
 export async function getDirectSku(id: number): Promise<DirectSkuItem> {
@@ -475,15 +477,17 @@ export async function deleteDirectShipment(id: number): Promise<{ ok: boolean }>
 }
 
 // 文件
-export async function getDirectFiles(sourceTable: string, sourceId: number): Promise<DirectFileItem[]> {
-  return fetchJson<DirectFileItem[]>(`${BASE}/ozon-direct/files/by-source?source_table=${sourceTable}&source_id=${sourceId}`)
+export async function getDirectFiles(sourceTable: string, sku: string, prNo?: string): Promise<DirectFileItem[]> {
+  let url = `${BASE}/ozon-direct/files/by-source?source_table=${sourceTable}&sku=${encodeURIComponent(sku)}`
+  if (prNo) url += `&pr_no=${encodeURIComponent(prNo)}`
+  return fetchJson<DirectFileItem[]>(url)
 }
-export async function uploadDirectFile(file: File, sourceTable: string, sourceId: number): Promise<DirectFileItem> {
+export async function uploadDirectFile(file: File, sourceTable: string, sku: string, prNo?: string): Promise<DirectFileItem> {
   const formData = new FormData()
   formData.append('file', file)
-  return fetchJson<DirectFileItem>(`${BASE}/ozon-direct/files/upload?source_table=${sourceTable}&source_id=${sourceId}`, {
-    method: 'POST', body: formData,
-  })
+  let url = `${BASE}/ozon-direct/files/upload?source_table=${sourceTable}&sku=${encodeURIComponent(sku)}`
+  if (prNo) url += `&pr_no=${encodeURIComponent(prNo)}`
+  return fetchJson<DirectFileItem>(url, { method: 'POST', body: formData })
 }
 export async function deleteDirectFile(id: number): Promise<{ ok: boolean }> {
   return fetchJson<{ ok: boolean }>(`${BASE}/ozon-direct/files/${id}`, { method: 'DELETE' })
@@ -500,4 +504,21 @@ export async function importDirectExcel(file: File): Promise<{ ok: boolean; sku_
 }
 export function getExportUrl(): string {
   return `${BASE}/ozon-direct/export`
+}
+
+// ── 供应链 SKU 聚合 ──
+
+export async function getSkuPipelineList(
+  dateFrom?: string, dateTo?: string, page?: number, pageSize?: number,
+): Promise<SkuPipelineListResponse> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  return fetchJson<SkuPipelineListResponse>(`${BASE}/procurement/sku-pipeline?${p.toString()}`)
+}
+
+export async function getSkuPipelineDetail(itemId: string): Promise<SkuPipelineDetail> {
+  return fetchJson<SkuPipelineDetail>(`${BASE}/procurement/sku-pipeline/${encodeURIComponent(itemId)}`)
 }

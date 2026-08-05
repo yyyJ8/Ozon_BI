@@ -82,14 +82,13 @@ export function useDirectShipment() {
   const total = ref(0)
   const search = ref('')
   const dateRange = ref<[string, string] | null>(null)
-  const receivingStatus = ref('')
 
   async function fetchAll() {
     loading.value = true
     try {
       const d1 = dateRange.value ? dateRange.value[0] : undefined
       const d2 = dateRange.value ? dateRange.value[1] : undefined
-      const res = await getDirectShipmentList(1, 0, search.value || undefined, d1, d2, receivingStatus.value || undefined)
+      const res = await getDirectShipmentList(1, 0, search.value || undefined, d1, d2)
       list.value = res.items
       total.value = res.total
     } catch (e: unknown) {
@@ -137,7 +136,7 @@ export function useDirectShipment() {
 
   function onSearch() { fetchAll() }
 
-  return { loading, list, total, search, dateRange, receivingStatus, fetchAll, create, update, remove, onSearch }
+  return { loading, list, total, search, dateRange, fetchAll, create, update, remove, onSearch }
 }
 
 
@@ -149,20 +148,20 @@ export function useDirectFiles() {
   const files = ref<DirectFileItem[]>([])
   const uploading = ref(false)
 
-  async function fetchFiles(sourceTable: string, sourceId: number) {
+  async function fetchFiles(sourceTable: string, sku: string, prNo?: string) {
     try {
-      files.value = await getDirectFiles(sourceTable, sourceId)
+      files.value = await getDirectFiles(sourceTable, sku, prNo)
     } catch {
       files.value = []
     }
   }
 
-  async function upload(file: File, sourceTable: string, sourceId: number): Promise<DirectFileItem | null> {
+  async function upload(file: File, sourceTable: string, sku: string, prNo?: string): Promise<DirectFileItem | null> {
     uploading.value = true
     try {
-      const item = await uploadDirectFile(file, sourceTable, sourceId)
+      const item = await uploadDirectFile(file, sourceTable, sku, prNo)
       ElMessage.success('文件上传成功')
-      await fetchFiles(sourceTable, sourceId)
+      await fetchFiles(sourceTable, sku, prNo)
       return item
     } catch (e: unknown) {
       ElMessage.error('上传失败: ' + (e instanceof Error ? e.message : '未知错误'))
@@ -172,11 +171,11 @@ export function useDirectFiles() {
     }
   }
 
-  async function remove(fileId: number, sourceTable: string, sourceId: number): Promise<boolean> {
+  async function remove(fileId: number, sourceTable: string, sku: string, prNo?: string): Promise<boolean> {
     try {
       await deleteDirectFile(fileId)
       ElMessage.success('文件已删除')
-      await fetchFiles(sourceTable, sourceId)
+      await fetchFiles(sourceTable, sku, prNo)
       return true
     } catch (e: unknown) {
       ElMessage.error('删除失败: ' + (e instanceof Error ? e.message : '未知错误'))

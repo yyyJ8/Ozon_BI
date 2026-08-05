@@ -281,6 +281,7 @@ export interface OrderTrendItem {
   delivered: number
   cancelled: number
   client_return: number
+  price: number | null
 }
 
 export interface OrderListItem {
@@ -361,9 +362,11 @@ export interface OrderSkuStats {
   total_quantity: number
   total_revenue: number
   actual_revenue: number
+  current_price: number
   delivered_count: number
   cancelled_count: number
   return_count: number
+  stock: number
   fbo_count: number
   fbs_count: number
 }
@@ -818,6 +821,88 @@ export interface ShippingDetail {
   items: ShippingItemDetail[]
 }
 
+// ── 供应链 SKU 聚合 ──
+
+export interface SkuPipelineItem {
+  item_id: string
+  seller_sku: string | null
+  main_sku_id: string | null
+  warehouse_item_code: string | null
+  plan_count: number
+  total_plan_qty: number
+  total_ordered_qty: number
+  plan_status_summary: string
+  latest_plan_no: string | null
+  order_count: number
+  total_order_qty: number
+  total_receipt_qty: number
+  order_status_summary: string
+  shipping_count: number
+  total_shipped_qty: number
+  total_inbound_qty: number
+  shipping_status_summary: string
+  marketplace: string | null
+  expect_date: string | null
+  latest_update: string | null
+}
+
+export interface SkuPipelineListResponse {
+  items: SkuPipelineItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface PlanStage {
+  po_plan_no: string
+  status: string | null
+  status_label: string
+  plan_qty: number
+  already_qty: number
+  direct_ship_arrival_qty: number
+  expect_date: string | null
+  wms_rec_qty: number
+  wms_onstock_qty: number
+  create_time: string | null
+}
+
+export interface OrderStage {
+  po_no: string
+  po_plan_no: string | null
+  status: string | null
+  status_label: string
+  qty: number
+  receipt_qty: number
+  price: number
+  untaxed_amount: number
+  expect_receipt_date: string | null
+  create_time: string | null
+}
+
+export interface ShippingStage {
+  order_code: string
+  source_order_code: string | null
+  po_no: string | null
+  order_status: string | null
+  status_label: string
+  final_shipping_num: number
+  planed_shipping_num: number
+  package_qty: number
+  channel_code: string | null
+  create_time: string | null
+  shipping_time: string | null
+  arrived_time: string | null
+}
+
+export interface SkuPipelineDetail {
+  item_id: string
+  seller_sku: string | null
+  main_sku_id: string | null
+  plans: PlanStage[]
+  orders: OrderStage[]
+  shippings: ShippingStage[]
+}
+
 // ============================================================
 // OZON 直发信息
 // ============================================================
@@ -828,6 +913,7 @@ export interface DirectSkuItem {
   product_name: string | null
   supplier: string | null
   store_name: string | null
+  sales_manager: string | null
   label_file: string | null
   created_at: string | null
   updated_at: string | null
@@ -838,90 +924,90 @@ export interface DirectSkuUpdate {
   product_name?: string | null
   supplier?: string | null
   store_name?: string | null
+  sales_manager?: string | null
   label_file?: string | null
 }
 
 export interface DirectShipmentItem {
   id: number
+  pr_date: string | null
   pr_no: string | null
   sku: string | null
-  product_cn_name: string | null
-  pr_date: string | null
   pr_person: string | null
+  product_cn_name: string | null
+  previous_aftersales: string | null
   supplier: string | null
-  po_no: string | null
-  online_po_no: string | null
-  is_received: string | null
+  logistics_provider: string | null
+  first_leg_tracking: string | null
   total_qty: number | null
   total_boxes: number | null
+  receiving_address: string | null
+  labeling_notes: string | null
   product_label: string | null
   carton_mark: string | null
   warehouse_receipt: string | null
-  receiving_address: string | null
-  labeling_notes: string | null
-  logistics_provider: string | null
-  first_leg_tracking: string | null
-  total_boxes_2: number | null
+  po_no: string | null
+  online_po_no: string | null
+  is_received: string | null
+  ship_date: string | null
+  special_notes: string | null
+  plan_no: string | null
+  tracking_no: string | null
+  receiving_status: string | null
+  receiving_date: string | null
   length_cm: number | null
   width_cm: number | null
   height_cm: number | null
   gross_weight: number | null
   total_cbm: number | null
   density: number | null
-  plan_no: string | null
-  ship_date: string | null
-  tracking_no: string | null
   logistics_company: string | null
-  special_notes: string | null
-  previous_aftersales: string | null
-  qty_total_2: number | null
-  receiving_status: string | null
   shipment_no: string | null
   created_at: string | null
   updated_at: string | null
 }
 
 export interface DirectShipmentUpdate {
+  pr_date?: string | null
   pr_no?: string | null
   sku?: string | null
-  product_cn_name?: string | null
-  pr_date?: string | null
   pr_person?: string | null
+  product_cn_name?: string | null
+  previous_aftersales?: string | null
   supplier?: string | null
-  po_no?: string | null
-  online_po_no?: string | null
-  is_received?: string | null
+  logistics_provider?: string | null
+  first_leg_tracking?: string | null
   total_qty?: number | null
   total_boxes?: number | null
+  receiving_address?: string | null
+  labeling_notes?: string | null
   product_label?: string | null
   carton_mark?: string | null
   warehouse_receipt?: string | null
-  receiving_address?: string | null
-  labeling_notes?: string | null
-  logistics_provider?: string | null
-  first_leg_tracking?: string | null
-  total_boxes_2?: number | null
+  po_no?: string | null
+  online_po_no?: string | null
+  is_received?: string | null
+  ship_date?: string | null
+  special_notes?: string | null
+  plan_no?: string | null
+  tracking_no?: string | null
+  receiving_status?: string | null
+  receiving_date?: string | null
   length_cm?: number | null
   width_cm?: number | null
   height_cm?: number | null
   gross_weight?: number | null
   total_cbm?: number | null
   density?: number | null
-  plan_no?: string | null
-  ship_date?: string | null
-  tracking_no?: string | null
   logistics_company?: string | null
-  special_notes?: string | null
-  previous_aftersales?: string | null
-  qty_total_2?: number | null
-  receiving_status?: string | null
   shipment_no?: string | null
 }
 
 export interface DirectFileItem {
   id: number
   source_table: string
-  source_id: number
+  sku: string | null
+  pr_no: string | null
   file_name: string
   file_size: number | null
   file_type: string | null

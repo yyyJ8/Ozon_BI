@@ -192,6 +192,8 @@ def sku_return_stats(
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
+    store_filter = "r.store_id = :store_id AND" if store_id != 0 else ""
+    store_filter_posting = "store_id = :store_id AND" if store_id != 0 else ""
     params = _date_params(date_from, date_to, store_id=store_id)
 
     rows = db.execute(text(f"""
@@ -211,8 +213,8 @@ def sku_return_stats(
                 MODE() WITHIN GROUP (ORDER BY r.return_reason_name)         AS main_reason
             FROM ozon.returns r
             LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
-            WHERE r.store_id = :store_id
-              AND p.created_at >= :date_from
+            WHERE {store_filter}
+              p.created_at >= :date_from
               AND p.created_at  < :date_to_excl
             GROUP BY r.sku
         ),
@@ -222,8 +224,8 @@ def sku_return_stats(
                 COALESCE(SUM((prod->>'quantity')::int), 0) AS ordered_units
             FROM ozon.postings,
                  jsonb_array_elements(products) AS prod
-            WHERE store_id = :store_id
-              AND created_at >= :date_from AND created_at < :date_to_excl
+            WHERE {store_filter_posting}
+              created_at >= :date_from AND created_at < :date_to_excl
             GROUP BY (prod->>'sku')::bigint
         )
         SELECT

@@ -16,9 +16,7 @@ import OrderAnalysis from '@/components/OrderAnalysis.vue'
 import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
 import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
 import SkuManagement from '@/components/SkuManagement.vue'
-import ProcurementPlan from '@/components/ProcurementPlan.vue'
-import PurchaseOrder from '@/components/PurchaseOrder.vue'
-import ShippingOrder from '@/components/ShippingOrder.vue'
+import SupplyChain from '@/components/SupplyChain.vue'
 import { useStore } from '@/composables/useStore'
 import { Notebook } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
@@ -516,31 +514,11 @@ onMounted(() => {
                 :active-tab="activeTab"
               />
             </el-tab-pane>
-            <el-tab-pane label="申购计划" name="plan">
+            <el-tab-pane label="供应链" name="supply-chain">
               <template #label>
-                <span><el-icon><List /></el-icon> 申购计划</span>
+                <span><el-icon><Connection /></el-icon> 供应链</span>
               </template>
-              <ProcurementPlan
-                :date-range="dateRange"
-                :products="products"
-                :active-tab="activeTab"
-              />
-            </el-tab-pane>
-            <el-tab-pane label="采购订单" name="purchase">
-              <template #label>
-                <span><el-icon><Goods /></el-icon> 采购订单</span>
-              </template>
-              <PurchaseOrder
-                :date-range="dateRange"
-                :products="products"
-                :active-tab="activeTab"
-              />
-            </el-tab-pane>
-            <el-tab-pane label="头程发货" name="shipping">
-              <template #label>
-                <span><el-icon><Van /></el-icon> 头程发货</span>
-              </template>
-              <ShippingOrder
+              <SupplyChain
                 :date-range="dateRange"
                 :products="products"
                 :active-tab="activeTab"

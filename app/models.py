@@ -450,6 +450,7 @@ class OzonDirectSku(Base):
     product_name: Mapped[Optional[str]] = mapped_column(Text, comment="产品名称")
     supplier: Mapped[Optional[str]] = mapped_column(Text, comment="供应商")
     store_name: Mapped[Optional[str]] = mapped_column(String(50), comment="店铺")
+    sales_manager: Mapped[Optional[str]] = mapped_column(String(50), comment="销售负责人")
     label_file: Mapped[Optional[str]] = mapped_column(String(255), comment="标签文件（关联文件名）")
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="软删除标记")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="记录创建时间")
@@ -507,6 +508,7 @@ class OzonDirectShipment(Base):
     previous_aftersales: Mapped[Optional[str]] = mapped_column(Text, comment="上期售后情况")
     qty_total_2: Mapped[Optional[int]] = mapped_column(Integer, comment="总数（重复列）")
     receiving_status: Mapped[Optional[str]] = mapped_column(Text, comment="货物收货情况")
+    receiving_date: Mapped[Optional[date]] = mapped_column(Date, comment="收货时间")
     shipment_no: Mapped[Optional[str]] = mapped_column(String(200), comment="货件单号")
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="软删除标记")
 
@@ -521,7 +523,8 @@ class OzonDirectFile(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
     source_table: Mapped[str] = mapped_column(String(50), nullable=False, comment="来源表: sku / shipment")
-    source_id: Mapped[int] = mapped_column(Integer, nullable=False, comment="来源记录 ID")
+    sku: Mapped[Optional[str]] = mapped_column(String(100), comment="关联 SKU（业务键）")
+    pr_no: Mapped[Optional[str]] = mapped_column(String(100), comment="关联申购单号（直发跟进表业务键）")
     file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="原始文件名")
     file_data: Mapped[Optional[bytes]] = mapped_column(LargeBinary, comment="文件二进制内容")
     file_size: Mapped[Optional[int]] = mapped_column(Integer, comment="文件大小（字节）")

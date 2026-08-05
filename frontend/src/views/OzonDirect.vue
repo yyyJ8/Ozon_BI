@@ -29,34 +29,55 @@
               >
                 <template #prefix><el-icon><Search /></el-icon></template>
               </el-input>
+              <el-select v-model="skuGroupBy" style="width: 120px;" @change="onSkuGroupByChange">
+                <el-option label="按店铺分组" value="store_name" />
+              </el-select>
               <el-button type="primary" @click="sku.onSearch()">搜索</el-button>
               <el-button type="success" @click="openSkuDialog()">新增 SKU</el-button>
+              <el-button v-if="skuSelected.length > 0" type="danger" @click="batchDeleteSku">删除选中 ({{ skuSelected.length }})</el-button>
             </div>
 
-            <el-table :data="sku.list" stripe size="small" max-height="calc(100vh - 260px)" v-loading="sku.loading">
-              <el-table-column prop="id" label="ID" width="60" />
-              <el-table-column prop="sku" label="SKU" min-width="160" />
-              <el-table-column prop="product_name" label="产品名称" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="supplier" label="供应商" min-width="160" show-overflow-tooltip />
-              <el-table-column prop="store_name" label="店铺" width="80" />
-              <el-table-column label="标签文件" min-width="200" show-overflow-tooltip>
-                <template #default="{ row }">
-                  <el-button
-                    v-if="row.label_file"
-                    size="small"
-                    type="primary"
-                    link
-                    @click="openRecordFile('sku', row.id, row.label_file)"
-                  >{{ row.label_file }}</el-button>
-                  <span v-else style="color: #c0c4cc;">—</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="80" fixed="right">
-                <template #default="{ row }">
-                  <el-button size="small" @click="openSkuDialog(row)">编辑</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div v-loading="sku.loading">
+              <el-table
+                :data="flatSkuList"
+                stripe
+                size="small"
+                class="sku-table"
+                :span-method="skuSpanMethod"
+                :row-class-name="skuRowClassName"
+                max-height="calc(100vh - 250px)"
+                style="width:100%;"
+                @selection-change="onSkuSelectionChange"
+              >
+                <el-table-column type="selection" width="40" />
+                <el-table-column prop="sku" label="SKU" min-width="160">
+                  <template #default="{ row }">
+                    <div v-if="row._type === 'group'" @click.stop="toggleSkuGroup(row._groupKey)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:2px 0;">
+                      <span style="font-size:12px;">{{ expandedSkuGroups.has(row._groupKey) ? '▼' : '▶' }}</span>
+                      <span style="font-weight:600;">{{ row._groupKey }}</span>
+                      <el-tag size="small" type="info">{{ row._count }}</el-tag>
+                    </div>
+                    <span v-else>{{ row.sku }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="product_name" label="产品名称" min-width="180" show-overflow-tooltip />
+                <el-table-column prop="supplier" label="供应商" min-width="160" show-overflow-tooltip />
+                <el-table-column prop="sales_manager" label="销售负责人" width="110" />
+                <el-table-column label="标签文件" min-width="200" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <template v-if="row._type !== 'group'">
+                      <el-button v-if="row.label_file" size="small" type="primary" link @click="openRecordFile('sku', row.sku, row.label_file)">{{ row.label_file }}</el-button>
+                      <span v-else style="color:#c0c4cc;">—</span>
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80">
+                  <template #default="{ row }">
+                    <el-button v-if="row._type !== 'group'" size="small" @click="openSkuDialog(row)">编辑</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
 
             <div style="margin-top: 8px; color: #909399; font-size: 12px;">共 {{ sku.total }} 条</div>
           </el-tab-pane>
@@ -93,80 +114,106 @@
               >
                 <template #prefix><el-icon><Search /></el-icon></template>
               </el-input>
-              <el-select v-model="shipment.receivingStatus" placeholder="收货情况" clearable style="width: 120px;" @change="shipment.fetchAll()">
-                <el-option label="已收到" value="已收到" />
-                <el-option label="异常" value="异常" />
-                <el-option label="已取消" value="已取消" />
+              <el-select v-model="shipGroupBy" style="width: 150px;" @change="onShipGroupByChange">
+                <el-option label="按收货情况分组" value="receiving_status" />
               </el-select>
               <el-button type="primary" @click="shipment.onSearch()">搜索</el-button>
               <el-button type="success" @click="openShipmentDialog()">新增记录</el-button>
+              <el-button v-if="shipSelected.length > 0" type="danger" @click="batchDeleteShipment">删除选中 ({{ shipSelected.length }})</el-button>
               <span style="color: #909399; font-size: 12px; margin-left: auto;">共 {{ shipment.total }} 条</span>
             </div>
 
-            <el-table :data="shipment.list" stripe size="small" max-height="calc(100vh - 260px)" v-loading="shipment.loading" style="width: 100%;">
-              <el-table-column prop="id" label="ID" width="55" fixed="left" />
-              <el-table-column prop="pr_no" label="申购单号" min-width="135" fixed="left" />
-              <el-table-column prop="sku" label="SKU" min-width="155" fixed="left" show-overflow-tooltip />
-              <el-table-column prop="product_cn_name" label="产品中文名" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="pr_date" label="申购时间" width="105" />
-              <el-table-column prop="pr_person" label="申购人员" width="80" />
-              <el-table-column prop="supplier" label="供应商" min-width="150" show-overflow-tooltip />
-              <el-table-column prop="po_no" label="采购单号" min-width="130" />
-              <el-table-column prop="online_po_no" label="网采单号" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="is_received" label="收货上架" width="90" align="center">
-                <template #default="{ row }">
-                  <el-tag :type="row.is_received === '是' ? 'success' : 'info'" size="small">
-                    {{ row.is_received || '—' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="total_qty" label="总数" width="65" align="center" />
-              <el-table-column prop="total_boxes" label="总箱数" width="75" align="center" />
-              <el-table-column prop="product_label" label="产品标签" min-width="100" show-overflow-tooltip />
-              <el-table-column prop="carton_mark" label="外箱箱唛" min-width="100" show-overflow-tooltip />
-              <el-table-column label="入库清单" min-width="180" show-overflow-tooltip>
-                <template #default="{ row }">
-                  <el-button
-                    v-if="row.warehouse_receipt"
-                    size="small"
-                    type="primary"
-                    link
-                    @click="openRecordFile('shipment', row.id, row.warehouse_receipt)"
-                  >{{ row.warehouse_receipt }}</el-button>
-                  <span v-else style="color: #c0c4cc;">—</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="receiving_address" label="收货地址" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="labeling_notes" label="贴标发货说明" min-width="150" show-overflow-tooltip />
-              <el-table-column prop="logistics_provider" label="物流商" width="85" />
-              <el-table-column prop="first_leg_tracking" label="头程单号" min-width="135" show-overflow-tooltip />
-              <el-table-column prop="total_boxes_2" label="总箱数." width="75" align="center" />
-              <el-table-column prop="length_cm" label="长(cm)" width="75" align="center" />
-              <el-table-column prop="width_cm" label="宽(cm)" width="75" align="center" />
-              <el-table-column prop="height_cm" label="高(cm)" width="75" align="center" />
-              <el-table-column prop="gross_weight" label="毛重(kg)" width="85" align="center" />
-              <el-table-column prop="total_cbm" label="总方数" width="80" align="center" />
-              <el-table-column prop="density" label="密度" width="70" align="center" />
-              <el-table-column prop="plan_no" label="计划单号" min-width="130" />
-              <el-table-column prop="ship_date" label="发货时间" width="105" />
-              <el-table-column prop="tracking_no" label="物流单号" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="logistics_company" label="物流公司" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="special_notes" label="特殊情况备注" min-width="140" show-overflow-tooltip />
-              <el-table-column prop="previous_aftersales" label="上期售后情况" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="qty_total_2" label="总数." width="65" align="center" />
-              <el-table-column prop="receiving_status" label="货物收货情况" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="shipment_no" label="货件单号" min-width="135" />
-              <el-table-column label="操作" width="80" fixed="right">
-                <template #default="{ row }">
-                  <el-button size="small" type="primary" @click="openShipmentDialog(row)">编辑</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div v-loading="shipment.loading">
+              <el-table
+                ref="shipTableRef"
+                :data="flatShipmentList"
+                stripe
+                size="small"
+                class="ship-table"
+                :span-method="shipSpanMethod"
+                :row-class-name="shipRowClassName"
+                style="width:100%;"
+                @selection-change="onShipSelectionChange"
+              >
+                <el-table-column type="selection" width="40" fixed="left" />
+                <el-table-column prop="pr_date" label="申购时间" width="105" fixed="left">
+                  <template #default="{ row }">
+                    <div v-if="row._type === 'group'" @click.stop="toggleShipGroup(row._groupKey)" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:2px 0;">
+                      <span style="font-size:12px;">{{ expandedShipGroups.has(row._groupKey) ? '▼' : '▶' }}</span>
+                      <span style="font-weight:600;">{{ row._groupKey }}</span>
+                      <el-tag size="small" type="info">{{ row._count }}</el-tag>
+                    </div>
+                    <span v-else>{{ row.pr_date }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="pr_no" label="申购单号" width="140" show-overflow-tooltip fixed="left" />
+                <el-table-column prop="sku" label="SKU" width="160" show-overflow-tooltip fixed="left" />
+                <el-table-column prop="pr_person" label="申购人员" width="80" />
+                <el-table-column prop="product_cn_name" label="产品中文名" width="130" show-overflow-tooltip />
+                <el-table-column prop="previous_aftersales" label="上期售后" width="120" show-overflow-tooltip />
+                <el-table-column prop="supplier" label="供应商" width="160" show-overflow-tooltip />
+                <el-table-column prop="logistics_provider" label="物流商" width="90" />
+                <el-table-column prop="first_leg_tracking" label="头程单号" width="140" show-overflow-tooltip />
+                <el-table-column prop="total_qty" label="总数" width="65" align="center" />
+                <el-table-column prop="total_boxes" label="总箱数" width="75" align="center" />
+                <el-table-column prop="receiving_address" label="收货地址" width="180" show-overflow-tooltip />
+                <el-table-column prop="labeling_notes" label="贴标说明" width="150" show-overflow-tooltip />
+                <el-table-column label="产品标签" width="110" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <template v-if="row._type !== 'group'">
+                      <el-button v-if="shipmentProductLabel(row)" size="small" type="primary" link @click="openRecordFile('sku', row.sku, shipmentProductLabel(row)!)">{{ shipmentProductLabel(row) }}</el-button>
+                      <span v-else style="color:#c0c4cc;">—</span>
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column label="外箱箱唛" width="110" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <template v-if="row._type !== 'group'">
+                      <el-button v-if="row.carton_mark" size="small" type="primary" link @click="openRecordFile('shipment', row.sku, row.carton_mark, row.pr_no)">{{ row.carton_mark }}</el-button>
+                      <span v-else style="color:#c0c4cc;">—</span>
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column label="入库清单" width="180" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <template v-if="row._type !== 'group'">
+                      <el-button v-if="row.warehouse_receipt" size="small" type="primary" link @click="openRecordFile('shipment', row.sku, row.warehouse_receipt, row.pr_no)">{{ row.warehouse_receipt }}</el-button>
+                      <span v-else style="color:#c0c4cc;">—</span>
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="po_no" label="采购单号" width="140" show-overflow-tooltip />
+                <el-table-column prop="online_po_no" label="网采单号" width="180" show-overflow-tooltip />
+                <el-table-column prop="is_received" label="收货上架" width="90" align="center">
+                  <template #default="{ row }">
+                    <template v-if="row._type !== 'group'">
+                      <el-tag :type="row.is_received === '是' ? 'success' : 'info'" size="small">{{ row.is_received || '—' }}</el-tag>
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="ship_date" label="发货时间" width="105" />
+                <el-table-column prop="special_notes" label="备注" width="150" show-overflow-tooltip />
+                <el-table-column prop="plan_no" label="计划单号" width="140" show-overflow-tooltip />
+                <el-table-column prop="tracking_no" label="物流单号" width="180" show-overflow-tooltip />
+                <el-table-column prop="receiving_status" label="收货状态" width="110" show-overflow-tooltip />
+                <el-table-column prop="receiving_date" label="收货时间" width="105" />
+                <el-table-column label="操作" width="80" fixed="right">
+                  <template #default="{ row }">
+                    <el-button v-if="row._type !== 'group'" size="small" type="primary" @click="openShipmentDialog(row)">编辑</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
 
           </el-tab-pane>
         </el-tabs>
       </el-card>
     </el-main>
+
+    <!-- 底部固定横向滚动条 -->
+    <div ref="hScrollBar" class="fixed-h-bar" @scroll="onFixedBarScroll">
+      <div ref="hScrollInner" :style="{ width: hScrollWidth + 'px', height: '1px' }"></div>
+    </div>
 
     <!-- ══════════════════════════════════════════ -->
     <!-- SKU 编辑弹窗 -->
@@ -181,17 +228,20 @@
         <el-form-item label="SKU" required>
           <el-input v-model="skuForm.sku" placeholder="SKU 编码" />
         </el-form-item>
-        <el-form-item label="产品名称">
+        <el-form-item label="产品名称" required>
           <el-input v-model="skuForm.product_name" placeholder="产品名称" />
         </el-form-item>
-        <el-form-item label="供应商">
+        <el-form-item label="供应商" required>
           <el-input v-model="skuForm.supplier" placeholder="供应商" />
         </el-form-item>
-        <el-form-item label="店铺">
+        <el-form-item label="店铺" required>
           <el-input v-model="skuForm.store_name" placeholder="店铺" />
         </el-form-item>
+        <el-form-item label="销售负责人">
+          <el-input v-model="skuForm.sales_manager" placeholder="销售负责人" />
+        </el-form-item>
         <el-form-item label="标签文件">
-          <el-input v-model="skuForm.label_file" placeholder="标签文件名" />
+          <el-input v-model="skuForm.label_file" placeholder="标签文件名（选填）" />
         </el-form-item>
         <el-form-item label="附件">
           <el-upload
@@ -234,60 +284,61 @@
       @closed="resetShipmentForm"
     >
       <el-form :model="shipmentForm" label-width="110px" size="small">
-        <el-divider content-position="left">申购信息</el-divider>
         <el-row :gutter="12">
           <el-col :span="8">
-            <el-form-item label="申购单号"><el-input v-model="shipmentForm.pr_no" /></el-form-item>
+            <el-form-item label="申购时间" required><el-date-picker v-model="shipmentForm.pr_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="SKU"><el-input v-model="shipmentForm.sku" /></el-form-item>
+            <el-form-item label="申购单号" required><el-input v-model="shipmentForm.pr_no" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="产品中文名"><el-input v-model="shipmentForm.product_cn_name" /></el-form-item>
+            <el-form-item label="SKU" required><el-input v-model="shipmentForm.sku" @blur="onShipmentSkuBlur" /></el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :span="8">
-            <el-form-item label="申购时间"><el-date-picker v-model="shipmentForm.pr_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
-          </el-col>
           <el-col :span="8">
             <el-form-item label="申购人员"><el-input v-model="shipmentForm.pr_person" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="供应商"><el-input v-model="shipmentForm.supplier" /></el-form-item>
+            <el-form-item label="产品中文名"><el-input v-model="shipmentForm.product_cn_name" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="上期售后情况"><el-input v-model="shipmentForm.previous_aftersales" /></el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="12">
           <el-col :span="8">
-            <el-form-item label="采购单号"><el-input v-model="shipmentForm.po_no" /></el-form-item>
+            <el-form-item label="供应商"><el-input v-model="shipmentForm.supplier" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="网采单号"><el-input v-model="shipmentForm.online_po_no" /></el-form-item>
+            <el-form-item label="物流商" required><el-input v-model="shipmentForm.logistics_provider" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="是否收货上架">
-              <el-select v-model="shipmentForm.is_received" style="width:100%">
-                <el-option label="是" value="是" /><el-option label="否" value="否" />
-              </el-select>
-            </el-form-item>
+            <el-form-item label="头程单号" required><el-input v-model="shipmentForm.first_leg_tracking" /></el-form-item>
           </el-col>
         </el-row>
 
         <el-divider content-position="left">数量/包装</el-divider>
         <el-row :gutter="12">
-          <el-col :span="6">
-            <el-form-item label="总数"><el-input-number v-model="shipmentForm.total_qty" :min="0" style="width:100%" /></el-form-item>
+          <el-col :span="8">
+            <el-form-item label="总数" required><el-input-number v-model="shipmentForm.total_qty" :min="0" style="width:100%" /></el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="总箱数"><el-input-number v-model="shipmentForm.total_boxes" :min="0" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="总箱数."><el-input-number v-model="shipmentForm.total_boxes_2" :min="0" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="总数."><el-input-number v-model="shipmentForm.qty_total_2" :min="0" style="width:100%" /></el-form-item>
+          <el-col :span="8">
+            <el-form-item label="总箱数" required><el-input-number v-model="shipmentForm.total_boxes" :min="0" style="width:100%" /></el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <el-form-item label="收货地址" required><el-input v-model="shipmentForm.receiving_address" type="textarea" :rows="2" /></el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <el-form-item label="贴标发货说明" required><el-input v-model="shipmentForm.labeling_notes" type="textarea" :rows="2" /></el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">标签/文件</el-divider>
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="产品标签">
@@ -323,71 +374,39 @@
           </el-col>
         </el-row>
 
-        <el-divider content-position="left">收货/发货说明</el-divider>
-        <el-row :gutter="12">
-          <el-col :span="24">
-            <el-form-item label="收货地址"><el-input v-model="shipmentForm.receiving_address" type="textarea" :rows="2" /></el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="24">
-            <el-form-item label="贴标发货说明"><el-input v-model="shipmentForm.labeling_notes" type="textarea" :rows="2" /></el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider content-position="left">箱规</el-divider>
-        <el-row :gutter="12">
-          <el-col :span="6">
-            <el-form-item label="长(cm)"><el-input-number v-model="shipmentForm.length_cm" :min="0" :precision="1" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="宽(cm)"><el-input-number v-model="shipmentForm.width_cm" :min="0" :precision="1" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="高(cm)"><el-input-number v-model="shipmentForm.height_cm" :min="0" :precision="1" style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="毛重(kg)"><el-input-number v-model="shipmentForm.gross_weight" :min="0" :precision="2" style="width:100%" /></el-form-item>
-          </el-col>
-        </el-row>
+        <el-divider content-position="left">采购/物流</el-divider>
         <el-row :gutter="12">
           <el-col :span="8">
-            <el-form-item label="总方数"><el-input-number v-model="shipmentForm.total_cbm" :min="0" :precision="4" style="width:100%" /></el-form-item>
+            <el-form-item label="采购单号"><el-input v-model="shipmentForm.po_no" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="密度"><el-input-number v-model="shipmentForm.density" :min="0" :precision="2" style="width:100%" /></el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider content-position="left">物流跟踪</el-divider>
-        <el-row :gutter="12">
-          <el-col :span="8">
-            <el-form-item label="物流商"><el-input v-model="shipmentForm.logistics_provider" /></el-form-item>
+            <el-form-item label="网采单号"><el-input v-model="shipmentForm.online_po_no" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="头程单号"><el-input v-model="shipmentForm.first_leg_tracking" /></el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="物流公司"><el-input v-model="shipmentForm.logistics_company" /></el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="物流单号"><el-input v-model="shipmentForm.tracking_no" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="计划单号"><el-input v-model="shipmentForm.plan_no" /></el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="货件单号"><el-input v-model="shipmentForm.shipment_no" /></el-form-item>
+            <el-form-item label="是否收货上架">
+              <el-select v-model="shipmentForm.is_received" style="width:100%">
+                <el-option label="是" value="是" /><el-option label="否" value="否" />
+              </el-select>
+            </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="12">
           <el-col :span="8">
             <el-form-item label="发货时间"><el-date-picker v-model="shipmentForm.ship_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
           </el-col>
-          <el-col :span="16">
-            <el-form-item label="货物收货情况">
+          <el-col :span="8">
+            <el-form-item label="计划单号"><el-input v-model="shipmentForm.plan_no" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="物流单号"><el-input v-model="shipmentForm.tracking_no" /></el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="8">
+            <el-form-item label="备注"><el-input v-model="shipmentForm.special_notes" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="收货状态">
               <el-select v-model="shipmentForm.receiving_status" style="width:100%;">
                 <el-option label="已收到" value="已收到" />
                 <el-option label="异常" value="异常" />
@@ -395,28 +414,16 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="8">
+            <el-form-item label="收货时间"><el-date-picker v-model="shipmentForm.receiving_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
+          </el-col>
         </el-row>
-
-        <el-divider content-position="left">备注/售后</el-divider>
         <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="特殊情况备注"><el-input v-model="shipmentForm.special_notes" type="textarea" :rows="2" /></el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="上期售后情况"><el-input v-model="shipmentForm.previous_aftersales" type="textarea" :rows="2" /></el-form-item>
+          <el-col :span="8">
+            <el-form-item label="货件单号"><el-input v-model="shipmentForm.shipment_no" /></el-form-item>
           </el-col>
         </el-row>
 
-        <el-divider content-position="left">附件</el-divider>
-        <el-upload :before-upload="handleShipmentFileUpload" :show-file-list="true" multiple :auto-upload="false">
-          <el-button size="small" type="primary"><el-icon><Upload /></el-icon> 上传文件</el-button>
-        </el-upload>
-        <div v-if="shipmentFiles.files.length > 0" style="margin-top: 8px;">
-          <div v-for="f in shipmentFiles.files" :key="f.id" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <el-button size="small" link type="primary" @click="downloadFile(f.id)">{{ f.file_name }}</el-button>
-            <el-button size="small" type="danger" link @click="removeFile(f.id)"><el-icon><Delete /></el-icon></el-button>
-          </div>
-        </div>
       </el-form>
       <template #footer>
         <el-button @click="shipmentDialogVisible = false">取消</el-button>
@@ -427,8 +434,43 @@
   </el-container>
 </template>
 
+<style>
+.fixed-h-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #f0f2f5;
+  border-top: 1px solid #dcdfe6;
+  z-index: 100;
+}
+.fixed-h-bar::-webkit-scrollbar { height: 12px; }
+.fixed-h-bar::-webkit-scrollbar-thumb { background: #c0c4cc; border-radius: 6px; }
+
+/* 表头：主题蓝色醒目 */
+.sku-table .el-table__header th,
+.ship-table .el-table__header th {
+  background: var(--el-color-primary) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  border-bottom: 2px solid var(--el-color-primary-light-3) !important;
+}
+
+/* 分组行样式 */
+.ship-table .ship-group-row > td,
+.sku-table .sku-group-row > td {
+  background: #f0f2f5 !important;
+  font-weight: 600;
+  border-bottom: 2px solid #dcdfe6;
+}
+</style>
+
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Upload, Download, Delete } from '@element-plus/icons-vue'
 import { useDirectSku, useDirectShipment, useDirectFiles } from '@/composables/useOzonDirect'
@@ -442,9 +484,76 @@ const activeTab = ref('sku')
 const sku = reactive(useDirectSku())
 const skuDialogVisible = ref(false)
 const skuSaving = ref(false)
+const skuSelected = ref<DirectSkuItem[]>([])
 const editingSku = ref<DirectSkuItem | null>(null)
+const expandedSkuGroups = reactive(new Set<string>())
+
+const skuGroupBy = ref('store_name')
+
+
+function toggleSkuGroup(key: string) {
+  if (expandedSkuGroups.has(key)) expandedSkuGroups.delete(key)
+  else expandedSkuGroups.add(key)
+}
+
+function onSkuGroupByChange() { expandedSkuGroups.clear(); sku.fetchAll() }
+
+const skuGroups = computed(() => {
+  const groups: Record<string, DirectSkuItem[]> = {}
+  for (const item of sku.list) {
+    const key = (item as any)[skuGroupBy.value] || '未分组'
+    if (!groups[key]) groups[key] = []
+    groups[key].push(item)
+  }
+  for (const key of Object.keys(groups)) {
+    expandedSkuGroups.add(key)
+  }
+  return Object.entries(groups).map(([key, items]) => ({ key, items }))
+})
+
+// 单表数据：分组行 + 展开的数据行
+const flatSkuList = computed(() => {
+  const result: any[] = []
+  for (const group of skuGroups.value) {
+    result.push({
+      _type: 'group',
+      _groupKey: group.key,
+      _count: group.items.length,
+    })
+    if (expandedSkuGroups.has(group.key)) {
+      for (const item of group.items) {
+        result.push({ _type: 'data', ...item })
+      }
+    }
+  }
+  return result
+})
+
+// SKU 编码 → SKU 详情映射（供直发跟进表自动填充用）
+const skuMap = computed(() => {
+  const map = new Map<string, DirectSkuItem>()
+  for (const item of sku.list) {
+    map.set(item.sku, item)
+  }
+  return map
+})
+
+function skuSpanMethod({ row, columnIndex }: { row: any; rowIndex: number; columnIndex: number }) {
+  if (row._type !== 'group') return [1, 1]
+  if (columnIndex === 0) return [1, 1]   // selection 列不合并
+  if (columnIndex === 1) return [1, 6]   // 分组标题跨越所有数据列
+  return [0, 0]
+}
+
+function skuRowClassName({ row }: { row: any }) {
+  return row._type === 'group' ? 'sku-group-row' : ''
+}
+
+function onSkuSelectionChange(rows: any[]) {
+  skuSelected.value = rows.filter(r => r._type === 'data')
+}
 const skuForm = reactive({
-  sku: '', product_name: '', supplier: '', store_name: '', label_file: '',
+  sku: '', product_name: '', supplier: '', store_name: '', sales_manager: '', label_file: '',
 })
 const skuFiles = reactive(useDirectFiles())
 
@@ -455,8 +564,9 @@ function openSkuDialog(row?: DirectSkuItem) {
     skuForm.product_name = row.product_name || ''
     skuForm.supplier = row.supplier || ''
     skuForm.store_name = row.store_name || ''
+    skuForm.sales_manager = row.sales_manager || ''
     skuForm.label_file = row.label_file || ''
-    skuFiles.fetchFiles('sku', row.id)
+    skuFiles.fetchFiles('sku', row.sku)
   } else {
     editingSku.value = null
     resetSkuForm()
@@ -470,15 +580,25 @@ function resetSkuForm() {
   skuForm.product_name = ''
   skuForm.supplier = ''
   skuForm.store_name = ''
+  skuForm.sales_manager = ''
   skuForm.label_file = ''
   skuFiles.files.value = []
 }
 
-async function saveSku() {
-  if (!skuForm.sku.trim()) {
-    ElMessage.warning('SKU 不能为空')
-    return
+async function batchDeleteSku() {
+  if (skuSelected.value.length === 0) return
+  await ElMessageBox.confirm(`确认删除选中的 ${skuSelected.value.length} 条记录？`, '批量删除', { type: 'warning' })
+  for (const row of skuSelected.value) {
+    await sku.remove(row.id)
   }
+  skuSelected.value = []
+}
+
+async function saveSku() {
+  if (!skuForm.sku.trim()) { ElMessage.warning('SKU 不能为空'); return }
+  if (!skuForm.product_name.trim()) { ElMessage.warning('产品名称不能为空'); return }
+  if (!skuForm.supplier.trim()) { ElMessage.warning('供应商不能为空'); return }
+  if (!skuForm.store_name.trim()) { ElMessage.warning('店铺不能为空'); return }
   skuSaving.value = true
   try {
     const body = {
@@ -486,6 +606,7 @@ async function saveSku() {
       product_name: skuForm.product_name || null,
       supplier: skuForm.supplier || null,
       store_name: skuForm.store_name || null,
+      sales_manager: skuForm.sales_manager || null,
       label_file: skuForm.label_file || null,
     }
     if (editingSku.value?.id) {
@@ -502,27 +623,26 @@ async function saveSku() {
 const uploadFileList = ref<any[]>([])
 
 async function handleSkuFileUpload(file: File) {
-  if (!editingSku.value?.id) {
-    ElMessage.warning('请先保存记录，再上传文件')
+  if (!skuForm.sku.trim()) {
+    ElMessage.warning('请先填写 SKU')
     return false
   }
-  await skuFiles.upload(file, 'sku', editingSku.value.id)
+  await skuFiles.upload(file, 'sku', skuForm.sku.trim())
   return false
 }
 
-async function openRecordFile(sourceTable: string, sourceId: number, fileName: string) {
-  // 查询该记录关联的文件，找到文件名匹配的
-  const fileList = await getDirectFiles(sourceTable, sourceId)
+async function openRecordFile(sourceTable: string, sku: string, fileName: string, prNo?: string) {
+  const fileList = await getDirectFiles(sourceTable, sku, prNo)
   const match = fileList.find(f => f.file_name === fileName)
-  if (match) {
-    window.open(getDirectFileUrl(match.id), '_blank')
+  if (match?.id) {
+    const a = document.createElement('a')
+    a.href = getDirectFileUrl(match.id)
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   } else {
-    // fallback: 文件名不完全匹配时，如果有任何文件就打开第一个
-    if (fileList.length > 0) {
-      window.open(getDirectFileUrl(fileList[0].id), '_blank')
-    } else {
-      ElMessage.info('文件未在文件库中找到')
-    }
+    ElMessage.info('文件未在文件库中找到')
   }
 }
 
@@ -531,17 +651,92 @@ const shipment = reactive(useDirectShipment())
 const shipmentDialogVisible = ref(false)
 const shipmentSaving = ref(false)
 const editingShipment = ref<DirectShipmentItem | null>(null)
+const shipSelected = ref<DirectShipmentItem[]>([])
+const expandedShipGroups = reactive(new Set<string>())
+const shipTableRef = ref<any>(null)
+
+const shipGroupBy = ref('receiving_status')
+
+const shipmentGroups = computed(() => {
+  const groups: Record<string, DirectShipmentItem[]> = {}
+  for (const item of shipment.list) {
+    const key = (item as any)[shipGroupBy.value] || '未分组'
+    if (!groups[key]) groups[key] = []
+    groups[key].push(item)
+  }
+  for (const key of Object.keys(groups)) {
+    expandedShipGroups.add(key)
+  }
+  return Object.entries(groups).map(([key, items]) => ({ key, items }))
+})
+
+// 单表数据：分组行 + 展开的数据行
+const flatShipmentList = computed(() => {
+  const result: any[] = []
+  for (const group of shipmentGroups.value) {
+    result.push({
+      _type: 'group',
+      _groupKey: group.key,
+      _count: group.items.length,
+    })
+    if (expandedShipGroups.has(group.key)) {
+      for (const item of group.items) {
+        result.push({ _type: 'data', ...item })
+      }
+    }
+  }
+  return result
+})
+
+function shipSpanMethod({ row, columnIndex }: { row: any; rowIndex: number; columnIndex: number }) {
+  if (row._type !== 'group') return [1, 1]
+  if (columnIndex === 0) return [1, 1]   // selection 列不合并
+  if (columnIndex === 1) return [1, 26]  // 分组标题跨越所有数据列
+  return [0, 0]
+}
+
+function shipRowClassName({ row }: { row: any }) {
+  return row._type === 'group' ? 'ship-group-row' : ''
+}
+
+function onShipSelectionChange(rows: any[]) {
+  shipSelected.value = rows.filter(r => r._type === 'data')
+}
+
+function toggleShipGroup(key: string) {
+  if (expandedShipGroups.has(key)) expandedShipGroups.delete(key)
+  else expandedShipGroups.add(key)
+}
+
+function onShipGroupByChange() { expandedShipGroups.clear(); shipment.fetchAll() }
+
+// SKU 字段失焦时自动从 SKU 表填充
+// 产品标签：优先取 SKU 表的 label_file，其次用直发表自身值
+function shipmentProductLabel(row: any): string | null {
+  if (!row || row._type === 'group') return null
+  return skuMap.value.get(row.sku)?.label_file || row.product_label || null
+}
+
+function onShipmentSkuBlur() {
+  const code = (shipmentForm as any).sku?.trim()
+  if (!code) return
+  const item = skuMap.value.get(code)
+  if (!item) { ElMessage.warning('未找到该 SKU'); return }
+  ;(shipmentForm as any).product_cn_name = item.product_name || ''
+  ;(shipmentForm as any).supplier = item.supplier || ''
+  ;(shipmentForm as any).pr_person = item.sales_manager || ''
+  ;(shipmentForm as any).product_label = item.label_file || ''
+}
+
 const shipmentForm = reactive<Record<string, any>>({
-  pr_no: '', sku: '', product_cn_name: '', pr_date: null, pr_person: '',
-  supplier: '', po_no: '', online_po_no: '', is_received: null,
-  total_qty: null, total_boxes: null, product_label: '', carton_mark: '',
-  warehouse_receipt: '', receiving_address: '', labeling_notes: '',
-  logistics_provider: '', first_leg_tracking: '', total_boxes_2: null,
-  length_cm: null, width_cm: null, height_cm: null,
-  gross_weight: null, total_cbm: null, density: null,
-  plan_no: '', ship_date: null, tracking_no: '', logistics_company: '',
-  special_notes: '', previous_aftersales: '', qty_total_2: null,
-  receiving_status: '', shipment_no: '',
+  pr_date: null, pr_no: '', sku: '', pr_person: '', product_cn_name: '',
+  previous_aftersales: '', supplier: '', logistics_provider: '',
+  first_leg_tracking: '', total_qty: null, total_boxes: null,
+  receiving_address: '', labeling_notes: '', product_label: '', carton_mark: '',
+  warehouse_receipt: '', po_no: '', online_po_no: '', is_received: null,
+  ship_date: null, special_notes: '', plan_no: '', tracking_no: '',
+  receiving_status: '', receiving_date: null,
+  shipment_no: '',
 })
 const shipmentFiles = reactive(useDirectFiles())
 
@@ -573,7 +768,14 @@ function openShipmentDialog(row?: DirectShipmentItem) {
     Object.keys(shipmentForm).forEach(k => {
       (shipmentForm as any)[k] = (row as any)[k] ?? null
     })
-    shipmentFiles.fetchFiles('shipment', row.id)
+    // 从 SKU 表补齐：产品标签 = SKU.label_file，产品中文名 / 供应商 / 申购人员同理
+    const skuItem = skuMap.value.get(row.sku || '')
+    if (skuItem) {
+      if (!shipmentForm.product_label) (shipmentForm as any).product_label = skuItem.label_file || ''
+      if (!shipmentForm.product_cn_name) (shipmentForm as any).product_cn_name = skuItem.product_name || ''
+      if (!shipmentForm.supplier) (shipmentForm as any).supplier = skuItem.supplier || ''
+      if (!shipmentForm.pr_person) (shipmentForm as any).pr_person = skuItem.sales_manager || ''
+    }
   } else {
     editingShipment.value = null
     resetShipmentForm()
@@ -584,10 +786,29 @@ function openShipmentDialog(row?: DirectShipmentItem) {
 function resetShipmentForm() {
   editingShipment.value = null
   Object.keys(shipmentForm).forEach(k => { (shipmentForm as any)[k] = null })
-  shipmentFiles.files.value = []
+}
+
+async function batchDeleteShipment() {
+  if (shipSelected.value.length === 0) return
+  await ElMessageBox.confirm(`确认删除选中的 ${shipSelected.value.length} 条记录？`, '批量删除', { type: 'warning' })
+  for (const row of shipSelected.value) {
+    await shipment.remove(row.id)
+  }
+  shipSelected.value = []
 }
 
 async function saveShipment() {
+  // 必填校验
+  if (!shipmentForm.pr_date) { ElMessage.warning('申购时间不能为空'); return }
+  if (!shipmentForm.pr_no?.trim()) { ElMessage.warning('申购单号不能为空'); return }
+  if (!shipmentForm.sku?.trim()) { ElMessage.warning('SKU 不能为空'); return }
+  if (!shipmentForm.logistics_provider?.trim()) { ElMessage.warning('物流商不能为空'); return }
+  if (!shipmentForm.first_leg_tracking?.trim()) { ElMessage.warning('头程单号不能为空'); return }
+  if (shipmentForm.total_qty == null || shipmentForm.total_qty === '') { ElMessage.warning('总数不能为空'); return }
+  if (shipmentForm.total_boxes == null || shipmentForm.total_boxes === '') { ElMessage.warning('总箱数不能为空'); return }
+  if (!shipmentForm.receiving_address?.trim()) { ElMessage.warning('收货地址不能为空'); return }
+  if (!shipmentForm.labeling_notes?.trim()) { ElMessage.warning('贴标说明不能为空'); return }
+
   shipmentSaving.value = true
   try {
     const body: Record<string, any> = {}
@@ -608,20 +829,28 @@ async function saveShipment() {
 
 async function handleFieldFileUpload(file: File, fieldName: string) {
   if (!file) return
-  const srcId = editingShipment.value?.id || 0
-  const result = await shipmentFiles.upload(file, 'shipment', srcId)
-  if (result) {
-    (shipmentForm as any)[fieldName] = result.file_name
-  }
-  return false
-}
+  const sku = (shipmentForm as any).sku?.trim() || ''
+  const prNo = (shipmentForm as any).pr_no?.trim() || ''
+  if (!sku) { ElMessage.warning('请先填写 SKU'); return false }
 
-async function handleShipmentFileUpload(file: File) {
-  if (!editingShipment.value?.id) {
-    ElMessage.warning('请先保存记录，再上传文件')
-    return false
+  // 产品标签 → 存到 SKU 文件表，同时更新 SKU 记录的 label_file
+  if (fieldName === 'product_label') {
+    const result = await shipmentFiles.upload(file, 'sku', sku)
+    if (result) {
+      (shipmentForm as any)[fieldName] = result.file_name
+      // 同步更新 SKU 表的 label_file
+      const skuItem = skuMap.value.get(sku)
+      if (skuItem) {
+        await sku.update(skuItem.id, { label_file: result.file_name })
+      }
+    }
+  } else {
+    // 外箱箱唛 / 入库清单 → 存到 shipment 文件表
+    const result = await shipmentFiles.upload(file, 'shipment', sku, prNo)
+    if (result) {
+      (shipmentForm as any)[fieldName] = result.file_name
+    }
   }
-  await shipmentFiles.upload(file, 'shipment', editingShipment.value.id)
   return false
 }
 
@@ -632,14 +861,13 @@ function downloadFile(fileId: number) {
 
 async function removeFile(fileId: number) {
   await ElMessageBox.confirm('确认删除该文件？', '确认', { type: 'warning' })
-  const srcTable = activeTab.value === 'sku' ? 'sku' : 'shipment'
-  const srcId = activeTab.value === 'sku' ? (editingSku.value?.id || 0) : (editingShipment.value?.id || 0)
-  if (srcId > 0) {
-    if (activeTab.value === 'sku') {
-      await skuFiles.remove(fileId, srcTable, srcId)
-    } else {
-      await shipmentFiles.remove(fileId, srcTable, srcId)
-    }
+  if (activeTab.value === 'sku') {
+    const s = skuForm.sku.trim()
+    if (s) await skuFiles.remove(fileId, 'sku', s)
+  } else {
+    const s = (shipmentForm as any).sku?.trim() || ''
+    const p = (shipmentForm as any).pr_no?.trim() || ''
+    if (s) await shipmentFiles.remove(fileId, 'shipment', s, p)
   }
 }
 
@@ -667,8 +895,65 @@ function fetchCurrentTab() {
   }
 }
 
+// ── 底部固定横向滚动条同步 ──
+const hScrollBar = ref<HTMLElement | null>(null)
+const hScrollInner = ref<HTMLElement | null>(null)
+const hScrollWidth = ref(1)
+
+function activeTableSelector(): string {
+  // 根据当前 tab 选择对应的表格 CSS class
+  return activeTab.value === 'sku' ? '.sku-table' : '.ship-table'
+}
+
+function updateHScrollWidth() {
+  const sel = activeTableSelector()
+  const body = document.querySelector(`${sel} .el-table__body`) as HTMLElement
+  if (body) hScrollWidth.value = body.scrollWidth + 80
+}
+
+function onFixedBarScroll() {
+  const sel = activeTableSelector()
+  const el = document.querySelector(`${sel} .el-table__body-wrapper .el-scrollbar__wrap`) as HTMLElement
+  if (el && hScrollBar.value) el.scrollLeft = hScrollBar.value.scrollLeft
+}
+
+function syncBarFromTable() {
+  if (!hScrollBar.value) return
+  const sel = activeTableSelector()
+  const el = document.querySelector(`${sel} .el-table__body-wrapper .el-scrollbar__wrap`) as HTMLElement
+  if (el) hScrollBar.value.scrollLeft = el.scrollLeft
+}
+
+function bindTableScroll() {
+  // 两张表都尝试绑定（同时只有一个可见）
+  for (const sel of ['.sku-table', '.ship-table']) {
+    const el = document.querySelector(`${sel} .el-table__body-wrapper .el-scrollbar__wrap`) as HTMLElement
+    if (el) {
+      el.removeEventListener('scroll', syncBarFromTable)
+      el.addEventListener('scroll', syncBarFromTable)
+    }
+  }
+  updateHScrollWidth()
+}
+
+// 分组切换 / tab 切换后重新绑定
+watch([expandedSkuGroups, expandedShipGroups, activeTab], () => {
+  nextTick(() => {
+    bindTableScroll()
+    updateHScrollWidth()
+  })
+}, { deep: true })
+
 onMounted(() => {
   document.title = 'OZON 直发信息'
   sku.fetchAll()
+  nextTick(bindTableScroll)
+})
+
+onUnmounted(() => {
+  for (const sel of ['.sku-table', '.ship-table']) {
+    const el = document.querySelector(`${sel} .el-table__body-wrapper .el-scrollbar__wrap`) as HTMLElement
+    if (el) el.removeEventListener('scroll', syncBarFromTable)
+  }
 })
 </script>

@@ -119,6 +119,7 @@ watch(trend, () => { if (chartReady) renderTrendChart() })
 onUnmounted(() => { trendChart?.dispose() })
 
 // ── SKU 表筛选 ────────────────────────────────────────
+const skuSearch = ref('')
 const minOrdered = ref(3)
 const minReturns = ref(1)
 const severityFilter = ref('')
@@ -135,10 +136,16 @@ function formatMoney(v: number) {
 function fmtInt(v: number) { return v.toLocaleString('ru-RU') }
 
 const filteredSkuStats = computed(() => {
+  const q = skuSearch.value.trim().toLowerCase()
   return skuStats.value.filter(s => {
     if ((s.ordered_units ?? 0) < minOrdered.value) return false
     if (s.total_returns < minReturns.value) return false
     if (severityFilter.value && severityTagType(s.return_rate) !== severityFilter.value) return false
+    if (q) {
+      const skuStr = String(s.sku_id)
+      const offer = (s.offer_id || '').toLowerCase()
+      if (!skuStr.includes(q) && !offer.includes(q)) return false
+    }
     return true
   })
 })
@@ -266,6 +273,7 @@ const minReturnOptions = [1, 2, 3, 5]
             </el-tag>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
+            <el-input v-model="skuSearch" placeholder="搜索 SKU / 货号" size="small" clearable style="width:160px;" />
             <span style="font-size:12px;color:#909399;">最小订单</span>
             <el-select v-model="minOrdered" size="small" style="width:80px;">
               <el-option v-for="n in unitOptions" :key="n" :label="n===0?'全部':`≥ ${n}`" :value="n" />
