@@ -425,11 +425,17 @@ def export_all(db: Session = Depends(get_db)):
         ws.append(["SKU", "产品名称", "供应商", "销售负责人", "店铺", "标签文件"])
         items = db.query(OzonDirectSku).filter_by(is_deleted=False).order_by(OzonDirectSku.id).all()
         sku_count = len(items)
+        # SKU → 申购人员（从直发跟进表取，填 SKU 销售负责人用）
+        sku_pr_person: dict[str, str] = {}
+        for s in db.query(OzonDirectShipment).filter_by(is_deleted=False).all():
+            if s.sku and s.pr_person and s.sku not in sku_pr_person:
+                sku_pr_person[s.sku] = s.pr_person
+
         for r, it in enumerate(items, 2):
             ws.cell(row=r, column=1, value=it.sku)
             ws.cell(row=r, column=2, value=it.product_name)
             ws.cell(row=r, column=3, value=it.supplier)
-            ws.cell(row=r, column=4, value=it.sales_manager)
+            ws.cell(row=r, column=4, value=it.sales_manager or sku_pr_person.get(it.sku))
             ws.cell(row=r, column=5, value=it.store_name)
             cell = ws.cell(row=r, column=6, value=it.label_file)
             if it.label_file:
@@ -444,21 +450,21 @@ def export_all(db: Session = Depends(get_db)):
             "总数", "总箱数", "收货地址", "贴标发货说明",
             "产品标签", "外箱箱唛", "入库清单",
             "采购单号", "网采单号", "是否收货上架",
-            "发货时间", "备注", "计划单号", "货件单号",
+            "发货时间", "备注", "货件单号",
             "货物收货状态", "收货时间",
         ]
         for c, h in enumerate(headers, 1):
             ws2.cell(row=1, column=c, value=h)
 
         shipments = db.query(OzonDirectShipment).filter_by(is_deleted=False).order_by(OzonDirectShipment.id).all()
-        # 构建 SKU → label_file 映射（产品标签超链接用）
-        sku_label_map: dict[str, str] = {}
+        # 构建 SKU 信息映射（产品标签 / 申购人员等从 SKU 表取值）
+        sku_info: dict[str, tuple[str | None, str | None, str | None, str | None]] = {}
         for it in items:
-            if it.label_file:
-                sku_label_map[it.sku] = it.label_file
+            sku_info[it.sku] = (it.label_file, it.sales_manager, it.product_name, it.supplier)
 
         ship_count = len(shipments)
         for r, it in enumerate(shipments, 2):
+            si = sku_info.get(it.sku, (None, None, None, None))
             ws2.cell(row=r, column=1, value=it.pr_date.strftime("%Y-%m-%d") if it.pr_date else None)
             ws2.cell(row=r, column=2, value=it.pr_no)
             ws2.cell(row=r, column=3, value=it.sku)
@@ -473,7 +479,7 @@ def export_all(db: Session = Depends(get_db)):
             ws2.cell(row=r, column=12, value=it.receiving_address)
             ws2.cell(row=r, column=13, value=it.labeling_notes)
             # 产品标签 → 优先用 SKU 表的 label_file，设置超链接
-            label_file = sku_label_map.get(it.sku) or it.product_label
+            label_file = si[0] or it.product_label
             cell_label = ws2.cell(row=r, column=14, value=label_file)
             if label_file:
                 cell_label.hyperlink = f"{LABEL_DIR}/{label_file}"
@@ -491,10 +497,9 @@ def export_all(db: Session = Depends(get_db)):
             ws2.cell(row=r, column=19, value=it.is_received)
             ws2.cell(row=r, column=20, value=it.ship_date.strftime("%Y-%m-%d") if it.ship_date else None)
             ws2.cell(row=r, column=21, value=it.special_notes)
-            ws2.cell(row=r, column=22, value=it.plan_no)
-            ws2.cell(row=r, column=23, value=it.shipment_no)
-            ws2.cell(row=r, column=24, value=it.receiving_status)
-            ws2.cell(row=r, column=25, value=it.receiving_date.strftime("%Y-%m-%d") if it.receiving_date else None)
+            ws2.cell(row=r, column=22, value=it.shipment_no)
+            ws2.cell(row=r, column=23, value=it.receiving_status)
+            ws2.cell(row=r, column=24, value=it.receiving_date.strftime("%Y-%m-%d") if it.receiving_date else None)
 
         xl_buf = io.BytesIO()
         wb.save(xl_buf)
