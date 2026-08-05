@@ -406,9 +406,6 @@
             <el-form-item label="发货时间"><el-date-picker v-model="shipmentForm.ship_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="物流单号"><el-input v-model="shipmentForm.tracking_no" /></el-form-item>
-          </el-col>
-          <el-col :span="8">
             <el-form-item label="备注"><el-input v-model="shipmentForm.special_notes" /></el-form-item>
           </el-col>
         </el-row>
@@ -428,7 +425,7 @@
             <el-form-item label="收货时间"><el-date-picker v-model="shipmentForm.receiving_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="货件单号"><el-input v-model="shipmentForm.shipment_no" /></el-form-item>
+            <el-form-item label="物流单号"><el-input v-model="shipmentForm.tracking_no" /></el-form-item>
           </el-col>
         </el-row>
 
@@ -881,7 +878,6 @@ const shipmentForm = reactive<Record<string, any>>({
   warehouse_receipt: '', po_no: '', online_po_no: '', is_received: null,
   ship_date: null, special_notes: '', tracking_no: '',
   receiving_status: '', receiving_date: null,
-  shipment_no: '',
 })
 const shipmentFiles = reactive(useDirectFiles())
 
