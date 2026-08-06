@@ -15,7 +15,7 @@ from app.schemas.procurement import (
     ShippingOverview, ShippingListItem, ShippingListResponse, ShippingItemDetail, ShippingDetail,
 )
 from app.schemas.supply_chain import (
-    SkuPipelineItem, SkuPipelineListResponse, SkuPipelineDetail,
+    SkuTableRow, SkuTableResponse, SkuPipelineDetail,
     PlanStage, OrderStage, ShippingStage,
 )
 
@@ -641,79 +641,139 @@ def shipping_detail(order_code: str, pg=Depends(get_oms_pg)):
 # ═══════════════════════════════════════════════════════════════
 
 
-@router.get("/sku-pipeline", response_model=SkuPipelineListResponse)
-def sku_pipeline_list(
+@router.get("/sku-pipeline", response_model=SkuTableResponse)
+def sku_table(
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="搜索 SKU 编码"),
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=200),
+    page_size: int = Query(default=30, ge=1, le=200),
     pg=Depends(get_oms_pg),
 ):
     dc, params = _date_clause(date_from, date_to, "ppi")
     cur = pg.cursor()
     try:
+        search_clause = ""
+        if search:
+            params["search"] = f"%{search}%"
+            search_clause = "AND ppi.item_id ILIKE %(search)s"
+
         sql = f"""
-        WITH plan_data AS (
+        WITH plan_summary AS (
             SELECT
                 ppi.item_id,
                 COUNT(DISTINCT ppi.po_plan_no) AS plan_count,
-                COALESCE(SUM(ppi.plan_qty), 0) AS total_plan_qty,
-                COALESCE(SUM(ppi.already_qty), 0) AS total_ordered_qty,
-                MAX(ppi.po_plan_no) AS latest_plan_no,
-                MAX(ppi.marketplace) AS marketplace,
+                COALESCE(SUM(ppi.plan_qty), 0) AS plan_qty,
+                COALESCE(SUM(ppi.already_qty), 0) AS already_qty,
+                COALESCE(SUM(ppi.direct_ship_arrival_qty), 0) AS direct_ship_arrival_qty,
+                COALESCE(SUM(ppi.wms_rec_qty), 0) AS wms_rec_qty,
+                COALESCE(SUM(ppi.wms_onstock_qty), 0) AS wms_onstock_qty,
                 MIN(ppi.expect_date) AS expect_date,
                 MAX(ppi.create_time) AS plan_update
             FROM public.purchase_plan_item ppi
             JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
-            WHERE ppi.platform = 'Ozon' AND {dc}
+            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
         ),
-        order_data AS (
+        latest_plan AS (
+            SELECT DISTINCT ON (ppi.item_id)
+                ppi.item_id,
+                pp.po_plan_no AS plan_no,
+                pp.status AS plan_status,
+                pp.plan_type,
+                pp.logistics_method,
+                ppi.marketplace
+            FROM public.purchase_plan_item ppi
+            JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
+            WHERE ppi.platform = 'Ozon'
+              AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.item_id, pp.create_time DESC
+        ),
+        order_summary AS (
             SELECT
                 ppi.item_id,
                 COUNT(DISTINCT poi.po_no) AS order_count,
-                COALESCE(SUM(poi.qty), 0) AS total_order_qty,
-                COALESCE(SUM(poi.receipt_qty), 0) AS total_receipt_qty,
+                COALESCE(SUM(poi.qty), 0) AS order_qty,
+                COALESCE(SUM(poi.receipt_qty), 0) AS receipt_qty,
+                COALESCE(SUM(poi.untaxed_amount), 0) AS order_amount,
+                MIN(poi.expect_receipt_date) AS expect_receipt_date,
                 MAX(poi.create_time) AS order_update
             FROM public.purchase_plan_item ppi
             LEFT JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
             LEFT JOIN public.purchase_order po ON po.po_no = poi.po_no
-            WHERE ppi.platform = 'Ozon' AND {dc}
+            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
         ),
-        shipping_data AS (
+        latest_order AS (
+            SELECT DISTINCT ON (ppi.item_id)
+                ppi.item_id,
+                poi.po_no AS order_no,
+                po.status AS order_status,
+                poi.price AS order_price
+            FROM public.purchase_plan_item ppi
+            LEFT JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
+            LEFT JOIN public.purchase_order po ON po.po_no = poi.po_no
+            WHERE ppi.platform = 'Ozon'
+              AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.item_id, poi.create_time DESC NULLS LAST
+        ),
+        shipping_summary AS (
             SELECT
                 ppi.item_id,
                 COUNT(DISTINCT fsoi.shipping_order_code) AS shipping_count,
-                COALESCE(SUM(fsoi.final_shipping_num), 0) AS total_shipped_qty,
-                COALESCE(SUM(fsoi.inbound_putaway_qty), 0) AS total_inbound_qty,
+                COALESCE(SUM(fsoi.planed_shipping_num), 0) AS planed_shipping_qty,
+                COALESCE(SUM(fsoi.final_shipping_num), 0) AS final_shipping_qty,
+                COALESCE(SUM(fsoi.inbound_putaway_qty), 0) AS inbound_qty,
                 MAX(fsoi.create_time) AS shipping_update
             FROM public.purchase_plan_item ppi
             LEFT JOIN public.first_leg_shipping_order_item fsoi ON fsoi.source_order_code = ppi.po_plan_no
             LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
-            WHERE ppi.platform = 'Ozon' AND {dc}
+            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
+        ),
+        latest_shipping AS (
+            SELECT DISTINCT ON (ppi.item_id)
+                ppi.item_id,
+                fso.order_code AS shipping_no,
+                fso.order_status AS shipping_status,
+                fso.channel_code,
+                fso.logistics_order,
+                fso.shipping_time,
+                fso.arrived_time
+            FROM public.purchase_plan_item ppi
+            LEFT JOIN public.first_leg_shipping_order_item fsoi ON fsoi.source_order_code = ppi.po_plan_no
+            LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
+            WHERE ppi.platform = 'Ozon'
+              AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.item_id, fso.create_time DESC NULLS LAST
         )
         SELECT
-            pd.item_id,
-            pd.plan_count, pd.total_plan_qty, pd.total_ordered_qty,
-            pd.latest_plan_no, pd.marketplace, pd.expect_date,
-            COALESCE(od.order_count, 0), COALESCE(od.total_order_qty, 0), COALESCE(od.total_receipt_qty, 0),
-            COALESCE(sd.shipping_count, 0), COALESCE(sd.total_shipped_qty, 0), COALESCE(sd.total_inbound_qty, 0),
-            GREATEST(pd.plan_update, od.order_update, sd.shipping_update) AS latest_update
-        FROM plan_data pd
-        LEFT JOIN order_data od ON od.item_id = pd.item_id
-        LEFT JOIN shipping_data sd ON sd.item_id = pd.item_id
+            ps.item_id,
+            lp.plan_no, lp.plan_status, lp.plan_type, lp.logistics_method,
+            ps.plan_qty, ps.already_qty, ps.plan_count, ps.expect_date,
+            ps.wms_rec_qty, ps.wms_onstock_qty, ps.direct_ship_arrival_qty,
+            lo.order_no, lo.order_status,
+            os.order_qty, os.receipt_qty, os.order_count,
+            lo.order_price, os.order_amount, os.expect_receipt_date,
+            ls.shipping_no, ls.shipping_status,
+            ss.planed_shipping_qty, ss.final_shipping_qty, ss.inbound_qty, ss.shipping_count,
+            ls.channel_code, ls.logistics_order, ls.shipping_time, ls.arrived_time,
+            lp.marketplace,
+            GREATEST(ps.plan_update, os.order_update, ss.shipping_update) AS latest_update
+        FROM plan_summary ps
+        LEFT JOIN latest_plan lp ON lp.item_id = ps.item_id
+        LEFT JOIN order_summary os ON os.item_id = ps.item_id
+        LEFT JOIN latest_order lo ON lo.item_id = ps.item_id
+        LEFT JOIN shipping_summary ss ON ss.item_id = ps.item_id
+        LEFT JOIN latest_shipping ls ON ls.item_id = ps.item_id
         """
 
-        # count
         cur.execute(f"SELECT COUNT(*) FROM ({sql}) AS pipeline", params)
         total = int(cur.fetchone()[0])
 
-        # paginated
         params["limit"] = page_size
         params["offset"] = (page - 1) * page_size
         cur.execute(f"{sql} ORDER BY latest_update DESC NULLS LAST LIMIT %(limit)s OFFSET %(offset)s", params)
@@ -722,25 +782,43 @@ def sku_pipeline_list(
         cur.close()
 
     items = [
-        SkuPipelineItem(
+        SkuTableRow(
             item_id=r[0],
-            plan_count=int(r[1]) if r[1] else 0,
-            total_plan_qty=float(r[2]) if r[2] else 0.0,
-            total_ordered_qty=float(r[3]) if r[3] else 0.0,
-            latest_plan_no=r[4],
-            marketplace=r[5],
-            expect_date=_fmt_val(r[6]),
-            order_count=int(r[7]) if r[7] else 0,
-            total_order_qty=float(r[8]) if r[8] else 0.0,
-            total_receipt_qty=float(r[9]) if r[9] else 0.0,
-            shipping_count=int(r[10]) if r[10] else 0,
-            total_shipped_qty=float(r[11]) if r[11] else 0.0,
-            total_inbound_qty=float(r[12]) if r[12] else 0.0,
-            latest_update=_fmt_val(r[13]),
+            plan_no=r[1], plan_status=r[2], plan_type=r[3], logistics_method=r[4],
+            plan_qty=float(r[5]) if r[5] else 0.0,
+            already_qty=float(r[6]) if r[6] else 0.0,
+            plan_count=int(r[7]) if r[7] else 0,
+            expect_date=_fmt_val(r[8]),
+            wms_rec_qty=float(r[9]) if r[9] else 0.0,
+            wms_onstock_qty=float(r[10]) if r[10] else 0.0,
+            direct_ship_arrival_qty=float(r[11]) if r[11] else 0.0,
+            order_no=r[12], order_status=r[13],
+            order_qty=float(r[14]) if r[14] else 0.0,
+            receipt_qty=float(r[15]) if r[15] else 0.0,
+            order_count=int(r[16]) if r[16] else 0,
+            order_price=float(r[17]) if r[17] else 0.0,
+            order_amount=float(r[18]) if r[18] else 0.0,
+            expect_receipt_date=_fmt_val(r[19]),
+            shipping_no=r[20], shipping_status=r[21],
+            planed_shipping_qty=float(r[22]) if r[22] else 0.0,
+            final_shipping_qty=float(r[23]) if r[23] else 0.0,
+            inbound_qty=float(r[24]) if r[24] else 0.0,
+            shipping_count=int(r[25]) if r[25] else 0,
+            channel_code=r[26], logistics_order=r[27],
+            shipping_time=_fmt_val(r[28]), arrived_time=_fmt_val(r[29]),
+            marketplace=r[30],
+            latest_update=_fmt_val(r[31]),
         )
         for r in rows
     ]
-    return SkuPipelineListResponse(items=items, total=total, page=page, page_size=page_size)
+    # 填充中文标签
+    for it in items:
+        it.plan_status_label = PLAN_STATUS_LABELS.get(it.plan_status or "", it.plan_status or "")
+        it.plan_type_label = PLAN_TYPE_LABELS.get(it.plan_type or "", it.plan_type or "")
+        it.order_status_label = ORDER_STATUS_LABELS.get(it.order_status or "", it.order_status or "")
+        it.shipping_status_label = SHIPPING_STATUS_LABELS.get(it.shipping_status or "", it.shipping_status or "")
+
+    return SkuTableResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/sku-pipeline/{item_id}", response_model=SkuPipelineDetail)

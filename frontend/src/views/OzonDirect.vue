@@ -39,7 +39,6 @@
 
             <div v-loading="sku.loading">
               <el-table
-                ref="skuTableRef"
                 :data="flatSkuList"
                 stripe
                 size="small"
@@ -49,9 +48,19 @@
                 :row-class-name="skuRowClassName"
                 max-height="calc(100vh - 250px)"
                 style="width:100%;"
-                @select="onSkuSelect" @select-all="onSkuSelectAll"
               >
-                <el-table-column type="selection" width="40" />
+                <el-table-column width="40">
+                  <template #header>
+                    <el-checkbox :model-value="isSkuAllSelected" @change="(v: boolean) => onSkuHeaderCheck(v)" />
+                  </template>
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="row._type !== 'group'"
+                      :model-value="selectedSkuIds.has(row.id)"
+                      @change="(v: boolean) => onSkuRowCheck(row, v)"
+                    />
+                  </template>
+                </el-table-column>
                 <el-table-column prop="sku" label="SKU" min-width="160">
                   <template #default="{ row }">
                     <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:8px;padding:2px 0;">
@@ -134,7 +143,6 @@
 
             <div v-loading="shipment.loading">
               <el-table
-                ref="shipTableRef"
                 :data="flatShipmentList"
                 stripe
                 size="small"
@@ -143,9 +151,19 @@
                 :span-method="shipSpanMethod"
                 :row-class-name="shipRowClassName"
                 style="width:100%;"
-                @select="onShipSelect" @select-all="onShipSelectAll"
               >
-                <el-table-column type="selection" width="40" fixed="left" />
+                <el-table-column width="40" fixed="left">
+                  <template #header>
+                    <el-checkbox :model-value="isShipAllSelected" @change="(v: boolean) => onShipHeaderCheck(v)" />
+                  </template>
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="row._type !== 'group'"
+                      :model-value="selectedShipIds.has(row.id)"
+                      @change="(v: boolean) => onShipRowCheck(row, v)"
+                    />
+                  </template>
+                </el-table-column>
                 <el-table-column prop="pr_date" label="申购时间" width="105" fixed="left">
                   <template #default="{ row }">
                     <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:8px;padding:2px 0;">
@@ -465,7 +483,7 @@
   border-bottom: 2px solid var(--el-color-primary-light-3) !important;
 }
 
-/* 分组行：吸顶 + 样式 + 隐藏原生 selection 列 checkbox */
+/* 分组行：吸顶 + 样式 */
 .ship-table .ship-group-row > td,
 .sku-table .sku-group-row > td {
   position: sticky;
@@ -474,15 +492,6 @@
   background: #f0f2f5 !important;
   font-weight: 600;
   border-bottom: 2px solid #dcdfe6;
-}
-.ship-table .ship-group-row .el-table-column--selection .el-checkbox,
-.sku-table .sku-group-row .el-table-column--selection .el-checkbox {
-  visibility: hidden;
-}
-/* 表头全选 — 去掉中间态，只有 ☑ 和 □ */
-.sku-table .el-table__header-wrapper .el-checkbox.is-indeterminate .el-checkbox__inner::after,
-.ship-table .el-table__header-wrapper .el-checkbox.is-indeterminate .el-checkbox__inner::after {
-  display: none;
 }
 </style>
 
@@ -504,28 +513,34 @@ const skuSaving = ref(false)
 // 独立选中状态（不受折叠/展开影响）
 const selectedSkuIds = ref(new Set<number>())
 const skuSelected = computed(() => sku.list.filter(it => selectedSkuIds.value.has(it.id)))
-const skuTableRef = ref<any>(null)
 const editingSku = ref<DirectSkuItem | null>(null)
 const expandedSkuGroups = reactive(new Set<string>())
 
 const skuGroupBy = ref('store_name')
+const isSkuAllSelected = computed(() => sku.list.length > 0 && selectedSkuIds.value.size >= sku.list.length)
+function onSkuRowCheck(row: any, checked: boolean) {
+  if (checked) selectedSkuIds.value.add(row.id)
+  else selectedSkuIds.value.delete(row.id)
+  selectedSkuIds.value = new Set(selectedSkuIds.value)
+}
+
+function onSkuHeaderCheck(checked: boolean) {
+  if (checked) {
+    for (const group of skuGroups.value) {
+      expandedSkuGroups.add(group.key)
+      for (const item of group.items) selectedSkuIds.value.add(item.id)
+    }
+  } else {
+    selectedSkuIds.value = new Set()
+  }
+  selectedSkuIds.value = new Set(selectedSkuIds.value)
+}
 
 
 function toggleSkuGroup(key: string) {
   if (expandedSkuGroups.has(key)) expandedSkuGroups.delete(key)
   else expandedSkuGroups.add(key)
 }
-
-// 分组变化后统一恢复所有选中行的勾选 UI
-watch(expandedSkuGroups, () => {
-  nextTick(() => {
-    flatSkuList.value.forEach(row => {
-      if (row._type === 'data' && selectedSkuIds.value.has(row.id)) {
-        skuTableRef.value?.toggleRowSelection(row, true)
-      }
-    })
-  })
-})
 
 function onSkuGroupByChange() { expandedSkuGroups.clear(); sku.fetchAll() }
 
@@ -571,19 +586,11 @@ function isSkuGroupAllSelected(groupKey: string): boolean {
 function toggleSkuGroupAll(groupKey: string, select: boolean) {
   const group = skuGroups.value.find(g => g.key === groupKey)
   if (!group) return
-  // 直接操作 Set
   if (select) group.items.forEach(it => selectedSkuIds.value.add(it.id))
   else group.items.forEach(it => selectedSkuIds.value.delete(it.id))
   selectedSkuIds.value = new Set(selectedSkuIds.value)
-  // 展开（如果折叠）并同步 el-table UI
+  // 折叠状态自动展开
   if (!expandedSkuGroups.has(groupKey)) expandedSkuGroups.add(groupKey)
-  nextTick(() => {
-    flatSkuList.value.forEach(row => {
-      if (row._type === 'data' && row._groupKey === groupKey) {
-        skuTableRef.value?.toggleRowSelection(row, select)
-      }
-    })
-  })
 }
 
 // 点击 SKU 分组标签 → 全选该组
@@ -620,22 +627,6 @@ function skuRowClassName({ row }: { row: any }) {
   return row._type === 'group' ? 'sku-group-row' : ''
 }
 
-// 只在用户点击时响应，不被展开/折叠触发
-function onSkuSelect(_selection: any[], row: any) {
-  if (row._type === 'group') return
-  if (selectedSkuIds.value.has(row.id)) selectedSkuIds.value.delete(row.id)
-  else selectedSkuIds.value.add(row.id)
-  selectedSkuIds.value = new Set(selectedSkuIds.value)
-}
-function onSkuSelectAll(selection: any[]) {
-  const visibleIds = new Set(flatSkuList.value.filter(r => r._type === 'data').map(r => r.id as number))
-  if (selection.length === 0) {
-    visibleIds.forEach(id => selectedSkuIds.value.delete(id))
-  } else {
-    visibleIds.forEach(id => selectedSkuIds.value.add(id))
-  }
-  selectedSkuIds.value = new Set(selectedSkuIds.value)
-}
 const skuForm = reactive({
   sku: '', product_name: '', supplier: '', store_name: '', sales_manager: '', label_file: '',
 })
@@ -677,8 +668,6 @@ async function batchDeleteSku() {
     await sku.remove(id)
   }
   selectedSkuIds.value = new Set()
-  // 同步清空 el-table 勾选 UI
-  skuTableRef.value?.clearSelection()
 }
 
 async function saveSku() {
@@ -742,9 +731,26 @@ const editingShipment = ref<DirectShipmentItem | null>(null)
 const selectedShipIds = ref(new Set<number>())
 const shipSelected = computed(() => shipment.list.filter(it => selectedShipIds.value.has(it.id)))
 const expandedShipGroups = reactive(new Set<string>())
-const shipTableRef = ref<any>(null)
 
 const shipGroupBy = ref('receiving_status')
+const isShipAllSelected = computed(() => shipment.list.length > 0 && selectedShipIds.value.size >= shipment.list.length)
+function onShipRowCheck(row: any, checked: boolean) {
+  if (checked) selectedShipIds.value.add(row.id)
+  else selectedShipIds.value.delete(row.id)
+  selectedShipIds.value = new Set(selectedShipIds.value)
+}
+
+function onShipHeaderCheck(checked: boolean) {
+  if (checked) {
+    for (const group of shipmentGroups.value) {
+      expandedShipGroups.add(group.key)
+      for (const item of group.items) selectedShipIds.value.add(item.id)
+    }
+  } else {
+    selectedShipIds.value = new Set()
+  }
+  selectedShipIds.value = new Set(selectedShipIds.value)
+}
 
 const shipmentGroups = computed(() => {
   const groups: Record<string, DirectShipmentItem[]> = {}
@@ -788,19 +794,11 @@ function isShipGroupAllSelected(groupKey: string): boolean {
 function toggleShipGroupAll(groupKey: string, select: boolean) {
   const group = shipmentGroups.value.find(g => g.key === groupKey)
   if (!group) return
-  // 直接操作 Set
   if (select) group.items.forEach(it => selectedShipIds.value.add(it.id))
   else group.items.forEach(it => selectedShipIds.value.delete(it.id))
   selectedShipIds.value = new Set(selectedShipIds.value)
-  // 展开（如果折叠）并同步 el-table UI
+  // 折叠状态自动展开
   if (!expandedShipGroups.has(groupKey)) expandedShipGroups.add(groupKey)
-  nextTick(() => {
-    flatShipmentList.value.forEach(row => {
-      if (row._type === 'data' && row._groupKey === groupKey) {
-        shipTableRef.value?.toggleRowSelection(row, select)
-      }
-    })
-  })
 }
 
 // 点击直发分组标签 → 全选该组
@@ -817,38 +815,10 @@ function shipRowClassName({ row }: { row: any }) {
   return row._type === 'group' ? 'ship-group-row' : ''
 }
 
-// 只在用户点击时响应，不被展开/折叠触发
-function onShipSelect(_selection: any[], row: any) {
-  if (row._type === 'group') return
-  if (selectedShipIds.value.has(row.id)) selectedShipIds.value.delete(row.id)
-  else selectedShipIds.value.add(row.id)
-  selectedShipIds.value = new Set(selectedShipIds.value)
-}
-function onShipSelectAll(selection: any[]) {
-  const visibleIds = new Set(flatShipmentList.value.filter(r => r._type === 'data').map(r => r.id as number))
-  if (selection.length === 0) {
-    visibleIds.forEach(id => selectedShipIds.value.delete(id))
-  } else {
-    visibleIds.forEach(id => selectedShipIds.value.add(id))
-  }
-  selectedShipIds.value = new Set(selectedShipIds.value)
-}
-
 function toggleShipGroup(key: string) {
   if (expandedShipGroups.has(key)) expandedShipGroups.delete(key)
   else expandedShipGroups.add(key)
 }
-
-// 分组变化后统一恢复所有选中行的勾选 UI
-watch(expandedShipGroups, () => {
-  nextTick(() => {
-    flatShipmentList.value.forEach(row => {
-      if (row._type === 'data' && selectedShipIds.value.has(row.id)) {
-        shipTableRef.value?.toggleRowSelection(row, true)
-      }
-    })
-  })
-})
 
 function onShipGroupByChange() { expandedShipGroups.clear(); shipment.fetchAll() }
 
@@ -937,8 +907,6 @@ async function batchDeleteShipment() {
     await shipment.remove(id)
   }
   selectedShipIds.value = new Set()
-  // 同步清空 el-table 勾选 UI
-  shipTableRef.value?.clearSelection()
 }
 
 async function saveShipment() {

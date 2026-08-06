@@ -13,7 +13,7 @@ import type {
   ShippingOverview, ShippingListItem, ShippingListResponse, ShippingDetail,
   DirectSkuItem, DirectSkuUpdate, DirectShipmentItem, DirectShipmentUpdate,
   DirectFileItem, DirectListResponse,
-  SkuPipelineItem, SkuPipelineListResponse, SkuPipelineDetail,
+  SkuTableRow, SkuTableResponse, SkuPipelineDetail,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -506,17 +506,18 @@ export function getExportUrl(): string {
   return `${BASE}/ozon-direct/export`
 }
 
-// ── 供应链 SKU 聚合 ──
+// ── 供应链 SKU 宽表 ──
 
 export async function getSkuPipelineList(
-  dateFrom?: string, dateTo?: string, page?: number, pageSize?: number,
-): Promise<SkuPipelineListResponse> {
+  dateFrom?: string, dateTo?: string, search?: string, page?: number, pageSize?: number,
+): Promise<SkuTableResponse> {
   const p = new URLSearchParams()
   if (dateFrom) p.set('date_from', dateFrom)
   if (dateTo) p.set('date_to', dateTo)
+  if (search) p.set('search', search)
   if (page) p.set('page', String(page))
   if (pageSize) p.set('page_size', String(pageSize))
-  return fetchJson<SkuPipelineListResponse>(`${BASE}/procurement/sku-pipeline?${p.toString()}`)
+  return fetchJson<SkuTableResponse>(`${BASE}/procurement/sku-pipeline?${p.toString()}`)
 }
 
 export async function getSkuPipelineDetail(itemId: string): Promise<SkuPipelineDetail> {

@@ -821,33 +821,49 @@ export interface ShippingDetail {
   items: ShippingItemDetail[]
 }
 
-// ── 供应链 SKU 聚合 ──
+// ── 供应链 SKU 宽表 ──
 
-export interface SkuPipelineItem {
+export interface SkuTableRow {
   item_id: string
-  seller_sku: string | null
-  main_sku_id: string | null
-  warehouse_item_code: string | null
+  plan_no: string | null
+  plan_status: string | null
+  plan_status_label: string
+  plan_type: string | null
+  plan_type_label: string
+  plan_qty: number
+  already_qty: number
   plan_count: number
-  total_plan_qty: number
-  total_ordered_qty: number
-  plan_status_summary: string
-  latest_plan_no: string | null
-  order_count: number
-  total_order_qty: number
-  total_receipt_qty: number
-  order_status_summary: string
-  shipping_count: number
-  total_shipped_qty: number
-  total_inbound_qty: number
-  shipping_status_summary: string
-  marketplace: string | null
   expect_date: string | null
+  wms_rec_qty: number
+  wms_onstock_qty: number
+  direct_ship_arrival_qty: number
+  order_no: string | null
+  order_status: string | null
+  order_status_label: string
+  order_qty: number
+  receipt_qty: number
+  order_count: number
+  order_price: number
+  order_amount: number
+  expect_receipt_date: string | null
+  shipping_no: string | null
+  shipping_status: string | null
+  shipping_status_label: string
+  planed_shipping_qty: number
+  final_shipping_qty: number
+  inbound_qty: number
+  shipping_count: number
+  channel_code: string | null
+  logistics_order: string | null
+  shipping_time: string | null
+  arrived_time: string | null
+  marketplace: string | null
   latest_update: string | null
+  logistics_method: string | null
 }
 
-export interface SkuPipelineListResponse {
-  items: SkuPipelineItem[]
+export interface SkuTableResponse {
+  items: SkuTableRow[]
   total: number
   page: number
   page_size: number
