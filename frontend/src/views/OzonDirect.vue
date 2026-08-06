@@ -166,11 +166,10 @@
                 </el-table-column>
                 <el-table-column prop="pr_date" label="申购时间" width="105" fixed="left">
                   <template #default="{ row }">
-                    <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:8px;padding:2px 0;">
-                      <el-checkbox :model-value="isShipGroupAllSelected(row._groupKey)" @change="(v: boolean) => toggleShipGroupAll(row._groupKey, v)" />
+                    <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
                       <span @click.stop="toggleShipGroup(row._groupKey)" style="font-size:12px;cursor:pointer;">{{ expandedShipGroups.has(row._groupKey) ? '▼' : '▶' }}</span>
-                      <span @click.stop="selectShipGroup(row._groupKey)" style="font-weight:600;cursor:pointer;">{{ row._groupKey }}</span>
-                      <el-tag size="small" type="info">{{ row._count }}</el-tag>
+                      <span @click.stop="selectShipGroup(row._groupKey)" style="font-weight:600;cursor:pointer;font-size:13px;">{{ row._groupKey }}</span>
+                      <span style="color:#909399;font-size:12px;">({{ row._count }})</span>
                     </div>
                     <span v-else>{{ row.pr_date }}</span>
                   </template>
@@ -373,7 +372,7 @@
             <el-form-item label="产品标签">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.product_label" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f) => handleFieldFileUpload(f, 'product_label')" :show-file-list="false" :auto-upload="false">
+                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'product_label')" :show-file-list="false" :auto-upload="false">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -383,7 +382,7 @@
             <el-form-item label="外箱箱唛">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.carton_mark" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f) => handleFieldFileUpload(f, 'carton_mark')" :show-file-list="false" :auto-upload="false">
+                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'carton_mark')" :show-file-list="false" :auto-upload="false">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -395,7 +394,7 @@
             <el-form-item label="入库清单">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.warehouse_receipt" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f) => handleFieldFileUpload(f, 'warehouse_receipt')" :show-file-list="false" :auto-upload="false">
+                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'warehouse_receipt')" :show-file-list="false" :auto-upload="false">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -483,12 +482,9 @@
   border-bottom: 2px solid var(--el-color-primary-light-3) !important;
 }
 
-/* 分组行：吸顶 + 样式 */
-.ship-table .ship-group-row > td,
-.sku-table .sku-group-row > td {
-  position: sticky;
-  top: 0;
-  z-index: 9;
+/* 分组行样式 — 覆盖所有子表（fixed 列会拆成多张表） */
+tr.ship-group-row > td,
+tr.sku-group-row > td {
   background: #f0f2f5 !important;
   font-weight: 600;
   border-bottom: 2px solid #dcdfe6;
@@ -657,7 +653,7 @@ function resetSkuForm() {
   skuForm.store_name = ''
   skuForm.sales_manager = ''
   skuForm.label_file = ''
-  skuFiles.files.value = []
+  skuFiles.files = [] as any
 }
 
 async function batchDeleteSku() {
@@ -806,9 +802,9 @@ function selectShipGroup(groupKey: string) { toggleShipGroupAll(groupKey, true) 
 
 function shipSpanMethod({ row, columnIndex }: { row: any; rowIndex: number; columnIndex: number }) {
   if (row._type !== 'group') return [1, 1]
-  if (columnIndex === 0) return [1, 1]   // selection 列不合并
-  if (columnIndex === 1) return [1, 25]  // 分组标题跨越所有数据列（26列 - 1列selection）
-  return [0, 0]
+  if (columnIndex === 0) return [1, 1]   // selection 列
+  if (columnIndex === 1) return [1, 1]   // pr_date 列：只占自己的格子，不跨列
+  return [1, 1]                           // 其余列：正常渲染（空但有背景色，形成连续灰条）
 }
 
 function shipRowClassName({ row }: { row: any }) {
