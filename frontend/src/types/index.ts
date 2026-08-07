@@ -366,6 +366,8 @@ export interface OrderSkuStats {
   delivered_count: number
   cancelled_count: number
   return_count: number
+  profit_rmb: number | null
+  profit_margin_pct: number | null
   stock: number
   fbo_count: number
   fbs_count: number

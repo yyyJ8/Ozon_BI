@@ -429,6 +429,17 @@ def sku_stats(
         """), {"store_id": store_id, "skus": sku_ids}).fetchall()
         stock_map = {int(r[0]): int(r[1]) for r in st_rows}
 
+    # SKU 管理数据（profit_rmb, profit_margin_pct）
+    mgmt_map: dict[int, tuple] = {}
+    if sku_ids:
+        mg_store = "store_id = :store_id AND " if store_id != 0 else ""
+        mg_rows = db.execute(text(f"""
+            SELECT sku_id, profit_rmb, profit_margin_pct
+            FROM ozon.sku_management
+            WHERE {mg_store}sku_id = ANY(:skus)
+        """), {"store_id": store_id, "skus": sku_ids}).fetchall()
+        mgmt_map = {int(r[0]): (float(r[1]) if r[1] else None, float(r[2]) if r[2] else None) for r in mg_rows}
+
     return [
         OrderSkuStats(
             sku_id=int(r[0]) if r[0] else 0,
@@ -444,6 +455,8 @@ def sku_stats(
             delivered_count=int(r[5]),
             cancelled_count=int(r[6]),
             return_count=cr_sku_map.get(int(r[0]), 0),
+            profit_rmb=mgmt_map.get(int(r[0]), (None, None))[0],
+            profit_margin_pct=mgmt_map.get(int(r[0]), (None, None))[1],
             fbo_count=int(r[7]),
             fbs_count=int(r[8]),
         )

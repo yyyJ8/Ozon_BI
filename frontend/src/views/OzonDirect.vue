@@ -221,7 +221,7 @@
                 </el-table-column>
                 <el-table-column prop="ship_date" label="发货时间" width="105" />
                 <el-table-column prop="special_notes" label="备注" width="150" show-overflow-tooltip />
-                <el-table-column prop="tracking_no" label="物流单号" width="180" show-overflow-tooltip />
+                <el-table-column prop="shipment_no" label="货件单号" width="180" show-overflow-tooltip />
                 <el-table-column prop="receiving_status" label="收货状态" width="110" show-overflow-tooltip />
                 <el-table-column prop="receiving_date" label="收货时间" width="105" />
                 <el-table-column label="操作" width="80" fixed="right">
@@ -430,6 +430,9 @@
         <el-divider content-position="left">货件情况</el-divider>
         <el-row :gutter="12">
           <el-col :span="8">
+            <el-form-item label="货件单号"><el-input v-model="shipmentForm.shipment_no" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
             <el-form-item label="收货状态">
               <el-select v-model="shipmentForm.receiving_status" style="width:100%;">
                 <el-option label="已收到" value="已收到" />
@@ -440,9 +443,6 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="收货时间"><el-date-picker v-model="shipmentForm.receiving_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="物流单号"><el-input v-model="shipmentForm.tracking_no" /></el-form-item>
           </el-col>
         </el-row>
 
@@ -842,7 +842,7 @@ const shipmentForm = reactive<Record<string, any>>({
   first_leg_tracking: '', total_qty: null, total_boxes: null,
   receiving_address: '', labeling_notes: '', product_label: '', carton_mark: '',
   warehouse_receipt: '', po_no: '', online_po_no: '', is_received: null,
-  ship_date: null, special_notes: '', tracking_no: '',
+  ship_date: null, special_notes: '', shipment_no: '',
   receiving_status: '', receiving_date: null,
 })
 const shipmentFiles = reactive(useDirectFiles())

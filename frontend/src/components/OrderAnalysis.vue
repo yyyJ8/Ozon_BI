@@ -393,6 +393,20 @@ const financeSummary = computed(() => {
             <span style="font-size:12px;">{{ row.current_price > 0 ? '₽ ' + formatMoney(row.current_price) : '—' }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="profit_rmb" label="利润 ¥" width="90" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.profit_rmb != null && row.profit_rmb >= 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
+              {{ row.profit_rmb != null ? '¥ ' + row.profit_rmb.toFixed(2) : '—' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="profit_margin_pct" label="利润率" width="75" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.profit_margin_pct != null && row.profit_margin_pct >= 0 ? '#67c23a' : '#f56c6c', fontWeight: 600 }">
+              {{ row.profit_margin_pct != null ? row.profit_margin_pct.toFixed(1) + '%' : '—' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="绿标价" width="100" align="right">
           <template #default>
             <span style="color:#c0c4cc;">—</span>

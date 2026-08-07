@@ -119,5 +119,7 @@ class OrderSkuStats(BaseModel):
     delivered_count: int = 0
     cancelled_count: int = 0
     return_count: int = 0
+    profit_rmb: float | None = None
+    profit_margin_pct: float | None = None
     fbo_count: int = 0
     fbs_count: int = 0
