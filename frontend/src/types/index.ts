@@ -825,6 +825,8 @@ export interface ShippingDetail {
 
 export interface SkuTableRow {
   item_id: string
+  sku_id: number
+  product_name: string | null
   plan_no: string | null
   plan_status: string | null
   plan_status_label: string
@@ -860,6 +862,28 @@ export interface SkuTableRow {
   marketplace: string | null
   latest_update: string | null
   logistics_method: string | null
+  // 货件追踪
+  cargo_status: string | null
+  transit_warehouse: string | null
+  logistics_inbound_no: string | null
+  cargo_box_count: number
+  cargo_cbm: number
+  cargo_weight: number
+  actual_listing_qty: number
+  fbo_warehouse_name: string | null
+  fbo_listing_time: string | null
+  product_status: string | null
+  info_remarks: string | null
+  requisitioner: string | null
+  replenishment_qty: number
+  // 直发跟进
+  direct_receiving_status: string | null
+  direct_total_qty: number
+  direct_shipment_count: number
+  direct_latest_pr_no: string | null
+  direct_logistics_provider: string | null
+  direct_tracking_no: string | null
+  direct_ship_date: string | null
 }
 
 export interface SkuTableResponse {
@@ -880,6 +904,12 @@ export interface PlanStage {
   wms_rec_qty: number
   wms_onstock_qty: number
   create_time: string | null
+  cargo_status: string | null
+  cargo_transit_warehouse: string | null
+  cargo_box_count: number
+  cargo_cbm: number
+  cargo_weight: number
+  cargo_logistics_inbound_no: string | null
 }
 
 export interface OrderStage {

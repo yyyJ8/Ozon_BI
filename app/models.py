@@ -530,3 +530,42 @@ class OzonDirectFile(Base):
     file_size: Mapped[Optional[int]] = mapped_column(Integer, comment="文件大小（字节）")
     file_type: Mapped[Optional[str]] = mapped_column(String(20), comment="文件扩展名")
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="上传时间")
+
+
+# ============================================================
+# CargoShipment — 货件汇总（转运仓→FBO仓 追踪）
+# ============================================================
+class CargoShipment(Base):
+    """货件汇总表 — 跟踪货件从中转仓到FBO仓的状态"""
+    __tablename__ = "cargo_shipments"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="自增主键")
+    sku: Mapped[str] = mapped_column(String(200), index=True, nullable=False, comment="SKU编码（关联 products.offer_id）")
+    product_name: Mapped[Optional[str]] = mapped_column(String(500), comment="产品名称")
+    store: Mapped[Optional[str]] = mapped_column(String(50), comment="店铺")
+    requisitioner: Mapped[Optional[str]] = mapped_column(String(100), comment="申购人")
+    replenishment_qty: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="补货数量")
+    carton_qty: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="装箱数（每箱装几个）")
+    carton_volume: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), comment="外箱体积（单箱 m³）")
+    carton_gross_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="外箱毛重（单箱 kg）")
+    weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="总重量（kg）")
+    cbm: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), comment="总方数（CBM）")
+    density: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="密度")
+    box_count: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="箱数（总箱数）")
+    transit_warehouse: Mapped[Optional[str]] = mapped_column(String(200), comment="中转仓")
+    logistics_inbound_no: Mapped[Optional[str]] = mapped_column(String(200), comment="物流商入库单号")
+    pr_no: Mapped[Optional[str]] = mapped_column(String(200), index=True, comment="关联直发申购单号（来自 ozon_direct_shipment）")
+    cargo_status: Mapped[Optional[str]] = mapped_column(String(100), comment="货物状态")
+    fbo_warehouse_name: Mapped[Optional[str]] = mapped_column(String(200), comment="FBO仓名称")
+    booking_code: Mapped[Optional[str]] = mapped_column(String(200), comment="约仓编码")
+    fbo_listing_time: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="FBO上架时间")
+    warehouse_rent_start: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="仓租开始时间")
+    actual_listing_qty: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), comment="实际上架数量")
+    info_remarks: Mapped[Optional[str]] = mapped_column(Text, comment="信息备注")
+    batch_quotation: Mapped[Optional[str]] = mapped_column(String(200), comment="批次报价")
+    product_status: Mapped[Optional[str]] = mapped_column(String(100), comment="产品状态")
+    stocking_opinion: Mapped[Optional[str]] = mapped_column(Text, comment="备货意见")
+    parent_record: Mapped[Optional[str]] = mapped_column(String(200), comment="父记录")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")

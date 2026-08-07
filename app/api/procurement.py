@@ -4,7 +4,10 @@ from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text as sa_text
+from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.database_oms import get_oms_pg
 from app.schemas.procurement import (
     # 申购
@@ -39,6 +42,9 @@ ORDER_STATUS_LABELS: dict[str, str] = {
     "0": "待提交", "1": "已提交", "2": "待审批",
     "3": "待入库", "4": "部分入库", "5": "异常",
     "6": "已作废", "7": "完结",
+    "21": "待申请付款", "22": "待付款",
+    "31": "已发货", "32": "已签收",
+    "6666": "待下放",
 }
 
 SHIPPING_STATUS_LABELS: dict[str, str] = {
@@ -91,6 +97,22 @@ def _str(v):
     if isinstance(v, Decimal):
         return str(v)
     return str(v)
+
+
+def _get_cs(cargo_map: dict, key: str, idx: int) -> str | None:
+    """从 cargo_shipments 查询结果中安全取值（字符串）"""
+    r = cargo_map.get(key)
+    if r and len(r) > idx and r[idx] is not None:
+        return str(r[idx])
+    return None
+
+
+def _get_cs_num(cargo_map: dict, key: str, idx: int) -> float:
+    """从 cargo_shipments 查询结果中安全取值（数值）"""
+    r = cargo_map.get(key)
+    if r and len(r) > idx and r[idx] is not None:
+        return float(r[idx])
+    return 0.0
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -647,8 +669,9 @@ def sku_table(
     date_to: Optional[date] = Query(default=None),
     search: Optional[str] = Query(default=None, description="搜索 SKU 编码"),
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=30, ge=1, le=200),
+    page_size: int = Query(default=30, ge=1, le=10000),
     pg=Depends(get_oms_pg),
+    db: Session = Depends(get_db),
 ):
     dc, params = _date_clause(date_from, date_to, "ppi")
     cur = pg.cursor()
@@ -672,7 +695,7 @@ def sku_table(
                 MAX(ppi.create_time) AS plan_update
             FROM public.purchase_plan_item ppi
             JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
-            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
+            WHERE ppi.platform = 'Ozon' AND pp.status != '5' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
         ),
@@ -700,9 +723,10 @@ def sku_table(
                 MIN(poi.expect_receipt_date) AS expect_receipt_date,
                 MAX(poi.create_time) AS order_update
             FROM public.purchase_plan_item ppi
+            JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
             LEFT JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
             LEFT JOIN public.purchase_order po ON po.po_no = poi.po_no
-            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
+            WHERE ppi.platform = 'Ozon' AND pp.status != '5' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
         ),
@@ -728,9 +752,10 @@ def sku_table(
                 COALESCE(SUM(fsoi.inbound_putaway_qty), 0) AS inbound_qty,
                 MAX(fsoi.create_time) AS shipping_update
             FROM public.purchase_plan_item ppi
+            JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
             LEFT JOIN public.first_leg_shipping_order_item fsoi ON fsoi.source_order_code = ppi.po_plan_no
             LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
-            WHERE ppi.platform = 'Ozon' AND {dc} {search_clause}
+            WHERE ppi.platform = 'Ozon' AND pp.status != '5' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
         ),
@@ -818,11 +843,84 @@ def sku_table(
         it.order_status_label = ORDER_STATUS_LABELS.get(it.order_status or "", it.order_status or "")
         it.shipping_status_label = SHIPPING_STATUS_LABELS.get(it.shipping_status or "", it.shipping_status or "")
 
+    # ── 从 ozon.products + cargo_shipments 补充本地数据 ──
+    if items:
+        skus = [it.item_id for it in items]
+
+        # 产品表：SKU ID + 商品名
+        product_rows = db.execute(
+            sa_text("SELECT offer_id, sku_id, name FROM ozon.products WHERE offer_id = ANY(:skus)"),
+            {"skus": skus},
+        ).fetchall()
+        prod_map = {r[0]: (int(r[1]) if r[1] else 0, r[2]) for r in product_rows}
+
+        for it in items:
+            pinfo = prod_map.get(it.item_id)
+            if pinfo:
+                it.sku_id = pinfo[0]
+                it.product_name = pinfo[1]
+
+    # ── 从 cargo_shipments 补充货件追踪数据 ──
+    if items:
+        cargo_rows = db.execute(
+            sa_text("SELECT sku, cargo_status, transit_warehouse, logistics_inbound_no, box_count, cbm, weight, actual_listing_qty, fbo_warehouse_name, fbo_listing_time, product_status, info_remarks, requisitioner, replenishment_qty FROM ozon.cargo_shipments WHERE sku = ANY(:skus)"),
+            {"skus": skus},
+        ).fetchall()
+        cargo_map = {r[0]: r for r in cargo_rows}
+
+        for it in items:
+            cr = cargo_map.get(it.item_id)
+            if cr:
+                it.cargo_status = cr[1]
+                it.transit_warehouse = cr[2]
+                it.logistics_inbound_no = cr[3]
+                it.cargo_box_count = float(cr[4]) if cr[4] else 0.0
+                it.cargo_cbm = float(cr[5]) if cr[5] else 0.0
+                it.cargo_weight = float(cr[6]) if cr[6] else 0.0
+                it.actual_listing_qty = float(cr[7]) if cr[7] else 0.0
+                it.fbo_warehouse_name = cr[8]
+                it.fbo_listing_time = _fmt_val(cr[9])
+                it.product_status = cr[10]
+                it.info_remarks = cr[11]
+                it.requisitioner = cr[12]
+                it.replenishment_qty = float(cr[13]) if cr[13] else 0.0
+
+    # ── 从 ozon_direct_shipment 补充直发跟进数据 ──
+    if items:
+        direct_rows = db.execute(
+            sa_text("""
+                SELECT sku,
+                       COUNT(*) AS shipment_count,
+                       COALESCE(SUM(total_qty), 0) AS total_qty,
+                       MAX(pr_no) AS latest_pr_no,
+                       MAX(receiving_status) AS receiving_status,
+                       MAX(logistics_provider) AS logistics_provider,
+                       MAX(tracking_no) AS tracking_no,
+                       MAX(ship_date) AS ship_date
+                FROM ozon.ozon_direct_shipment
+                WHERE is_deleted = false AND sku = ANY(:skus)
+                GROUP BY sku
+            """),
+            {"skus": skus},
+        ).fetchall()
+        direct_map = {r[0]: r for r in direct_rows}
+
+        for it in items:
+            dp = direct_map.get(it.item_id)
+            if dp:
+                it.direct_shipment_count = int(dp[1])
+                it.direct_total_qty = float(dp[2]) if dp[2] else 0.0
+                it.direct_latest_pr_no = dp[3]
+                it.direct_receiving_status = dp[4]
+                it.direct_logistics_provider = dp[5]
+                it.direct_tracking_no = dp[6]
+                it.direct_ship_date = _fmt_val(dp[7])
+
     return SkuTableResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.get("/sku-pipeline/{item_id}", response_model=SkuPipelineDetail)
-def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg)):
+def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depends(get_db)):
     cur = pg.cursor()
     try:
         # 申购阶段
@@ -832,7 +930,7 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg)):
                    ppi.wms_rec_qty, ppi.wms_onstock_qty, ppi.create_time
             FROM public.purchase_plan_item ppi
             JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
-            WHERE ppi.item_id = %s AND ppi.platform = 'Ozon'
+            WHERE ppi.item_id = %s AND ppi.platform = 'Ozon' AND pp.status != '5'
             ORDER BY ppi.create_time DESC
         """, (item_id,))
         plan_rows = cur.fetchall()
@@ -872,6 +970,19 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg)):
     if not plan_rows:
         raise HTTPException(status_code=404, detail=f"SKU {item_id} 无供应链数据")
 
+    # 查询关联的货件追踪数据（全量字段）
+    plan_nos = [r[0] for r in plan_rows]
+    cargo_rows = db.execute(
+        sa_text("""SELECT pr_no, product_name, store, requisitioner, replenishment_qty,
+            carton_qty, carton_volume, carton_gross_weight, weight, cbm, density, box_count,
+            transit_warehouse, logistics_inbound_no, cargo_status, fbo_warehouse_name,
+            booking_code, fbo_listing_time, warehouse_rent_start, actual_listing_qty,
+            info_remarks, batch_quotation, product_status, stocking_opinion, parent_record
+            FROM ozon.cargo_shipments WHERE pr_no = ANY(:prs)"""),
+        {"prs": plan_nos},
+    ).fetchall()
+    cargo_map = {r[0]: r for r in cargo_rows}
+
     return SkuPipelineDetail(
         item_id=item_id,
         plans=[
@@ -885,6 +996,30 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg)):
                 wms_rec_qty=float(r[6]) if r[6] else 0.0,
                 wms_onstock_qty=float(r[7]) if r[7] else 0.0,
                 create_time=_fmt_val(r[8]),
+                cs_product_name=_get_cs(cargo_map, r[0], 1),
+                cs_store=_get_cs(cargo_map, r[0], 2),
+                cs_requisitioner=_get_cs(cargo_map, r[0], 3),
+                cs_replenishment_qty=_get_cs_num(cargo_map, r[0], 4),
+                cs_carton_qty=_get_cs_num(cargo_map, r[0], 5),
+                cs_carton_volume=_get_cs_num(cargo_map, r[0], 6),
+                cs_carton_gross_weight=_get_cs_num(cargo_map, r[0], 7),
+                cs_weight=_get_cs_num(cargo_map, r[0], 8),
+                cs_cbm=_get_cs_num(cargo_map, r[0], 9),
+                cs_density=_get_cs_num(cargo_map, r[0], 10),
+                cs_box_count=_get_cs_num(cargo_map, r[0], 11),
+                cs_transit_warehouse=_get_cs(cargo_map, r[0], 12),
+                cs_logistics_inbound_no=_get_cs(cargo_map, r[0], 13),
+                cs_cargo_status=_get_cs(cargo_map, r[0], 14),
+                cs_fbo_warehouse_name=_get_cs(cargo_map, r[0], 15),
+                cs_booking_code=_get_cs(cargo_map, r[0], 16),
+                cs_fbo_listing_time=_fmt_val(_get_cs(cargo_map, r[0], 17)),
+                cs_warehouse_rent_start=_fmt_val(_get_cs(cargo_map, r[0], 18)),
+                cs_actual_listing_qty=_get_cs_num(cargo_map, r[0], 19),
+                cs_info_remarks=_get_cs(cargo_map, r[0], 20),
+                cs_batch_quotation=_get_cs(cargo_map, r[0], 21),
+                cs_product_status=_get_cs(cargo_map, r[0], 22),
+                cs_stocking_opinion=_get_cs(cargo_map, r[0], 23),
+                cs_parent_record=_get_cs(cargo_map, r[0], 24),
             )
             for r in plan_rows
         ],
