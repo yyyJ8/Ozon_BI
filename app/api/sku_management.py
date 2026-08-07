@@ -9,27 +9,12 @@ from app.schemas.sku_management import (
     SkuManagementItem,
     SkuManagementBatchUpdate,
 )
+from app.services.sku_formulas import INPUT_FIELDS, COMPUTED_FIELDS, compute_formulas
 
 router = APIRouter(prefix="/sku-management", tags=["sku-management"])
 
-# 可编辑字段列表
-EDITABLE_FIELDS = [
-    "main_sku", "source_url_1688", "specification", "sales_manager",
-    "listed_stores", "product_status", "key_notes",
-    "length_cm", "width_cm", "height_cm", "actual_weight_kg", "volume_cbm", "density",
-    "first_leg_unit_price", "units_per_carton",
-    "carton_length_cm", "carton_width_cm", "carton_height_cm",
-    "gross_weight_kg", "volume_liters",
-    "purchase_cost_rmb", "warehousing_fee_rmb", "fbo_delivery_fee_rmb", "first_leg_cost_rmb",
-    "acquiring_fee_pct", "fbo_commission_pct", "logistics_rub", "delivery_pickup_rub",
-    "advertising_rate_pct", "return_rate_pct", "tax_and_fee_pct", "risk_reserve_rub",
-    "exchange_rate", "green_price_rub",
-    "competitor_1", "competitor_2", "competitor_sales",
-    "purchase_cost_pct", "first_leg_pct", "last_mile_pct",
-    "product_cost_rmb", "discount_pct",
-    "platform_payout_rub", "actual_payout_rub",
-    "profit_rmb", "profit_rub", "profit_margin_pct",
-]
+# 可保存字段 = 输入字段 + 计算字段（计算字段由公式引擎自动填充）
+SAVEABLE_FIELDS = INPUT_FIELDS + COMPUTED_FIELDS
 
 
 def _row_to_item(product, mgmt, p_name, p_offer_id, p_image, p_price, p_category, sp) -> SkuManagementItem:
@@ -108,24 +93,50 @@ def batch_update(
     store_id: int = Query(default=1),
     db: Session = Depends(get_db),
 ):
-    """批量 upsert SKU 管理数据，返回更新后的全量数据"""
+    """批量 upsert SKU 管理数据，自动计算公式字段，返回更新后的全量数据"""
     # 预查有效的 SKU
     valid_skus = set(
         sku for (sku,) in
         db.query(Product.sku_id).filter(Product.store_id == store_id).all()
     )
+
+    # 批量获取 product price（公式计算需要售价）
+    target_sku_ids = [item.sku_id for item in payload.items if item.sku_id in valid_skus]
+    price_rows = (
+        db.query(Product.sku_id, Product.price)
+        .filter(Product.store_id == store_id, Product.sku_id.in_(target_sku_ids))
+        .all()
+    )
+    price_map = {sku: float(p) if p else None for sku, p in price_rows}
+
     updated = 0
 
     for item in payload.items:
         if item.sku_id not in valid_skus:
             continue
 
-        update_data = {k: v for k, v in item.model_dump(exclude_unset=True).items()
-                       if k != "sku_id" and k in EDITABLE_FIELDS}
+        # 只取用户提交的输入字段
+        user_input = {
+            k: v for k, v in item.model_dump(exclude_unset=True).items()
+            if k != "sku_id" and k in INPUT_FIELDS
+        }
 
         existing = db.query(SkuManagement).filter_by(
             store_id=store_id, sku_id=item.sku_id
         ).first()
+
+        # 合并：已有输入值 + 用户本次修改的输入值
+        merged_input: dict = {}
+        for field in INPUT_FIELDS:
+            merged_input[field] = getattr(existing, field, None) if existing else None
+        merged_input.update(user_input)
+
+        # 运行公式引擎
+        price = price_map.get(item.sku_id)
+        computed = compute_formulas(merged_input, price)
+
+        # 最终写入 = 输入字段 + 计算字段
+        update_data = {**merged_input, **computed}
 
         if existing:
             for key, value in update_data.items():
