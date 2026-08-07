@@ -121,5 +121,6 @@ class OrderSkuStats(BaseModel):
     return_count: int = 0
     profit_rmb: float | None = None
     profit_margin_pct: float | None = None
+    green_price: float | None = None
     fbo_count: int = 0
     fbs_count: int = 0

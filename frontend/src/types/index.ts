@@ -368,6 +368,7 @@ export interface OrderSkuStats {
   return_count: number
   profit_rmb: number | null
   profit_margin_pct: number | null
+  green_price: number | null
   stock: number
   fbo_count: number
   fbs_count: number
@@ -536,6 +537,10 @@ export interface SkuManagementRow {
   profit_rmb: number | null
   profit_rub: number | null
   profit_margin_pct: number | null
+
+  target_price_3pct: number | null
+  target_price_5pct: number | null
+  target_price_10pct: number | null
 
   created_at: string | null
   updated_at: string | null

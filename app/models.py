@@ -406,6 +406,10 @@ class SkuManagement(Base):
     profit_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
     profit_margin_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
 
+    target_price_3pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    target_price_5pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    target_price_10pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 

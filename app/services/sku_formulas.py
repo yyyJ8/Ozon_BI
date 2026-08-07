@@ -50,6 +50,9 @@ COMPUTED_FIELDS = [
     "profit_rmb",          # 利润RMB
     "profit_rub",          # 利润₽
     "profit_margin_pct",   # 利润率
+    "target_price_3pct",   # 3%利润率目标售价
+    "target_price_5pct",   # 5%利润率目标售价
+    "target_price_10pct",  # 10%利润率目标售价
 ]
 
 
@@ -63,6 +66,18 @@ def _f(v: Any) -> Optional[float]:
         return float(v)
     except (TypeError, ValueError):
         return None
+
+
+def _pct(v: Any) -> Optional[float]:
+    """读取百分比字段，自动归一化为小数。
+
+    数据库可能存 43（表示 43%）或 0.43，统一转为 0.43。
+    规则：绝对值 > 1 视为整数存储，除以 100。
+    """
+    val = _f(v)
+    if val is not None and abs(val) > 1:
+        return val / 100
+    return val
 
 
 def _safe_div(a: Optional[float], b: Optional[float]) -> Optional[float]:
@@ -100,12 +115,12 @@ def compute_formulas(
     R = _f(inputs.get("carton_width_cm"))   # 内盒宽
     S = _f(inputs.get("carton_height_cm"))  # 内盒高
 
-    # 费率百分比（以小数存储，如 0.02 = 2%）
-    AB = _f(inputs.get("acquiring_fee_pct"))      # 收单业务
-    AC = _f(inputs.get("fbo_commission_pct"))     # FBO佣金
+    # 费率百分比（自动归一化：DB存43或0.43都会转为0.43）
+    AB = _pct(inputs.get("acquiring_fee_pct"))      # 收单业务
+    AC = _pct(inputs.get("fbo_commission_pct"))     # FBO佣金
     AE = _f(inputs.get("delivery_pickup_rub"))    # 配送至取货点₽
-    AG = _f(inputs.get("advertising_rate_pct"))   # 广告费率
-    AH = _f(inputs.get("return_rate_pct"))        # 退货率
+    AG = _pct(inputs.get("advertising_rate_pct"))   # 广告费率
+    AH = _pct(inputs.get("return_rate_pct"))        # 退货率
 
     AI = _f(inputs.get("product_cost_rmb"))       # 产品成本RMB
     AJ = _f(inputs.get("exchange_rate"))          # 汇率
@@ -173,18 +188,18 @@ def compute_formulas(
         AD = float(AD)
     result["logistics_rub"] = AD
 
-    # --- Step 8: 头程占比 (AA) = Z*AJ / AK ---
-    result["first_leg_pct"] = round(_safe_div(Z * AJ, AK), 4) if Z is not None and AJ is not None and AK is not None else None
+    # --- Step 8: 头程占比 (AA) = Z*AJ / AK × 100 ---
+    result["first_leg_pct"] = round(_safe_div(Z * AJ, AK) * 100, 2) if Z is not None and AJ is not None and AK is not None else None
 
     # --- Step 9: 尾程运费占比 (AF) = (AD+AE)/AK + AB ---
     AF = None
     if AD is not None and AE is not None and AK is not None and AK != 0 and AB is not None:
         AF = (AD + AE) / AK + AB
         AF = round(AF, 4)
-    result["last_mile_pct"] = AF
+    result["last_mile_pct"] = round(AF * 100, 2) if AF is not None else None  # 存整数
 
     # --- Step 10: 折扣比例 (AM) = 1 - AL/AK ---
-    result["discount_pct"] = round(1 - _safe_div(AL, AK), 4) if AL is not None and AK is not None and AK != 0 else None
+    result["discount_pct"] = round((1 - _safe_div(AL, AK)) * 100, 2) if AL is not None and AK is not None and AK != 0 else None
 
     # --- Step 11: 平台打款 (AN) = AK * (1 - AF - AG - AH - AC) ---
     AN = None
@@ -201,7 +216,7 @@ def compute_formulas(
     result["actual_payout_rub"] = AO
 
     # --- Step 13: 税点+手续费占比 (AP) = (AN - AO) / AK ---
-    result["tax_and_fee_pct"] = round(_safe_div(AN - AO, AK), 4) if AN is not None and AO is not None and AK is not None else None
+    result["tax_and_fee_pct"] = round(_safe_div(AN - AO, AK) * 100, 2) if AN is not None and AO is not None and AK is not None else None
 
     # --- Step 14: 风险储备金 (AQ) = AK * 1% ---
     result["risk_reserve_rub"] = round(AK * 0.01, 2) if AK is not None else None
@@ -219,6 +234,26 @@ def compute_formulas(
 
     # --- Step 17: 利润率 (AT) = AS / AK ---
     AS = result["profit_rub"]
-    result["profit_margin_pct"] = round(_safe_div(AS, AK), 4) if AS is not None and AK is not None else None
+    result["profit_margin_pct"] = round(_safe_div(AS, AK) * 100, 2) if AS is not None and AK is not None else None
+
+    # --- Step 18: 目标利润率售价 ---
+    # 利润率 = C₁ - D / 售价, 反解售价 = D / (C₁ - 目标利润率)
+    # C₁ = 0.92 × (1 - 收单% - 广告% - 退货% - 佣金%) - 0.03
+    # D  = 0.92 × (物流₽ + 配送₽) + 产品成本RMB × 汇率
+    C1 = None
+    if all(v is not None for v in (AB, AG, AH, AC)):
+        C1 = 0.92 * (1 - AB - AG - AH - AC) - 0.03
+        C1 = round(C1, 6)
+
+    D_val = None
+    if AD is not None and AE is not None and AI is not None and AJ is not None:
+        D_val = 0.92 * (AD + AE) + AI * AJ
+        D_val = round(D_val, 2)
+
+    for margin, key in [(0.03, "target_price_3pct"), (0.05, "target_price_5pct"), (0.10, "target_price_10pct")]:
+        if C1 is not None and D_val is not None and C1 > margin:
+            result[key] = round(D_val / (C1 - margin), 2)
+        else:
+            result[key] = None
 
     return result

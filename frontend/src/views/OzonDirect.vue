@@ -167,6 +167,7 @@
                 <el-table-column prop="pr_date" label="申购时间" width="105" fixed="left">
                   <template #default="{ row }">
                     <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
+                      <el-checkbox :model-value="isShipGroupAllSelected(row._groupKey)" @change="(v: boolean) => toggleShipGroupAll(row._groupKey, v)" />
                       <span @click.stop="toggleShipGroup(row._groupKey)" style="font-size:12px;cursor:pointer;">{{ expandedShipGroups.has(row._groupKey) ? '▼' : '▶' }}</span>
                       <span @click.stop="selectShipGroup(row._groupKey)" style="font-weight:600;cursor:pointer;font-size:13px;">{{ row._groupKey }}</span>
                       <span style="color:#909399;font-size:12px;">({{ row._count }})</span>

@@ -66,7 +66,7 @@ def list_all(
         Product.name,
         Product.offer_id,
         Product.primary_image,
-        Product.price,
+        Product.marketing_seller_price,
         Product.category_id,
         func.coalesce(stock_sub.c.present, 0).label("stock_present"),
     )
@@ -100,10 +100,10 @@ def batch_update(
         db.query(Product.sku_id).filter(Product.store_id == store_id).all()
     )
 
-    # 批量获取 product price（公式计算需要售价）
+    # 批量获取促销价（公式计算需要售价）
     target_sku_ids = [item.sku_id for item in payload.items if item.sku_id in valid_skus]
     price_rows = (
-        db.query(Product.sku_id, Product.price)
+        db.query(Product.sku_id, Product.marketing_seller_price)
         .filter(Product.store_id == store_id, Product.sku_id.in_(target_sku_ids))
         .all()
     )
@@ -161,7 +161,7 @@ def batch_update(
             Product.name,
             Product.offer_id,
             Product.primary_image,
-            Product.price,
+            Product.marketing_seller_price,
             Product.category_id,
             func.coalesce(stock_q.c.present, 0).label("stock_present"),
         )

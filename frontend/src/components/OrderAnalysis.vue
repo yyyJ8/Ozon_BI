@@ -407,9 +407,11 @@ const financeSummary = computed(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="绿标价" width="100" align="right">
-          <template #default>
-            <span style="color:#c0c4cc;">—</span>
+        <el-table-column prop="green_price" label="绿标价" width="100" align="right" sortable>
+          <template #default="{ row }">
+            <span :style="{ color: row.green_price != null ? '#67c23a' : '#c0c4cc', fontWeight: row.green_price != null ? 600 : 400 }">
+              {{ row.green_price != null ? '₽ ' + formatMoney(row.green_price) : '—' }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="退货" width="70" align="center">

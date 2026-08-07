@@ -31,6 +31,7 @@ const COMPUTED_FIELDS = [
   'logistics_rub', 'first_leg_pct', 'last_mile_pct', 'discount_pct',
   'platform_payout_rub', 'actual_payout_rub', 'tax_and_fee_pct',
   'risk_reserve_rub', 'profit_rmb', 'profit_rub', 'profit_margin_pct',
+  'target_price_3pct', 'target_price_5pct', 'target_price_10pct',
 ]
 
 const INPUT_FIELDS_SET = new Set(INPUT_FIELDS)
@@ -113,6 +114,11 @@ const COLUMNS: ColDef[] = [
   { key: 'profit_rmb', label: '利润 ¥', width: 90, group: '财务', type: 'number' },
   { key: 'profit_rub', label: '利润 ₽', width: 90, group: '财务', type: 'number' },
   { key: 'profit_margin_pct', label: '利润率%', width: 80, group: '财务', type: 'pct' },
+
+  // -- 目标售价 --
+  { key: 'target_price_3pct', label: '目标售价 3% ₽', width: 120, group: '目标售价', type: 'number' },
+  { key: 'target_price_5pct', label: '目标售价 5% ₽', width: 120, group: '目标售价', type: 'number' },
+  { key: 'target_price_10pct', label: '目标售价 10% ₽', width: 120, group: '目标售价', type: 'number' },
 
   // -- 竞品 --
   { key: 'competitor_1', label: '对标1', width: 120, group: '竞品', editable: true, type: 'text' },
@@ -422,6 +428,16 @@ const DIALOG_FIELDS: EditFieldDef[] = [
   { key: 'competitor_1', label: '对标1', type: 'text', span: 1 },
   { key: 'competitor_2', label: '对标2', type: 'text', span: 1 },
   { key: 'competitor_sales', label: '竞品销量', type: 'int', span: 1 },
+
+  // ── 目标售价 ─────────────────────────────────────────────
+  { key: '_g8', label: '目标售价', _group: true, _formulas: [
+    '利润率 = C₁ - D ÷ 售价  →  目标售价 = D ÷ (C₁ - 目标利润率)',
+    'C₁ = 0.92 × (1 - 收单% - 广告% - 退货% - 佣金%) - 0.03',
+    'D = 0.92 × (物流₽ + 配送₽) + 产品成本RMB × 汇率',
+  ]},
+  { key: 'target_price_3pct', label: '3% 利润率售价 ₽', _result: true },
+  { key: 'target_price_5pct', label: '5% 利润率售价 ₽', _result: true },
+  { key: 'target_price_10pct', label: '10% 利润率售价 ₽', _result: true },
 ]
 
 const dialogVisible = ref(false)

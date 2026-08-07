@@ -64,6 +64,10 @@ class SkuManagementItem(BaseModel):
     profit_rub: Optional[float] = None
     profit_margin_pct: Optional[float] = None
 
+    target_price_3pct: Optional[float] = None
+    target_price_5pct: Optional[float] = None
+    target_price_10pct: Optional[float] = None
+
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
