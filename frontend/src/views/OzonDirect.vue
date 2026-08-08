@@ -122,7 +122,7 @@
               />
               <el-input
                 v-model="shipment.search"
-                placeholder="搜索申购单号 / SKU / 产品名 / 供应商"
+                placeholder="搜索申购单号 / SKU / 产品名 / 供应商 / 头程单号"
                 clearable
                 style="width: 240px;"
                 @clear="shipment.onSearch()"

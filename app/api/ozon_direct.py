@@ -126,6 +126,7 @@ def list_shipment(
             | (OzonDirectShipment.sku.ilike(like))
             | (OzonDirectShipment.product_cn_name.ilike(like))
             | (OzonDirectShipment.supplier.ilike(like))
+            | (OzonDirectShipment.first_leg_tracking.ilike(like))
         )
     if date_from:
         q = q.filter(OzonDirectShipment.pr_date >= date_from)
