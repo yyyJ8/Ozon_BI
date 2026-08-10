@@ -194,6 +194,7 @@ def sku_return_stats(
 
     store_filter = "r.store_id = :store_id AND" if store_id != 0 else ""
     store_filter_posting = "store_id = :store_id AND" if store_id != 0 else ""
+    pr_store_filter = "pr.store_id = :store_id AND" if store_id != 0 else ""
     params = _date_params(date_from, date_to, store_id=store_id)
 
     rows = db.execute(text(f"""
@@ -245,7 +246,7 @@ def sku_return_stats(
             sr.avg_days,
             sr.main_reason
         FROM sku_returns sr
-        LEFT JOIN ozon.products pr ON sr.sku = pr.sku_id AND pr.store_id = :store_id
+        LEFT JOIN ozon.products pr ON sr.sku = pr.sku_id AND {pr_store_filter} true
         LEFT JOIN sku_ordered so ON sr.sku = so.sku_id
         ORDER BY sr.total_returns DESC
     """), params).fetchall()
@@ -291,6 +292,7 @@ def returns_details(
     if date_from is None:
         date_from = date_to - timedelta(days=90)
 
+    store_filter = "r.store_id = :store_id AND" if store_id != 0 else ""
     params = _date_params(date_from, date_to, store_id=store_id, sku_id=sku_id)
 
     rows = db.execute(text(f"""
@@ -314,8 +316,8 @@ def returns_details(
         FROM ozon.returns r
         LEFT JOIN ozon.postings p ON r.posting_number = p.posting_number AND r.store_id = p.store_id
         LEFT JOIN ozon.products pr ON r.sku = pr.sku_id AND r.store_id = pr.store_id
-        WHERE r.store_id = :store_id
-          AND p.created_at >= :date_from
+        WHERE {store_filter}
+          p.created_at >= :date_from
           AND p.created_at  < :date_to_excl
           AND r.sku = :sku_id
         ORDER BY r.returned_at DESC

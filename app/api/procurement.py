@@ -884,6 +884,9 @@ def sku_table(
                 it.info_remarks = cr[11]
                 it.requisitioner = cr[12]
                 it.replenishment_qty = float(cr[13]) if cr[13] else 0.0
+                # 货物状态=已上架 → 用实际上架数量覆盖到仓数（omsprod 数据不靠谱）
+                if cr[1] == '已上架' and cr[7] is not None:
+                    it.inbound_qty = float(cr[7])
 
     # ── 从 ozon_direct_shipment 补充直发跟进数据 ──
     if items:

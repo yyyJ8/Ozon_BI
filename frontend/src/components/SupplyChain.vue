@@ -104,9 +104,6 @@ function fmtFloat(v: number) { return v ? v.toLocaleString('ru-RU', { minimumFra
 function fmtMoney(v: number) { return v ? v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00' }
 function fmtDate(v: string | null) { if (!v) return ''; return v.length > 10 ? v.slice(0, 10) : v }
 function fmtDatetime(v: string | null) { if (!v) return ''; return v.length > 16 ? v.slice(0, 16) : v }
-function cargoTagType(s: string | null) {
-  if (!s) return 'info'; if (s === '已上架') return 'success'; if (s === '跨境在途') return 'warning'; return 'info'
-}
 function planTagType(s: string | null) { if (!s) return 'info'; if (s === '已创建采购订单') return 'success'; if (s === '已作废') return 'danger'; return 'warning' }
 function orderTagType(s: string | null) { if (!s) return 'info'; if (s === '完结') return 'success'; if (s === '已作废') return 'danger'; return 'warning' }
 function shippingTagType(s: string | null) { if (!s) return 'info'; if (s.startsWith('已')) return 'success'; if (s === '已作废') return 'danger'; return 'warning' }
@@ -323,19 +320,6 @@ function shippingTagType(s: string | null) { if (!s) return 'info'; if (s.starts
         </el-table-column>
         <el-table-column label="已到仓" width="70" align="right">
           <template #default="{ row }"><span :style="{color: row.inbound_qty > 0 ? '#67c23a' : '#c0c4cc'}">{{ fmtFloat(row.inbound_qty) }}</span></template>
-        </el-table-column>
-        <el-table-column label="货物状态" width="90" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.cargo_status" size="small" effect="plain" :type="cargoTagType(row.cargo_status)">{{ row.cargo_status }}</el-tag>
-            <span v-else style="color:#c0c4cc;">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="直发收货" width="85" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.direct_receiving_status" size="small" effect="plain"
-              :type="row.direct_receiving_status === '已收到' ? 'success' : 'warning'">{{ row.direct_receiving_status }}</el-tag>
-            <span v-else style="color:#c0c4cc;">—</span>
-          </template>
         </el-table-column>
         <el-table-column label="最近更新" width="130" align="center">
           <template #default="{ row }"><span style="font-size:11px;">{{ fmtDatetime(row.latest_update) || '—' }}</span></template>

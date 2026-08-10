@@ -383,9 +383,9 @@ const financeSummary = computed(() => {
             <span style="font-size:12px;">{{ row.offer_id || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="order_count" label="实际成交数" width="80" align="right" sortable>
+        <el-table-column label="实际成交数" width="85" align="right" sortable :sort-method="(a:any,b:any) => (a.order_count - a.cancelled_count - a.return_count) - (b.order_count - b.cancelled_count - b.return_count)">
           <template #default="{ row }">
-            <span style="font-weight:600;">{{ fmtInt(row.order_count) }}</span>
+            <span style="font-weight:600;">{{ fmtInt(row.order_count - row.cancelled_count - row.return_count) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="current_price" label="售价" width="100" align="right" sortable>

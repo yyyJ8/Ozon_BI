@@ -17,8 +17,9 @@ import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
 import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
 import SkuManagement from '@/components/SkuManagement.vue'
 import SupplyChain from '@/components/SupplyChain.vue'
+import Replenishment from '@/components/Replenishment.vue'
 import { useStore } from '@/composables/useStore'
-import { Notebook } from '@element-plus/icons-vue'
+import { Notebook, ShoppingCart } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -523,6 +524,12 @@ onMounted(() => {
                 :products="products"
                 :active-tab="activeTab"
               />
+            </el-tab-pane>
+            <el-tab-pane label="补货提示" name="replenishment">
+              <template #label>
+                <span><el-icon><ShoppingCart /></el-icon> 补货提示</span>
+              </template>
+              <Replenishment />
             </el-tab-pane>
           </el-tabs>
           <el-select

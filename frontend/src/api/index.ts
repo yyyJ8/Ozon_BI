@@ -14,6 +14,7 @@ import type {
   DirectSkuItem, DirectSkuUpdate, DirectShipmentItem, DirectShipmentUpdate,
   DirectFileItem, DirectListResponse,
   SkuTableRow, SkuTableResponse, SkuPipelineDetail,
+  ReplenishmentRow,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -522,4 +523,12 @@ export async function getSkuPipelineList(
 
 export async function getSkuPipelineDetail(itemId: string): Promise<SkuPipelineDetail> {
   return fetchJson<SkuPipelineDetail>(`${BASE}/procurement/sku-pipeline/${encodeURIComponent(itemId)}`)
+}
+
+// ── 补货提示 ──
+
+export async function getReplenishment(storeId?: number): Promise<ReplenishmentRow[]> {
+  const p = new URLSearchParams()
+  if (storeId !== undefined) p.set('store_id', String(storeId))
+  return fetchJson<ReplenishmentRow[]>(`${BASE}/replenishment?${p.toString()}`)
 }

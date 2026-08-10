@@ -1073,3 +1073,34 @@ export interface DirectListResponse<T> {
   page: number
   page_size: number
 }
+
+// ── 补货提示 ──
+
+export interface ReplenishmentRow {
+  store_id: number
+  sku_id: number
+  offer_id: string
+  product_name: string | null
+  primary_image: string | null
+  product_status: string | null
+  sales_manager: string | null
+  // 输入数据
+  stock_present: number
+  sales_3d: number
+  sales_7d: number
+  sales_14d: number
+  sales_30d: number
+  cross_border_sdk: number
+  cross_border_yunmeng: number
+  cross_border_kunlun: number
+  cross_border_cgs: number
+  domestic_in_transit: number
+  safety_days: number
+  logistics_days: number
+  // 中间结果
+  weighted_daily_sales: number
+  cross_border_total: number
+  // 最终结果
+  replenishment_qty_raw: number
+  suggested_replenishment: string
+}

@@ -39,9 +39,13 @@ def parse_datetime(v) -> datetime | None:
     s = str(v).strip()
     if not s:
         return None
-    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y/%m/%d"]:
+    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y/%m/%d", "%m月%d日"]:
         try:
-            return datetime.strptime(s, fmt)
+            dt = datetime.strptime(s, fmt)
+            # 中文月日格式没有年份，用当前年份
+            if fmt == "%m月%d日":
+                dt = dt.replace(year=datetime.now().year)
+            return dt
         except ValueError:
             continue
     return None
@@ -74,7 +78,7 @@ def main():
     db = SessionLocal()
     try:
         # 先清空已有数据
-        deleted = db.execute(text("DELETE FROM public.cargo_shipments")).rowcount
+        deleted = db.execute(text("DELETE FROM ozon.cargo_shipments")).rowcount
         if deleted:
             print(f"[CLEAR] Deleted {deleted} old records")
 

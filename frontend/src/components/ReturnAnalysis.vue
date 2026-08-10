@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import { Failed, Remove, CircleCloseFilled, TrendCharts, Timer } from '@element-plus/icons-vue'
+import { Failed, Remove, CircleCloseFilled, TrendCharts } from '@element-plus/icons-vue'
 import type { Product, ReturnDetailItem } from '@/types'
 import { useReturns } from '@/composables/useReturns'
 import { useLocalDateRange } from '@/composables/useLocalDateRange'
+import { useStore } from '@/composables/useStore'
 import { getReturnsDetails } from '@/api'
 
 const props = defineProps<{
@@ -13,6 +14,7 @@ const props = defineProps<{
   activeTab: string
 }>()
 
+const { selectedStoreId } = useStore()
 const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
 const selectedSkuId = ref<number>()
 const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(localDateRange, selectedSkuId)
@@ -44,6 +46,8 @@ async function onExpandChange(row: any, expandedRowsList: any) {
         sku,
         localDateRange.value[0],
         localDateRange.value[1],
+        undefined, undefined,
+        selectedStoreId.value,
       )
       detailsMap.value[sku] = data
     } finally {
@@ -226,19 +230,6 @@ const minReturnOptions = [1, 2, 3, 5]
           </div>
         </el-card>
       </el-col>
-      <el-col :span="5">
-        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><Timer /></el-icon></div>
-            <div>
-              <div style="font-size:12px;color:#909399;">平均处理天数</div>
-              <div style="font-size:20px;font-weight:700;color:#303133;">
-                {{ overview.avg_processing_days != null ? overview.avg_processing_days.toFixed(1) + ' 天' : '—' }}
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
     </el-row>
 
     <!-- 状态分布标签 -->
@@ -298,6 +289,14 @@ const minReturnOptions = [1, 2, 3, 5]
             <div v-loading="detailsLoading[skuRow.sku_id]" style="padding:4px 12px 8px;">
               <el-table v-if="detailsMap[skuRow.sku_id]?.length"
                 :data="detailsMap[skuRow.sku_id]" size="small" border style="width:100%">
+                <el-table-column label="图片" width="50">
+                  <template #default="{ row: d }">
+                    <el-image v-if="d.primary_image" :src="d.primary_image" style="width:28px;height:28px;border-radius:4px;" fit="cover" lazy>
+                      <template #error><div style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" /></template>
+                    </el-image>
+                    <div v-else style="width:28px;height:28px;background:#f5f7fa;border-radius:4px;" />
+                  </template>
+                </el-table-column>
                 <el-table-column prop="id" label="退货ID" width="100" />
                 <el-table-column prop="posting_number" label="订单号" width="130" />
                 <el-table-column label="类型" width="75" align="center">

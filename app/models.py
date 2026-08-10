@@ -573,3 +573,20 @@ class CargoShipment(Base):
     parent_record: Mapped[Optional[str]] = mapped_column(String(200), comment="父记录")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
+
+
+# ============================================================
+# ReplenishmentConfig — 补货提示配置
+# ============================================================
+class ReplenishmentConfig(Base):
+    """补货提示配置 — 每个 SKU 的安全天数和物流天数"""
+    __tablename__ = "replenishment_config"
+    __table_args__ = {"schema": "ozon"}
+
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True, comment="店铺 ID")
+    offer_id: Mapped[str] = mapped_column(String(255), primary_key=True, comment="货号，关联 products.offer_id")
+    product_name: Mapped[Optional[str]] = mapped_column(Text, comment="产品名称")
+    safety_days: Mapped[int] = mapped_column(Integer, default=5, comment="安全天数")
+    logistics_days: Mapped[int] = mapped_column(Integer, default=45, comment="物流天数")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
