@@ -1103,4 +1103,6 @@ export interface ReplenishmentRow {
   // 最终结果
   replenishment_qty_raw: number
   suggested_replenishment: string
+  available_days: number | null
+  alert_level: string  // 'emergency' | 'warning' | 'normal'
 }

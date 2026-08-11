@@ -271,6 +271,20 @@ export async function getOrdersSkuStats(
     `${BASE}/orders/sku-stats?${returnsParams(storeId, dateFrom, dateTo, extra)}`)
 }
 
+// ── SKU 备注 ──
+
+export async function getSkuNote(skuId: number, date: string, storeId: number = 1): Promise<{ content: string | null }> {
+  return fetchJson(`${BASE}/orders/sku-notes?sku_id=${skuId}&record_date=${date}&store_id=${storeId}`)
+}
+
+export async function saveSkuNote(skuId: number, date: string, content: string, storeId: number = 1): Promise<{ content: string | null }> {
+  return fetchJson(`${BASE}/orders/sku-notes?sku_id=${skuId}&record_date=${date}&store_id=${storeId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+}
+
 // ── 库存 API ──
 
 export async function getStockStatus(storeId: number = 1): Promise<StockStatus> {

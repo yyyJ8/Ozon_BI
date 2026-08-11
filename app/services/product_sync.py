@@ -136,28 +136,39 @@ def sync_products(db: Session, client: OzonClient, store_id: int) -> dict:
 
 def sync_stocks_v4(db: Session, client: OzonClient, store_id: int) -> dict:
     """
-    从 v4 专用库存接口全量拉取并更新 stocks 表（独立于商品同步）
-    v4 返回 type 字段(如 "fbo")，映射到 stocks.source
+    从 v4 专用库存接口拉取并更新 stocks 表。
+
+    用 product_id 精确查询（而非 visibility=ALL 全量扫描），
+    确保已归档/下架商品的库存也能被更新到 0。
     """
     logger.info(f"=== [store={store_id}] 开始同步库存 (v4) ===")
     now = datetime.now()
 
+    # 先拉取该店铺所有 product_id，包括已归档的
+    from app.models import Product
+    all_product_ids = [row[0] for row in db.query(Product.product_id).filter(
+        Product.store_id == store_id
+    ).distinct().all()]
+
+    if not all_product_ids:
+        logger.warning(f"[store={store_id}] 无商品，跳过库存同步")
+        return {"stocks_upserted": 0}
+
+    # 分批查询（API 限制 1000 个 id / 请求）
     all_items: list[dict] = []
-    cursor = ""
-    while True:
+    batch_size = 1000
+    for i in range(0, len(all_product_ids), batch_size):
+        batch = all_product_ids[i:i + batch_size]
         resp = client._request("/v4/product/info/stocks", {
-            "filter": {"visibility": "ALL"},
-            "limit": 1000,
-            "cursor": cursor,
+            "filter": {"product_id": batch},
+            "limit": batch_size,
         })
-        items = resp.get("items", [])
-        all_items.extend(items)
-        cursor = resp.get("cursor", "")
-        if not cursor or not items:
-            break
-    logger.info(f"[store={store_id}] v4 stocks: 拉取 {len(all_items)} 个商品")
+        all_items.extend(resp.get("items", []))
+
+    logger.info(f"[store={store_id}] v4 stocks: 查询 {len(all_product_ids)} 个商品, 返回 {len(all_items)} 条")
 
     upserted = 0
+    seen_skus: set[tuple[int, str]] = set()
     for item in all_items:
         for s in item.get("stocks", []):
             sku_id = s.get("sku")
@@ -179,6 +190,26 @@ def sync_stocks_v4(db: Session, client: OzonClient, store_id: int) -> dict:
                     "reserved": s_data["reserved"],
                     "updated_at": now,
                 },
+            )
+            db.execute(stmt)
+            upserted += 1
+            seen_skus.add((int(sku_id), source))
+
+    # API 可能不返回库存为 0 的已归档商品，对这些商品手动置 0
+    for pid in all_product_ids:
+        p = db.query(Product).filter(Product.product_id == pid, Product.store_id == store_id).first()
+        if p and (p.sku_id, "fbo") not in seen_skus:
+            s_data = {
+                "store_id": store_id,
+                "sku_id": p.sku_id,
+                "source": "fbo",
+                "present": 0,
+                "reserved": 0,
+                "updated_at": now,
+            }
+            stmt = pg_insert(Stock).values(**s_data).on_conflict_do_update(
+                index_elements=["store_id", "sku_id", "source"],
+                set_={"present": 0, "reserved": 0, "updated_at": now},
             )
             db.execute(stmt)
             upserted += 1

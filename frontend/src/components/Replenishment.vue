@@ -208,6 +208,35 @@ function formatNum(n: number, decimals?: number): string {
           </template>
         </el-table-column>
 
+        <el-table-column label="可售天数" width="80" align="right" sortable prop="available_days">
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.available_days === null"
+              type="info"
+              size="small"
+              effect="plain"
+            >∞</el-tag>
+            <el-tag
+              v-else-if="row.alert_level === 'emergency'"
+              type="danger"
+              size="small"
+              effect="dark"
+            >{{ row.available_days }}</el-tag>
+            <el-tag
+              v-else-if="row.alert_level === 'warning'"
+              type="warning"
+              size="small"
+              effect="dark"
+            >{{ row.available_days }}</el-tag>
+            <el-tag
+              v-else
+              type="success"
+              size="small"
+              effect="plain"
+            >{{ row.available_days }}</el-tag>
+          </template>
+        </el-table-column>
+
         <el-table-column label="建议补货" width="100" align="center" fixed="right" sortable prop="replenishment_qty_raw">
           <template #default="{ row }">
             <el-tag
@@ -293,7 +322,36 @@ function formatNum(n: number, decimals?: number): string {
               </div>
             </div>
 
-            <!-- ④ 结果 -->
+            <!-- ④ 预警分析 -->
+            <div class="formula-block" :style="{ background: selectedRow.alert_level === 'emergency' ? '#fef0f0' : selectedRow.alert_level === 'warning' ? '#fdf6ec' : '#f0f9eb', borderColor: selectedRow.alert_level === 'emergency' ? '#fde2e2' : selectedRow.alert_level === 'warning' ? '#faecd8' : '#e1f3d8' }">
+              <div class="formula-title">
+                ④ 可售天数 =
+                <template v-if="selectedRow.available_days === null">∞（无销量）</template>
+                <template v-else>{{ selectedRow.available_days }} 天</template>
+              </div>
+              <div class="formula-expr">= (库存 + 跨境在途 + 国内在途) ÷ 加权日销量</div>
+              <div class="formula-steps">
+                <div class="step-line">= ({{ selectedRow.stock_present }} + {{ selectedRow.cross_border_total }} + {{ selectedRow.domestic_in_transit }}) ÷ {{ selectedRow.weighted_daily_sales.toFixed(4) }}</div>
+                <div class="step-line" v-if="selectedRow.available_days !== null">
+                  = {{ (selectedRow.stock_present + selectedRow.cross_border_total + selectedRow.domestic_in_transit) }} ÷ {{ selectedRow.weighted_daily_sales.toFixed(4) }}
+                  = <strong>{{ selectedRow.available_days }} 天</strong>
+                </div>
+              </div>
+              <div style="margin-top:8px;">
+                <el-tag v-if="selectedRow.available_days === null" type="info" size="small">暂无销售数据</el-tag>
+                <el-tag v-else-if="selectedRow.alert_level === 'emergency'" type="danger" size="small">
+                  🔴 紧急：可售天数 ≤ 安全天数({{ selectedRow.safety_days }})
+                </el-tag>
+                <el-tag v-else-if="selectedRow.alert_level === 'warning'" type="warning" size="small">
+                  🟡 预警：可售天数 ≤ 安全({{ selectedRow.safety_days }})+物流({{ selectedRow.logistics_days }})
+                </el-tag>
+                <el-tag v-else type="success" size="small">
+                  🟢 正常：可售天数充足
+                </el-tag>
+              </div>
+            </div>
+
+            <!-- ⑤ 结果 -->
             <div class="formula-block result-block">
               <div class="formula-title" style="font-size:16px;">
                 📦 建议补货：

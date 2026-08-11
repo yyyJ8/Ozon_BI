@@ -22,30 +22,31 @@ export function useLocalDateRange() {
     return d.toISOString().split('T')[0]
   }
 
-  const yesterday = daysAgoStr(1)
-  const localDateRange = ref<[string, string]>([daysAgoStr(30), yesterday])
+  const today = daysAgoStr(0)
+  const localDateRange = ref<[string, string]>([daysAgoStr(30), today])
 
   function applyPreset(preset: string) {
     periodPreset.value = preset
-    if (preset === 'custom') return // 等用户自己选日期
+    if (preset === 'custom') return
 
+    const t = daysAgoStr(0)
     const y = daysAgoStr(1)
     switch (preset) {
       case 'yesterday':
         localDateRange.value = [y, y]
         break
       case '7days':
-        localDateRange.value = [daysAgoStr(7), y]
+        localDateRange.value = [daysAgoStr(7), t]
         break
       case '30days':
-        localDateRange.value = [daysAgoStr(30), y]
+        localDateRange.value = [daysAgoStr(30), t]
         break
       case 'all':
       default:
         if (availableRange.value) {
-          localDateRange.value = [availableRange.value.min_date, y]
+          localDateRange.value = [availableRange.value.min_date, t]
         } else {
-          localDateRange.value = [daysAgoStr(90), y] // fallback
+          localDateRange.value = [daysAgoStr(90), t]
         }
         break
     }

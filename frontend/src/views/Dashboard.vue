@@ -444,7 +444,6 @@ onMounted(() => {
               </div>
               <TopProducts
                 :products="productSummary"
-                @row-click="openProductDetail"
               />
             </el-tab-pane>
             <el-tab-pane label="库存健康" name="inventory">

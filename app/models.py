@@ -395,6 +395,19 @@ class SkuManagement(Base):
     competitor_2: Mapped[Optional[str]] = mapped_column(String(200))
     competitor_sales: Mapped[Optional[int]] = mapped_column(Integer)
 
+
+class SkuDailyNote(Base):
+    """SKU 每日操作记录"""
+    __tablename__ = "sku_daily_notes"
+    __table_args__ = {"schema": "ozon"}
+
+    store_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    record_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    content: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+
     purchase_cost_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
     first_leg_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
     last_mile_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))

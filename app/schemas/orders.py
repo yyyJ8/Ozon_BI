@@ -124,3 +124,8 @@ class OrderSkuStats(BaseModel):
     green_price: float | None = None
     fbo_count: int = 0
     fbs_count: int = 0
+
+
+class SkuDailyNote(BaseModel):
+    """SKU 每日操作记录"""
+    content: str | None = None

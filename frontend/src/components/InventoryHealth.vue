@@ -2,8 +2,8 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
-import type { ProductSummary, SummaryRow } from '@/types'
-import { getStockStatus, refreshStocks } from '@/api'
+import type { ProductSummary, SummaryRow, ReplenishmentRow } from '@/types'
+import { getStockStatus, refreshStocks, getReplenishment } from '@/api'
 
 const props = defineProps<{
   products: ProductSummary[]
@@ -20,9 +20,29 @@ const emit = defineEmits<{
 const stockStatus = ref<{ last_updated: string | null; stock_count: number }>({ last_updated: null, stock_count: 0 })
 const refreshing = ref(false)
 
+const replenishmentMap = ref<Map<number, { available_days: number | null; alert_level: string; actual_sales_3d: number; actual_sales_7d: number; actual_sales_14d: number; actual_sales_30d: number }>>(new Map())
+
 async function fetchStockStatus() {
   try {
     stockStatus.value = await getStockStatus()
+  } catch { /* ignore */ }
+}
+
+async function fetchReplenishmentData() {
+  try {
+    const data = await getReplenishment(0)
+    const map = new Map<number, { available_days: number | null; alert_level: string; actual_sales_3d: number; actual_sales_7d: number; actual_sales_14d: number; actual_sales_30d: number }>()
+    for (const r of data) {
+      map.set(r.sku_id, {
+        available_days: r.available_days,
+        alert_level: r.alert_level,
+        actual_sales_3d: r.sales_3d,
+        actual_sales_7d: r.sales_7d,
+        actual_sales_14d: r.sales_14d,
+        actual_sales_30d: r.sales_30d,
+      })
+    }
+    replenishmentMap.value = map
   } catch { /* ignore */ }
 }
 
@@ -140,10 +160,28 @@ interface InventoryItem {
   name: string
   primary_image: string | null
   stock_present: number
-  ordered_units: number
-  delivered_units: number
+  actual_sales: number
   status: 'danger' | 'warning' | 'success'
   status_label: string
+  available_days: number | null
+  alert_level: string
+}
+
+// 实际成交 = 下单 - 取消 - 退货，按当前日期范围聚合（与订单/退货 tab 口径一致）
+const actualSalesMap = computed(() => {
+  const map = new Map<number, number>()
+  const rows = props.summaryRows
+  for (const r of rows) {
+    const v = (Number(r.ordered_units) || 0) - (Number(r.cancelled_units) || 0) - (Number(r.returns_units) || 0)
+    map.set(r.sku_id, (map.get(r.sku_id) || 0) + v)
+  }
+  return map
+})
+
+const ALERT_LABELS: Record<string, string> = {
+  emergency: '紧急',
+  warning: '预警',
+  normal: '正常',
 }
 
 const items = computed<InventoryItem[]>(() => {
@@ -158,16 +196,21 @@ const items = computed<InventoryItem[]>(() => {
       } else {
         status = 'success'; status_label = '健康'
       }
+      const rp = replenishmentMap.value.get(p.sku_id)
       return {
         sku_id: p.sku_id, offer_id: p.offer_id, name: p.name,
         primary_image: p.primary_image, stock_present: p.stock_present,
-        ordered_units: p.ordered_units, delivered_units: p.delivered_units,
+        actual_sales: actualSalesMap.value.get(p.sku_id) ?? 0,
         status, status_label,
+        available_days: rp?.available_days ?? null,
+        alert_level: rp?.alert_level ?? 'normal',
       }
     })
     .sort((a, b) => {
-      const rank = { danger: 0, warning: 1, success: 2 }
-      return rank[a.status] - rank[b.status] || a.stock_present - b.stock_present
+      const rank = { emergency: 0, warning: 1, normal: 2 }
+      const ar = rank[a.alert_level as keyof typeof rank] ?? 2
+      const br = rank[b.alert_level as keyof typeof rank] ?? 2
+      return ar - br || a.stock_present - b.stock_present
     })
 })
 
@@ -261,9 +304,9 @@ function selectSku(skuId: number) {
   selectedSkuId.value = selectedSkuId.value === skuId ? null : skuId
 }
 
-onMounted(() => { if (props.activeTab === 'inventory') { initIfNeeded(); fetchStockStatus() } })
+onMounted(() => { if (props.activeTab === 'inventory') { initIfNeeded(); fetchStockStatus(); fetchReplenishmentData() } })
 watch(() => props.activeTab, (tab) => {
-  if (tab === 'inventory') { nextTick(() => { initIfNeeded(); chart?.resize() }) }
+  if (tab === 'inventory') { nextTick(() => { initIfNeeded(); chart?.resize() }); fetchReplenishmentData() }
 })
 watch(() => [estimatedStockHistory.value, dailyOrders.value], () => { if (initialized) renderChart() })
 onUnmounted(() => { chart?.dispose() })
@@ -325,11 +368,9 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
           <span style="font-weight: 600; white-space: nowrap;">库存列表</span>
           <div style="display: flex; align-items: center; gap: 8px;">
             <el-input v-model="searchInput" placeholder="搜索名称 / 货号 / SKU" clearable style="width: 190px;" size="small" @clear="handleClear" @keyup.enter="applySearch" />
-            <el-select v-model="statusInput" placeholder="状态" style="width: 95px;" size="small">
+            <el-select v-model="statusInput" placeholder="库存状态" style="width: 105px;" size="small" @change="applySearch">
               <el-option label="全部" value="" /><el-option label="缺货" value="danger" /><el-option label="低库存" value="warning" /><el-option label="健康" value="success" />
             </el-select>
-            <el-button type="primary" size="small" @click="applySearch">搜索</el-button>
-            <el-button size="small" @click="handleClear">重置</el-button>
             <el-tag type="info" size="small">{{ filteredItems.length }} / {{ items.length }}</el-tag>
           </div>
         </div>
@@ -355,9 +396,23 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
             <span :style="{ color: row.stock_present <= 0 ? '#f56c6c' : row.stock_present < 10 ? '#e6a23c' : '#303133', fontWeight: row.stock_present <= 0 ? 700 : 400 }">{{ row.stock_present }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="ordered_units" label="下单" width="55" align="right" sortable />
-        <el-table-column prop="delivered_units" label="送达" width="55" align="right" sortable />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="actual_sales" label="实际成交" width="80" align="right" sortable />
+        <el-table-column label="可售天数" width="80" align="right" sortable prop="available_days">
+          <template #default="{ row }">
+            <el-tag v-if="row.available_days === null" type="info" size="small" effect="plain">∞</el-tag>
+            <el-tag v-else-if="row.alert_level === 'emergency'" type="danger" size="small" effect="dark">{{ row.available_days }}</el-tag>
+            <el-tag v-else-if="row.alert_level === 'warning'" type="warning" size="small" effect="dark">{{ row.available_days }}</el-tag>
+            <el-tag v-else type="success" size="small" effect="plain">{{ row.available_days }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="预警" width="70" align="center" sortable prop="alert_level">
+          <template #default="{ row }">
+            <el-tag v-if="row.alert_level === 'emergency'" type="danger" size="small" effect="dark">紧急</el-tag>
+            <el-tag v-else-if="row.alert_level === 'warning'" type="warning" size="small" effect="dark">预警</el-tag>
+            <el-tag v-else type="success" size="small" effect="plain">正常</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="库存状态" width="100" align="center">
           <template #default="{ row }"><el-tag :type="statusTagType(row.status)" size="small" effect="dark">{{ row.status_label }}</el-tag></template>
         </el-table-column>
       </el-table>

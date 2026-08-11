@@ -47,5 +47,7 @@ class ReplenishmentRow(BaseModel):
     # 最终结果
     replenishment_qty_raw: float = 0.0
     suggested_replenishment: str = "♥☺♥"  # "♥☺♥" 或数字字符串
+    available_days: Optional[float] = None
+    alert_level: str = "normal"  # emergency / warning / normal
 
     model_config = {"from_attributes": True}

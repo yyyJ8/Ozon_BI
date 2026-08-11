@@ -2,9 +2,11 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { Document, Van, Box, CircleCheck, CircleClose, TrendCharts } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import type { Product, OrderListItem } from '@/types'
 import { useOrders } from '@/composables/useOrders'
 import { useLocalDateRange } from '@/composables/useLocalDateRange'
+import { getSkuNote, saveSkuNote } from '@/api'
 
 const props = defineProps<{
   dateRange: [string, string] | null
@@ -89,6 +91,19 @@ let trendChart: echarts.ECharts | null = null
 function renderTrendChart() {
   if (!trendChart || !trend.value.length) return
   const dates = trend.value.map(d => d.date.slice(5))
+  const fullDates = trend.value.map(d => d.date)
+  trendChart.off('click')
+  trendChart.getZr().off('click')
+  trendChart.getZr().on('click', (e: any) => {
+    if (!selectedSkuId.value) return
+    const pointInGrid = trendChart.convertFromPixel({ seriesIndex: 0 }, [e.offsetX, e.offsetY])
+    const dataIdx = Math.round(pointInGrid[0])
+    if (dataIdx >= 0 && dataIdx < fullDates.length) {
+      noteDate.value = fullDates[dataIdx]
+      noteVisible.value = true
+      loadNote()
+    }
+  })
   trendChart.setOption({
     tooltip: {
       trigger: 'axis',
@@ -112,6 +127,11 @@ function renderTrendChart() {
         name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled),
         lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
         symbol: 'circle', symbolSize: 4,
+        markPoint: noteDates.value.length ? {
+          symbol: 'pin', symbolSize: 35, symbolOffset: [0, -8],
+          itemStyle: { color: '#f56c6c' },
+          data: noteDates.value.map(d => ({ coord: [d.slice(5), 'max'] })),
+        } : undefined,
       },
       {
         name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled - d.client_return),
@@ -155,6 +175,50 @@ function formatDate(v: string | null) {
 // ── 分页 ──────────────────────────────────────────────────
 function onPageChange(page: number) { currentPage.value = page }
 function onPageSizeChange(size: number) { pageSize.value = size; currentPage.value = 1 }
+
+// ── SKU 每日备注 ────────────────────────────────────────
+const noteVisible = ref(false)
+const noteDate = ref('')
+const noteContent = ref('')
+const noteLoading = ref(false)
+const noteDates = ref<string[]>([])
+
+async function refreshNoteDates() {
+  // 当前不支持批量查，用趋势数据匹配
+  noteDates.value = []
+}
+watch(selectedSkuId, async (sid) => {
+  if (!sid) { noteDates.value = []; return }
+  // 简单方案：载入后本地记录有备注的日期
+  noteDates.value = []
+})
+
+async function loadNote() {
+  if (!selectedSkuId.value || !noteDate.value) return
+  noteLoading.value = true
+  try {
+    const r = await getSkuNote(selectedSkuId.value, noteDate.value)
+    noteContent.value = r.content || ''
+  } catch { noteContent.value = '' }
+  finally { noteLoading.value = false }
+}
+
+async function handleSaveNote() {
+  if (!selectedSkuId.value || !noteDate.value) return
+  noteLoading.value = true
+  try {
+    await saveSkuNote(selectedSkuId.value, noteDate.value, noteContent.value)
+    if (noteContent.value && !noteDates.value.includes(noteDate.value)) {
+      noteDates.value.push(noteDate.value)
+      if (chartReady) renderTrendChart()
+    } else if (!noteContent.value) {
+      noteDates.value = noteDates.value.filter(d => d !== noteDate.value)
+      if (chartReady) renderTrendChart()
+    }
+    ElMessage.success('已保存')
+  } catch { ElMessage.error('保存失败') }
+  finally { noteLoading.value = false }
+}
 
 // ── 详情：该订单财务汇总 ──────────────────────────────────
 const financeSummary = computed(() => {
@@ -303,7 +367,7 @@ const financeSummary = computed(() => {
           <div style="display:flex;align-items:center;gap:12px;">
             <span style="font-weight:600;">{{ viewMode === 'posting' ? '订单明细' : 'SKU 统计' }}</span>
             <el-button v-if="viewMode === 'posting'" size="small" @click="clearSkuFilter">← 返回 SKU 统计</el-button>
-            <el-tag v-if="selectedSkuId && viewMode === 'posting'" type="warning" size="small">
+            <el-tag v-if="selectedSkuId" type="warning" closable size="small" @close="clearSkuFilter">
               {{ selectedSkuName }}
             </el-tag>
           </div>
@@ -619,6 +683,16 @@ const financeSummary = computed(() => {
       </template>
       <div v-else style="text-align:center;color:#c0c4cc;padding:40px;">加载中...</div>
     </el-drawer>
+
+    <!-- SKU 每日备注弹窗 -->
+    <el-dialog v-model="noteVisible" :title="`操作记录 — ${noteDate}`" width="450px" destroy-on-close>
+      <el-input v-model="noteContent" type="textarea" :rows="5" maxlength="100" show-word-limit
+        placeholder="记录当天的操作（不超过100字）" :disabled="noteLoading" />
+      <template #footer>
+        <el-button @click="noteVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveNote" :loading="noteLoading">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

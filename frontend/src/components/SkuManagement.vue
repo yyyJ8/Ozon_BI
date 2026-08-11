@@ -107,7 +107,7 @@ const COLUMNS: ColDef[] = [
 
   // -- 财务 --
   { key: 'exchange_rate', label: '汇率', width: 65, group: '财务', editable: true, type: 'number' },
-  { key: 'green_price_rub', label: '绿标价 ₽', width: 95, group: '财务', editable: true, type: 'number' },
+  { key: 'green_price_rub', label: '绿标价 ₽', width: 95, group: '财务', editable: true, type: 'number', fixed: 'left' },
   { key: 'discount_pct', label: '折扣%', width: 70, group: '财务', type: 'pct' },
   { key: 'platform_payout_rub', label: '平台打款 ₽', width: 105, group: '财务', type: 'number' },
   { key: 'actual_payout_rub', label: '实际回款 ₽', width: 105, group: '财务', type: 'number' },
@@ -621,6 +621,7 @@ watch(selectedStoreId, fetchData)
       <!-- 售价 -->
       <el-table-column
         key="price"
+        prop="price"
         label="售价 ₽"
         width="90"
         fixed="left"
@@ -634,9 +635,25 @@ watch(selectedStoreId, fetchData)
         </template>
       </el-table-column>
 
+      <!-- 绿标价 -->
+      <el-table-column
+        key="green_price_rub"
+        prop="green_price_rub"
+        label="绿标价 ₽"
+        width="95"
+        fixed="left"
+      >
+        <template #default="{ row }">
+          <span style="font-weight: 600; font-size: 13px;">
+            {{ row.green_price_rub ? '₽ ' + row.green_price_rub.toLocaleString('ru-RU') : '—' }}
+          </span>
+        </template>
+      </el-table-column>
+
       <!-- 库存 -->
       <el-table-column
         key="stock_present"
+        prop="stock_present"
         label="库存"
         width="65"
         fixed="left"

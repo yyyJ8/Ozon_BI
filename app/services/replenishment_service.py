@@ -187,6 +187,8 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
             weighted_daily = _calc_weighted_daily(sales_3, sales_7, sales_14, sales_30)
             qty_raw = _calc_replenishment_qty(weighted_daily, stock, cb_total, dom_in_transit, safety, logistics)
             suggested = _calc_suggested(qty_raw)
+            available_days = _calc_available_days(stock, cb_total, dom_in_transit, weighted_daily)
+            alert_level = _calc_alert_level(available_days, safety, logistics)
 
             results.append({
                 "store_id": cfg.store_id,
@@ -215,6 +217,8 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
                 # 最终结果
                 "replenishment_qty_raw": round(qty_raw, 2),
                 "suggested_replenishment": suggested,
+                "available_days": available_days,
+                "alert_level": alert_level,
             })
 
         return results
@@ -252,6 +256,24 @@ def _calc_suggested(qty_raw: float) -> str:
     if qty_raw <= 0:
         return "♥☺♥"
     return str(math.ceil(qty_raw))
+
+
+def _calc_available_days(stock: int, cross_border: int, domestic: int, weighted_daily: float) -> float | None:
+    """可售天数 = (库存 + 跨境在途 + 国内在途) / 加权日销量"""
+    if weighted_daily <= 0:
+        return None  # 无销量，可理解为无限
+    return round((stock + cross_border + domestic) / weighted_daily, 1)
+
+
+def _calc_alert_level(available_days: float | None, safety_days: int, logistics_days: int) -> str:
+    """预警等级: emergency / warning / normal"""
+    if available_days is None:
+        return "normal"  # 无销量=无风险
+    if available_days <= safety_days:
+        return "emergency"
+    if available_days <= safety_days + logistics_days:
+        return "warning"
+    return "normal"
 
 
 def _get_domestic_in_transit(sku_ids: list[int]) -> dict[int, int]:

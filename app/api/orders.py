@@ -1,5 +1,5 @@
 """订单分析 API — 以 ozon.postings 表为主体，LEFT JOIN returns/finance_transactions 补充上下文"""
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -17,6 +17,7 @@ from app.schemas.orders import (
     OrderReturn,
     OrderFinance,
     OrderSkuStats,
+    SkuDailyNote,
 )
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -469,6 +470,44 @@ def sku_stats(
     ]
 
 
+
+
+# ── SKU 每日备注 ──────────────────────────────────────────
+
+@router.get("/sku-notes", response_model=SkuDailyNote)
+def get_sku_note(
+    sku_id: int = Query(...),
+    record_date: date = Query(...),
+    store_id: int = STORE_ID,
+    db: Session = Depends(get_db),
+):
+    row = db.execute(text("SELECT content FROM ozon.sku_daily_notes WHERE store_id = :sid AND sku_id = :sku AND record_date = :d"),
+                     {"sid": store_id if store_id != 0 else 1, "sku": sku_id, "d": record_date}).fetchone()
+    return SkuDailyNote(content=row[0] if row else None)
+
+
+@router.put("/sku-notes", response_model=SkuDailyNote)
+def save_sku_note(
+    sku_id: int = Query(...),
+    record_date: date = Query(...),
+    body: SkuDailyNote = None,
+    store_id: int = STORE_ID,
+    db: Session = Depends(get_db),
+):
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from app.models import SkuDailyNote as NoteModel
+    content = body.content if body else None
+    db.execute(pg_insert(NoteModel).values(
+        store_id=store_id if store_id != 0 else 1, sku_id=sku_id, record_date=record_date,
+        content=content, updated_at=datetime.utcnow(),
+    ).on_conflict_do_update(
+        index_elements=["store_id", "sku_id", "record_date"],
+        set_={"content": content, "updated_at": datetime.utcnow()},
+    ))
+    db.commit()
+    return SkuDailyNote(content=content)
+
+
 @router.get("/{posting_number}", response_model=OrderDetail)
 def order_detail(
     posting_number: str,
@@ -568,3 +607,5 @@ def order_detail(
         returns=returns,
         finance_transactions=finance,
     )
+
+
