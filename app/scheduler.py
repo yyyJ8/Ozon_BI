@@ -37,16 +37,19 @@ def daily_snapshot():
                     INSERT INTO ozon.sku_daily_snapshot
                         (store_id, sku_id, record_date, offer_id,
                          price, old_price, marketing_seller_price, min_price,
+                         green_price, discount_pct,
                          stock_present, stock_reserved, synced_at)
                     SELECT
                         p.store_id, p.sku_id, :today, p.offer_id,
                         p.price, p.old_price, p.marketing_seller_price, p.min_price,
+                        m.green_price_rub, m.discount_pct,
                         COALESCE(s.present, 0), COALESCE(s.reserved, 0), now()
                     FROM ozon.products p
                     LEFT JOIN (
                         SELECT store_id, sku_id, SUM(present) AS present, SUM(reserved) AS reserved
                         FROM ozon.stocks GROUP BY store_id, sku_id
                     ) s ON p.store_id = s.store_id AND p.sku_id = s.sku_id
+                    LEFT JOIN ozon.sku_management m ON p.store_id = m.store_id AND p.sku_id = m.sku_id
                     WHERE p.store_id = :sid
                     ON CONFLICT (store_id, sku_id, record_date) DO NOTHING
                 """), {"today": today, "sid": store.id})

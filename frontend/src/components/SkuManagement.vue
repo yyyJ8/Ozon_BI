@@ -2,10 +2,10 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Search, Refresh, Edit,
+  Search, Refresh, Edit, Delete,
 } from '@element-plus/icons-vue'
 import type { SkuManagementRow, SkuManagementUpdate } from '@/types'
-import { getSkuManagement, batchUpdateSkuManagement } from '@/api'
+import { getSkuManagement, batchUpdateSkuManagement, deleteSkuManagement } from '@/api'
 import { useStore } from '@/composables/useStore'
 
 const { selectedStoreId } = useStore()
@@ -13,21 +13,22 @@ const { selectedStoreId } = useStore()
 // ── 字段分类（与后端 sku_formulas.py 保持一致）─────────────
 
 const INPUT_FIELDS = [
-  'main_sku', 'source_url_1688', 'specification', 'sales_manager',
+  'main_sku', 'product_cn_name', 'source_url_1688', 'specification', 'sales_manager',
   'listed_stores', 'product_status', 'key_notes',
   'length_cm', 'width_cm', 'height_cm', 'actual_weight_kg',
   'first_leg_unit_price', 'units_per_carton',
-  'carton_length_cm', 'carton_width_cm', 'carton_height_cm', 'gross_weight_kg',
-  'purchase_cost_rmb', 'purchase_cost_pct',
-  'acquiring_fee_pct', 'fbo_commission_pct',
+  'carton_length_cm', 'carton_width_cm', 'carton_height_cm',
+  'purchase_cost_rmb',
+  'acquiring_fee_pct',
   'delivery_pickup_rub', 'advertising_rate_pct', 'return_rate_pct',
-  'product_cost_rmb', 'exchange_rate', 'green_price_rub',
+  'exchange_rate', 'green_price_rub',
   'competitor_1', 'competitor_2', 'competitor_sales',
 ]
 
 const COMPUTED_FIELDS = [
-  'volume_cbm', 'density', 'volume_liters',
-  'warehousing_fee_rmb', 'fbo_delivery_fee_rmb', 'first_leg_cost_rmb',
+  'volume_cbm', 'density', 'volume_liters', 'gross_weight_kg',
+  'warehousing_fee_rmb', 'fbo_delivery_fee_rmb', 'first_leg_cost_rmb', 'product_cost_rmb',
+  'purchase_cost_pct',
   'logistics_rub', 'first_leg_pct', 'last_mile_pct', 'discount_pct',
   'platform_payout_rub', 'actual_payout_rub', 'tax_and_fee_pct',
   'risk_reserve_rub', 'profit_rmb', 'profit_rub', 'profit_margin_pct',
@@ -82,21 +83,21 @@ const COLUMNS: ColDef[] = [
   { key: 'carton_length_cm', label: '外箱长 cm', width: 80, group: '包装', editable: true, type: 'number' },
   { key: 'carton_width_cm', label: '外箱宽 cm', width: 80, group: '包装', editable: true, type: 'number' },
   { key: 'carton_height_cm', label: '外箱高 cm', width: 80, group: '包装', editable: true, type: 'number' },
-  { key: 'gross_weight_kg', label: '毛重 kg', width: 75, group: '包装', editable: true, type: 'number' },
+  { key: 'gross_weight_kg', label: '毛重 kg', width: 75, group: '包装', type: 'number' },
   { key: 'volume_liters', label: '升', width: 60, group: '包装', type: 'number' },
 
   // -- 成本RMB --
   { key: 'purchase_cost_rmb', label: '采购成本 ¥', width: 95, group: '成本', editable: true, type: 'number' },
-  { key: 'purchase_cost_pct', label: '采购占比%', width: 85, group: '成本', editable: true, type: 'pct' },
+  { key: 'purchase_cost_pct', label: '采购占比%', width: 85, group: '成本', type: 'pct' },
   { key: 'warehousing_fee_rmb', label: '入库费 ¥', width: 85, group: '成本', type: 'number' },
   { key: 'fbo_delivery_fee_rmb', label: '送仓费 ¥', width: 85, group: '成本', type: 'number' },
-  { key: 'first_leg_cost_rmb', label: '头程费 ¥', width: 90, group: '成本', type: 'number' },
+  { key: 'first_leg_cost_rmb', label: '实际头程费用 ¥', width: 90, group: '成本', type: 'number' },
   { key: 'first_leg_pct', label: '头程占比%', width: 90, group: '成本', type: 'pct' },
-  { key: 'product_cost_rmb', label: '产品成本 ¥', width: 100, group: '成本', editable: true, type: 'number' },
+  { key: 'product_cost_rmb', label: '产品成本 ¥', width: 100, group: '成本', type: 'number' },
 
   // -- 平台费用 --
   { key: 'acquiring_fee_pct', label: '收单%', width: 65, group: '费用', editable: true, type: 'pct' },
-  { key: 'fbo_commission_pct', label: '佣金%', width: 65, group: '费用', editable: true, type: 'pct' },
+  { key: 'fbo_commission_pct', label: '佣金%', width: 65, group: '费用', type: 'pct' },
   { key: 'logistics_rub', label: '物流 ₽', width: 80, group: '费用', type: 'number' },
   { key: 'delivery_pickup_rub', label: '配送 ₽', width: 80, group: '费用', editable: true, type: 'number' },
   { key: 'last_mile_pct', label: '尾程%', width: 70, group: '费用', type: 'pct' },
@@ -162,6 +163,7 @@ const filteredRows = computed(() => {
     String(r.sku_id).includes(s) ||
     (r.offer_id || '').toLowerCase().includes(s) ||
     (r.name || '').toLowerCase().includes(s) ||
+    (r.product_cn_name || '').toLowerCase().includes(s) ||
     (r.main_sku || '').toLowerCase().includes(s)
   )
 })
@@ -342,6 +344,7 @@ const DIALOG_FIELDS: EditFieldDef[] = [
   // ── 基本信息（无公式）───────────────────────────────────
   { key: '_g1', label: '基本信息', _group: true },
   { key: 'main_sku', label: '主SKU', type: 'text', span: 1 },
+  { key: 'product_cn_name', label: '中文名称', type: 'text', span: 2 },
   { key: 'source_url_1688', label: '1688链接', type: 'text', span: 2 },
   { key: 'specification', label: '规格', type: 'text', span: 2 },
   { key: 'sales_manager', label: '负责人', type: 'text', span: 1 },
@@ -364,34 +367,37 @@ const DIALOG_FIELDS: EditFieldDef[] = [
   // ── 包装 ─────────────────────────────────────────────────
   { key: '_g3', label: '包装', _group: true, _formulas: [
     '升 = 内盒长 × 内盒宽 × 内盒高 ÷ 1,000',
+    '毛重 = 实重 ÷ 装箱数',
   ]},
   { key: 'first_leg_unit_price', label: '头程单价', type: 'number', span: 1 },
   { key: 'units_per_carton', label: '装箱数', type: 'int', span: 1 },
   { key: 'carton_length_cm', label: '内盒长 cm', type: 'number', span: 1 },
   { key: 'carton_width_cm', label: '内盒宽 cm', type: 'number', span: 1 },
   { key: 'carton_height_cm', label: '内盒高 cm', type: 'number', span: 1 },
-  { key: 'gross_weight_kg', label: '内盒毛重 kg', type: 'number', span: 1 },
   { key: 'volume_liters', label: '升', _result: true },
+  { key: 'gross_weight_kg', label: '毛重 kg', _result: true },
 
   // ── 成本 ─────────────────────────────────────────────────
   { key: '_g4', label: '成本', _group: true, _formulas: [
     '入库费 = 实重 × 3 ÷ 装箱数',
     '送仓费 = 阶梯{ <10→5 | ≤20→10 | <40→15 | ≥40→20 }',
-    '头程费 = 实重 × 头程单价 × 7 ÷ 装箱数 + 入库费 + 送仓费',
+    '实际头程费用 = 实重 × 头程单价 × 7 ÷ 装箱数',
+    '产品成本 = 采购成本 + 送仓费 + 实际头程费用 × 1.06',
+    '采购占比 = 采购成本 × 汇率 ÷ 售价 × 100',
   ]},
   { key: 'purchase_cost_rmb', label: '采购成本 ¥', type: 'number', span: 1 },
-  { key: 'purchase_cost_pct', label: '采购占比 %', type: 'pct', span: 1 },
-  { key: 'product_cost_rmb', label: '产品成本 ¥', type: 'number', span: 1 },
   { key: 'warehousing_fee_rmb', label: '入库费 ¥', _result: true },
   { key: 'fbo_delivery_fee_rmb', label: '送仓费 ¥', _result: true },
-  { key: 'first_leg_cost_rmb', label: '头程费 ¥', _result: true },
+  { key: 'first_leg_cost_rmb', label: '实际头程费用 ¥', _result: true },
+  { key: 'product_cost_rmb', label: '产品成本 ¥', _result: true },
+  { key: 'purchase_cost_pct', label: '采购占比 %', _result: true },
 
   // ── 平台费率 ─────────────────────────────────────────────
   { key: '_g5', label: '平台费率', _group: true, _formulas: [
     '物流 ₽ = 阶梯{ <1→46 | 1~2→56 | 2~3→66 | ≥3→CEILING(升-3)×15+66 }',
   ]},
   { key: 'acquiring_fee_pct', label: '收单 %', type: 'pct', span: 1 },
-  { key: 'fbo_commission_pct', label: '佣金 %', type: 'pct', span: 1 },
+  { key: 'fbo_commission_pct', label: '佣金 %', _result: true },
   { key: 'delivery_pickup_rub', label: '配送至取货点 ₽', type: 'number', span: 1 },
   { key: 'advertising_rate_pct', label: '广告费率 %', type: 'pct', span: 1 },
   { key: 'return_rate_pct', label: '退货率 %', type: 'pct', span: 1 },
@@ -399,11 +405,11 @@ const DIALOG_FIELDS: EditFieldDef[] = [
 
   // ── 财务（公式链，依赖售价）──────────────────────────────
   { key: '_g6', label: '财务', _group: true, _formulas: [
-    '头程占比 = 头程费 × 汇率 ÷ 售价',
+    '头程占比 = 实际头程费用 × 1.06 × 汇率 ÷ 售价',
     '尾程占比 = (物流 + 配送) ÷ 售价 + 收单',
     '折扣 = 1 - 绿标价 ÷ 售价',
     '平台打款 = 售价 × (1 - 尾程占比 - 广告费率 - 退货率 - 佣金)',
-    '实际回款 = 平台打款 - (售价 × 2% + 平台打款 × 8%)',
+    '实际回款 = 平台打款 - 售价×1% - (平台打款 - 实际头程费用×1.06×汇率)×11%',
     '税点+手续费 = (平台打款 - 实际回款) ÷ 售价',
     '风险金 = 售价 × 1%',
     '利润 RMB = (实际回款 - 风险金) ÷ 汇率 - 产品成本',
@@ -513,6 +519,32 @@ async function onDialogSave() {
   }
 }
 
+async function onDeleteRow(row: SkuManagementRow) {
+  const label = row.product_cn_name || row.name || row.offer_id || String(row.sku_id)
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${label}」吗？删除后将从列表隐藏（数据保留，可恢复）。`,
+      '删除确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+
+  saving.value = true
+  try {
+    await deleteSkuManagement(row.sku_id, selectedStoreId.value)
+    // 从本地列表移除该行 + 关闭弹窗
+    rows.value = rows.value.filter(r => r.sku_id !== row.sku_id)
+    dialogVisible.value = false
+    ElMessage.success(`已删除「${label}」`)
+  } catch (e: any) {
+    ElMessage.error('删除失败: ' + (e.message || '未知'))
+  } finally {
+    saving.value = false
+  }
+}
+
 // ── 生命周期 ──────────────────────────────────────────────
 
 onMounted(fetchData)
@@ -608,7 +640,7 @@ watch(selectedStoreId, fetchData)
         </template>
       </el-table-column>
 
-      <!-- 商品名称 -->
+      <!-- 商品名称（优先中文名，回退俄语名）-->
       <el-table-column
         key="name"
         prop="name"
@@ -616,7 +648,11 @@ watch(selectedStoreId, fetchData)
         min-width="180"
         fixed="left"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          {{ row.product_cn_name || row.name || '—' }}
+        </template>
+      </el-table-column>
 
       <!-- 售价 -->
       <el-table-column
@@ -808,8 +844,20 @@ watch(selectedStoreId, fetchData)
         </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="onDialogSave">确定</el-button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <el-button
+            type="danger"
+            plain
+            :icon="Delete"
+            @click="editingRow && onDeleteRow(editingRow)"
+          >
+            删除
+          </el-button>
+          <div>
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="onDialogSave">确定</el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
   </div>

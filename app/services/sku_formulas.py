@@ -18,15 +18,16 @@ INPUT_FIELDS = [
     "length_cm", "width_cm", "height_cm", "actual_weight_kg",
     # 头程 & 装箱
     "first_leg_unit_price", "units_per_carton",
-    # 内盒尺寸重量
-    "carton_length_cm", "carton_width_cm", "carton_height_cm", "gross_weight_kg",
+    # 内盒尺寸
+    "carton_length_cm", "carton_width_cm", "carton_height_cm",
     # 成本
-    "purchase_cost_rmb", "purchase_cost_pct",
+    "purchase_cost_rmb",
     # 平台费率 (百分比以小数存储，如 0.02 = 2%)
-    "acquiring_fee_pct", "fbo_commission_pct",
+    # 注意：fbo_commission_pct 从 products.commission_fbo_pct 自动读取，不在输入字段中
+    "acquiring_fee_pct",
     "delivery_pickup_rub", "advertising_rate_pct", "return_rate_pct",
     # 财务
-    "product_cost_rmb", "exchange_rate", "green_price_rub",
+    "exchange_rate", "green_price_rub",
     # 竞品
     "competitor_1", "competitor_2", "competitor_sales",
 ]
@@ -36,9 +37,11 @@ COMPUTED_FIELDS = [
     "volume_cbm",          # 外箱体积
     "density",             # 密度
     "volume_liters",       # 升
+    "gross_weight_kg",     # 毛重 = 实重 ÷ 装箱数
     "warehousing_fee_rmb", # 入库费
     "fbo_delivery_fee_rmb",# FBO送仓费
-    "first_leg_cost_rmb",  # 头程费用
+    "first_leg_cost_rmb",  # 实际头程费用 = 实重×头程单价×7÷装箱数
+    "product_cost_rmb",    # 产品成本 = 采购成本 + 送仓费 + 实际头程费用×1.06
     "logistics_rub",       # 物流₽
     "first_leg_pct",       # 头程占比
     "last_mile_pct",       # 尾程运费占比
@@ -49,6 +52,7 @@ COMPUTED_FIELDS = [
     "risk_reserve_rub",    # 风险储备金
     "profit_rmb",          # 利润RMB
     "profit_rub",          # 利润₽
+    "purchase_cost_pct",   # 采购成本占比
     "profit_margin_pct",   # 利润率
     "target_price_3pct",   # 3%利润率目标售价
     "target_price_5pct",   # 5%利润率目标售价
@@ -122,7 +126,6 @@ def compute_formulas(
     AG = _pct(inputs.get("advertising_rate_pct"))   # 广告费率
     AH = _pct(inputs.get("return_rate_pct"))        # 退货率
 
-    AI = _f(inputs.get("product_cost_rmb"))       # 产品成本RMB
     AJ = _f(inputs.get("exchange_rate"))          # 汇率
     AL = _f(inputs.get("green_price_rub"))        # 绿标价格
 
@@ -147,6 +150,9 @@ def compute_formulas(
         U = round(U, 2)
     result["volume_liters"] = U
 
+    # --- Step 3b: 毛重 = 实重 ÷ 装箱数 ---
+    result["gross_weight_kg"] = round(_safe_div(W_kg, P), 2) if W_kg is not None and P is not None and P != 0 else None
+
     # --- Step 4: 入库费 (X) = L*3 / P ---
     X = None
     if W_kg is not None and P is not None and P != 0:
@@ -167,12 +173,17 @@ def compute_formulas(
             Y = 20.0
     result["fbo_delivery_fee_rmb"] = Y
 
-    # --- Step 6: 头程费用 (Z) = L*(O*7)/P + X + Y ---
+    # --- Step 6: 实际头程费用 (Z) = 实重 × (头程单价×7) ÷ 装箱数 ---
     Z = None
-    if W_kg is not None and O is not None and P is not None and P != 0 and X is not None and Y is not None:
-        Z = W_kg * (O * 7) / P + X + Y
+    if W_kg is not None and O is not None and P is not None and P != 0:
+        Z = W_kg * (O * 7) / P
         Z = round(Z, 2)
     result["first_leg_cost_rmb"] = Z
+
+    # --- Step 6b: 产品成本 = 采购成本 + 送仓费 + 实际头程费用×1.06 ---
+    V_val = _f(inputs.get("purchase_cost_rmb"))  # 采购成本RMB
+    AI = round(V_val + Y + Z * 1.06, 2) if V_val is not None and Y is not None and Z is not None else None  # noqa: F841
+    result["product_cost_rmb"] = AI
 
     # --- Step 7: 物流₽ (AD) = tiered IF on U ---
     AD = None
@@ -188,8 +199,11 @@ def compute_formulas(
         AD = float(AD)
     result["logistics_rub"] = AD
 
-    # --- Step 8: 头程占比 (AA) = Z*AJ / AK × 100 ---
-    result["first_leg_pct"] = round(_safe_div(Z * AJ, AK) * 100, 2) if Z is not None and AJ is not None and AK is not None else None
+    # --- Step 8: 头程占比 (AA) = 实际头程费用×1.06×汇率 / 售价 × 100 ---
+    result["first_leg_pct"] = round(_safe_div(Z * 1.06 * AJ, AK) * 100, 2) if Z is not None and AJ is not None and AK is not None else None
+
+    # --- Step 8b: 采购成本占比 = 采购成本RMB × 汇率 ÷ 售价 × 100 ---
+    result["purchase_cost_pct"] = round(_safe_div(V_val * AJ, AK) * 100, 2) if V_val is not None and AJ is not None and AK is not None else None
 
     # --- Step 9: 尾程运费占比 (AF) = (AD+AE)/AK + AB ---
     AF = None
@@ -208,10 +222,10 @@ def compute_formulas(
         AN = round(AN, 2)
     result["platform_payout_rub"] = AN
 
-    # --- Step 12: 实际回款 (AO) = AN - (AK*0.02 + AN*0.08) ---
+    # --- Step 12: 实际回款 (AO) = AN - 售价×1% - (AN - 实际头程费用×1.06×汇率)×11% ---
     AO = None
-    if AN is not None and AK is not None:
-        AO = AN - (AK * 0.02 + AN * 0.08)
+    if AN is not None and AK is not None and Z is not None and AJ is not None:
+        AO = AN - AK * 0.01 - (AN - Z * 1.06 * AJ) * 0.11
         AO = round(AO, 2)
     result["actual_payout_rub"] = AO
 
