@@ -28,8 +28,9 @@ def _moscow_today() -> date:
 
 
 def _upsert_snapshot(db: Session, store_id: int, sku_id: int, record_date: date, values: dict) -> None:
-    """将 sku_management 的绿标价/折扣同步到 sku_daily_snapshot 当日记录。
+    """将 sku_management 的绿标价同步到 sku_daily_snapshot 当日记录。
 
+    折扣在 SQL 中按 1 - 绿标价 ÷ 售价 实时计算，保证与当天售价自洽。
     当日记录不存在则创建（价格/库存取自 products + stocks，与 scheduler 相同），
     已存在则只更新 green_price / discount_pct / synced_at，不覆盖历史快照的价格与库存。
     """
@@ -42,7 +43,14 @@ def _upsert_snapshot(db: Session, store_id: int, sku_id: int, record_date: date,
         SELECT
             p.store_id, p.sku_id, :record_date, p.offer_id,
             p.price, p.old_price, p.marketing_seller_price, p.min_price,
-            :green_price, :discount_pct,
+            :green_price,
+            CASE
+                WHEN :green_price IS NOT NULL
+                     AND p.marketing_seller_price IS NOT NULL
+                     AND p.marketing_seller_price > 0
+                THEN ROUND((1 - :green_price / p.marketing_seller_price) * 100, 2)
+                ELSE NULL
+            END,
             COALESCE(s.present, 0), COALESCE(s.reserved, 0), now()
         FROM ozon.products p
         LEFT JOIN (
@@ -59,7 +67,6 @@ def _upsert_snapshot(db: Session, store_id: int, sku_id: int, record_date: date,
         "sku_id": sku_id,
         "record_date": record_date,
         "green_price": values.get("green_price"),
-        "discount_pct": values.get("discount_pct"),
     })
 
 
@@ -214,11 +221,10 @@ def batch_update(
                 db.add(SkuManagement(store_id=sid, sku_id=item.sku_id, **update_data))
             updated += 1
 
-            # 绿标价被修改时，将最新绿标价 + 重算后的折扣同步到快照表当日记录
+            # 绿标价被修改时，同步到快照表当日记录（折扣由快照 SQL 按当天售价计算）
             if "green_price_rub" in user_input:
                 snapshot_sync[(sid, item.sku_id)] = {
                     "green_price": update_data.get("green_price_rub"),
-                    "discount_pct": update_data.get("discount_pct"),
                 }
 
     # 与 sku_management 同事务写入快照表（避免前端保存后快照仍是旧值）

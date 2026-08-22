@@ -128,6 +128,25 @@ def sync_products(db: Session, client: OzonClient, store_id: int) -> dict:
                     prices_updated += 1
             db.commit()
             logger.info(f"[store={store_id}] v5 促销价更新: {prices_updated} 商品")
+            # 售价变化后重算 sku_management 折扣（折扣 = 1 - 绿标价 ÷ 售价）
+            # 售价由 Ozon 自动同步，不经过公式引擎，这里保持主表折扣与最新售价自洽
+            if prices_updated > 0:
+                recalc = db.execute(text("""
+                    UPDATE ozon.sku_management m
+                    SET discount_pct = CASE
+                            WHEN m.green_price_rub IS NOT NULL
+                                 AND p.marketing_seller_price IS NOT NULL
+                                 AND p.marketing_seller_price > 0
+                            THEN ROUND((1 - m.green_price_rub / p.marketing_seller_price) * 100, 2)
+                            ELSE NULL
+                        END
+                    FROM ozon.products p
+                    WHERE p.store_id = m.store_id AND p.sku_id = m.sku_id
+                      AND p.store_id = :sid
+                """), {"sid": store_id})
+                db.commit()
+                if recalc.rowcount:
+                    logger.info(f"[store={store_id}] 售价同步后重算折扣: {recalc.rowcount} SKU")
         except Exception as e:
             logger.warning(f"[store={store_id}] v5 价格同步失败: {e}")
             db.rollback()

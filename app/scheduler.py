@@ -42,7 +42,14 @@ def daily_snapshot():
                     SELECT
                         p.store_id, p.sku_id, :today, p.offer_id,
                         p.price, p.old_price, p.marketing_seller_price, p.min_price,
-                        m.green_price_rub, m.discount_pct,
+                        m.green_price_rub,
+                        CASE
+                            WHEN m.green_price_rub IS NOT NULL
+                                 AND p.marketing_seller_price IS NOT NULL
+                                 AND p.marketing_seller_price > 0
+                            THEN ROUND((1 - m.green_price_rub / p.marketing_seller_price) * 100, 2)
+                            ELSE NULL
+                        END,
                         COALESCE(s.present, 0), COALESCE(s.reserved, 0), now()
                     FROM ozon.products p
                     LEFT JOIN (
