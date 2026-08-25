@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     sync_cron_hours: str = "9,19"  # 每天几点执行全量同步（逗号分隔）
     ad_sync_days: int = 3          # 每次同步拉取最近N天的广告SKU明细
 
+    # ── 直发附件存储（文件系统目录；为空则回退存数据库）──
+    direct_file_dir: str = "./data/ozon_direct_files"
+
+    # ── 钉钉机器人通知（为空则不发送）──
+    dingtalk_webhook_url: str = ""
+    dingtalk_secret: str = ""
+
     @property
     def database_url(self) -> str:
         return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"

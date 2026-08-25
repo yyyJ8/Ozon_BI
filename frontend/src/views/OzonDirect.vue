@@ -130,11 +130,8 @@
               >
                 <template #prefix><el-icon><Search /></el-icon></template>
               </el-input>
-              <el-select v-model="shipGroupBy" style="width: 160px;" @change="onShipGroupByChange">
-                <el-option label="按收货情况分组" value="receiving_status" />
-                <el-option label="按收货上架分组" value="is_received" />
-                <el-option label="按物流商分组" value="logistics_provider" />
-              </el-select>
+              <el-button :type="shipConds.length ? 'primary' : 'default'" @click="shipFilterDialogVisible = true">筛选{{ shipConds.length ? `(${shipConds.length})` : '' }}</el-button>
+              <el-button :type="shipGroupFields.length > 1 ? 'primary' : 'default'" @click="shipGroupDialogVisible = true">分组{{ shipGroupFields.length > 1 ? `(${shipGroupFields.length})` : '' }}</el-button>
               <el-button type="primary" @click="shipment.onSearch()">搜索</el-button>
               <el-button type="success" @click="openShipmentDialog()">新增记录</el-button>
               <el-button v-if="shipSelected.length > 0" type="danger" @click="batchDeleteShipment">删除选中 ({{ shipSelected.length }})</el-button>
@@ -151,6 +148,7 @@
                 :span-method="shipSpanMethod"
                 :row-class-name="shipRowClassName"
                 style="width:100%;"
+                @filter-change="onShipFilterChange"
               >
                 <el-table-column width="40" fixed="left">
                   <template #header>
@@ -164,12 +162,11 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column prop="pr_date" label="申购时间" width="105" fixed="left">
+                <el-table-column prop="pr_date" label="申购时间" width="150" fixed="left">
                   <template #default="{ row }">
-                    <div v-if="row._type === 'group'" style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
-                      <el-checkbox :model-value="isShipGroupAllSelected(row._groupKey)" @change="(v: boolean) => toggleShipGroupAll(row._groupKey, v)" />
+                    <div v-if="row._type === 'group'" :style="{ display:'flex', alignItems:'center', gap:'6px', whiteSpace:'nowrap', paddingLeft: `${14 + row._depth * 18}px` }">
                       <span @click.stop="toggleShipGroup(row._groupKey)" style="font-size:12px;cursor:pointer;">{{ expandedShipGroups.has(row._groupKey) ? '▼' : '▶' }}</span>
-                      <span @click.stop="selectShipGroup(row._groupKey)" style="font-weight:600;cursor:pointer;font-size:13px;">{{ row._groupKey }}</span>
+                      <span @click.stop="toggleShipGroup(row._groupKey)" style="font-weight:600;cursor:pointer;font-size:13px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" :title="row._path.join(' / ')">{{ row._path[row._path.length - 1] }}</span>
                       <span style="color:#909399;font-size:12px;">({{ row._count }})</span>
                     </div>
                     <span v-else>{{ row.pr_date }}</span>
@@ -177,11 +174,11 @@
                 </el-table-column>
                 <el-table-column prop="pr_no" label="申购单号" width="140" show-overflow-tooltip fixed="left" />
                 <el-table-column prop="sku" label="SKU" width="160" show-overflow-tooltip fixed="left" />
-                <el-table-column prop="pr_person" label="申购人员" width="80" />
+                <el-table-column prop="pr_person" label="申购人员" width="110" :filters="shipFilterOptions['pr_person']" />
                 <el-table-column prop="product_cn_name" label="产品中文名" width="130" show-overflow-tooltip />
                 <el-table-column prop="previous_aftersales" label="上期售后" width="120" show-overflow-tooltip />
                 <el-table-column prop="supplier" label="供应商" width="160" show-overflow-tooltip />
-                <el-table-column prop="logistics_provider" label="物流商" width="90" />
+                <el-table-column prop="logistics_provider" label="物流商" width="110" :filters="shipFilterOptions['logistics_provider']" />
                 <el-table-column prop="first_leg_tracking" label="头程单号" width="140" show-overflow-tooltip />
                 <el-table-column prop="total_qty" label="总数" width="65" align="center" />
                 <el-table-column prop="total_boxes" label="总箱数" width="75" align="center" />
@@ -213,7 +210,7 @@
                 </el-table-column>
                 <el-table-column prop="po_no" label="采购单号" width="140" show-overflow-tooltip />
                 <el-table-column prop="online_po_no" label="网采单号" width="180" show-overflow-tooltip />
-                <el-table-column prop="is_received" label="收货上架" width="90" align="center">
+                <el-table-column prop="is_received" label="收货上架" width="110" align="center" :filters="shipFilterOptions['is_received']">
                   <template #default="{ row }">
                     <template v-if="row._type !== 'group'">
                       <el-tag :type="row.is_received === '是' ? 'success' : 'info'" size="small">{{ row.is_received || '—' }}</el-tag>
@@ -222,8 +219,8 @@
                 </el-table-column>
                 <el-table-column prop="ship_date" label="发货时间" width="105" />
                 <el-table-column prop="special_notes" label="备注" width="150" show-overflow-tooltip />
-                <el-table-column prop="shipment_no" label="货件单号" width="180" show-overflow-tooltip />
-                <el-table-column prop="receiving_status" label="收货状态" width="110" show-overflow-tooltip />
+                <el-table-column prop="shipment_no" label="货件单号" width="180" show-overflow-tooltip :filters="shipFilterOptions['shipment_no']" />
+                <el-table-column prop="receiving_status" label="收货状态" width="120" show-overflow-tooltip :filters="shipFilterOptions['receiving_status']" />
                 <el-table-column prop="receiving_date" label="收货时间" width="105" />
                 <el-table-column label="操作" width="80" fixed="right">
                   <template #default="{ row }">
@@ -234,6 +231,60 @@
             </div>
 
           </el-tab-pane>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- 直发 高级筛选 面板 -->
+        <!-- ══════════════════════════════════════════ -->
+        <el-dialog v-model="shipFilterDialogVisible" title="筛选（多字段组合）" width="780px">
+          <div style="margin-bottom:12px;color:#909399;font-size:12px;">筛选与分组可同时生效，先筛选后分组。</div>
+          <div v-for="(c, idx) in shipConds" :key="c.id" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <el-select :model-value="idx === 0 ? 'and' : c.logic" style="width:64px;" :disabled="idx === 0" @update:model-value="(v: string) => { c.logic = v as any }">
+              <el-option label="当" value="and" />
+              <el-option label="且" value="and" />
+              <el-option label="或" value="or" />
+            </el-select>
+            <el-select v-model="c.field" filterable style="width:170px;" @change="c.value = ''">
+              <el-option v-for="f in shipFieldOptions" :key="f.value" :label="f.label" :value="f.value" />
+            </el-select>
+            <el-select v-model="c.op" style="width:110px;">
+              <el-option v-for="o in condOps(shipFieldType(c.field))" :key="o.value" :label="o.label" :value="o.value" />
+            </el-select>
+            <el-select v-if="shipFieldType(c.field) === 'enum'" v-model="c.value" filterable clearable placeholder="请选择" style="width:180px;">
+              <el-option v-for="o in shipCondOptions(c.field)" :key="o.value" :label="o.label" :value="o.value" />
+            </el-select>
+            <el-date-picker v-else-if="shipFieldType(c.field) === 'date'" v-model="c.value" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width:150px;" />
+            <el-input v-else v-model="c.value" placeholder="请输入" clearable style="width:180px;" />
+            <el-button type="danger" link @click="removeShipCond(c.id)">删除</el-button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+            <el-button type="primary" @click="addShipCond">+ 添加条件</el-button>
+            <el-button @click="clearShipConds">清空</el-button>
+            <span style="margin-left:auto;color:#909399;font-size:12px;">当前 {{ shipConds.length }} 个条件</span>
+          </div>
+        </el-dialog>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- 直发 多级分组 面板 -->
+        <!-- ══════════════════════════════════════════ -->
+        <el-dialog v-model="shipGroupDialogVisible" title="分组（最多 3 级）" width="620px">
+          <div v-for="(g, i) in shipGroupFields" :key="i" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <span style="color:#909399;font-size:12px;width:32px;">{{ i + 1 }}级</span>
+            <el-select v-model="g.field" filterable style="width:210px;">
+              <el-option v-for="f in shipFieldOptions" :key="f.value" :label="f.label" :value="f.value" />
+            </el-select>
+            <el-select v-model="g.dir" style="width:100px;">
+              <el-option label="A→Z" value="asc" />
+              <el-option label="Z→A" value="desc" />
+            </el-select>
+            <el-button type="danger" link @click="removeShipGroupField(i)" :disabled="shipGroupFields.length <= 1">删除</el-button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+            <el-button type="primary" @click="addShipGroupField" :disabled="shipGroupFields.length >= 3">+ 添加分组</el-button>
+            <el-button @click="expandAllShipGroups">展开所有</el-button>
+            <el-button @click="collapseAllShipGroups">折叠所有</el-button>
+            <span style="margin-left:auto;color:#909399;font-size:12px;">已选 {{ shipGroupFields.length }} 级分组</span>
+          </div>
+        </el-dialog>
         </el-tabs>
       </el-card>
     </el-main>
@@ -254,7 +305,7 @@
     >
       <el-form :model="skuForm" label-width="80px">
         <el-form-item label="SKU" required>
-          <el-input v-model="skuForm.sku" placeholder="SKU 编码" />
+          <el-input v-model="skuForm.sku" placeholder="SKU 编码" :disabled="!!editingSku" />
         </el-form-item>
         <el-form-item label="产品名称" required>
           <el-input v-model="skuForm.product_name" placeholder="产品名称" />
@@ -273,17 +324,17 @@
         </el-form-item>
         <el-form-item label="附件">
           <el-upload
-            :file-list="uploadFileList"
-            :before-upload="handleSkuFileUpload"
-            :show-file-list="true"
+            :on-change="handleSkuFileChange"
+            :show-file-list="false"
             multiple
             :auto-upload="false"
+            accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp,.zip"
           >
             <el-button size="small" type="primary">
               <el-icon><Upload /></el-icon> 上传文件
             </el-button>
             <template #tip>
-              <div style="font-size: 12px; color: #909399;">支持 PDF、Excel、图片</div>
+              <div style="font-size: 12px; color: #909399;">支持 PDF、Excel、图片（单个 ≤ 20MB）</div>
             </template>
           </el-upload>
           <div v-if="skuFiles.files.length > 0" style="margin-top: 8px;">
@@ -340,7 +391,13 @@
             <el-form-item label="供应商"><el-input v-model="shipmentForm.supplier" /></el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="物流商" required><el-input v-model="shipmentForm.logistics_provider" /></el-form-item>
+            <el-form-item label="物流商" required>
+              <el-select v-model="shipmentForm.logistics_provider" placeholder="请选择物流商" style="width:100%">
+                <el-option label="超光速" value="超光速" />
+                <el-option label="SDK" value="SDK" />
+                <el-option label="昆仑" value="昆仑" />
+              </el-select>
+            </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="头程单号" required><el-input v-model="shipmentForm.first_leg_tracking" /></el-form-item>
@@ -373,7 +430,7 @@
             <el-form-item label="产品标签">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.product_label" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'product_label')" :show-file-list="false" :auto-upload="false">
+                <el-upload :on-change="(f: any) => handleFieldFileUpload(f, 'product_label')" :show-file-list="false" :auto-upload="false" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp,.zip">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -383,7 +440,7 @@
             <el-form-item label="外箱箱唛">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.carton_mark" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'carton_mark')" :show-file-list="false" :auto-upload="false">
+                <el-upload :on-change="(f: any) => handleFieldFileUpload(f, 'carton_mark')" :show-file-list="false" :auto-upload="false" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp,.zip">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -395,7 +452,7 @@
             <el-form-item label="入库清单">
               <div style="display:flex;gap:8px;">
                 <el-input v-model="shipmentForm.warehouse_receipt" placeholder="文件名或描述" style="flex:1;" />
-                <el-upload :before-upload="(f: File) => handleFieldFileUpload(f, 'warehouse_receipt')" :show-file-list="false" :auto-upload="false">
+                <el-upload :on-change="(f: any) => handleFieldFileUpload(f, 'warehouse_receipt')" :show-file-list="false" :auto-upload="false" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp,.zip">
                   <el-button size="small"><el-icon><Upload /></el-icon></el-button>
                 </el-upload>
               </div>
@@ -481,6 +538,28 @@
   font-weight: 700 !important;
   font-size: 13px !important;
   border-bottom: 2px solid var(--el-color-primary-light-3) !important;
+}
+
+/* 表头筛选触发器颜色（深蓝表头下可见） */
+.sku-table .el-table__header .el-table__column-filter-trigger,
+.sku-table .el-table__header .el-table__column-filter-trigger .el-icon,
+.ship-table .el-table__header .el-table__column-filter-trigger,
+.ship-table .el-table__header .el-table__column-filter-trigger .el-icon {
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+.sku-table .el-table__header .el-table__column-filter-trigger,
+.ship-table .el-table__header .el-table__column-filter-trigger {
+  padding: 0 4px !important;
+  border-radius: 3px !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  margin-left: 2px !important;
+}
+/* 筛选进行中（激活）时高亮 */
+.sku-table .el-table__header .el-table__column-filter-trigger.is-active .el-icon,
+.ship-table .el-table__header .el-table__column-filter-trigger.is-active .el-icon {
+  color: #ffd04b !important;
 }
 
 /* 分组行样式 — 覆盖所有子表（fixed 列会拆成多张表） */
@@ -693,20 +772,35 @@ async function saveSku() {
   }
 }
 
-const uploadFileList = ref<any[]>([])
-
-async function handleSkuFileUpload(file: File) {
+async function handleSkuFileChange(uploadFile: any) {
+  const file: File | undefined = uploadFile?.raw
+  if (!file || uploadFile.status !== 'ready') return
+  if (!editingSku.value?.id) {
+    ElMessage.warning('请先保存 SKU，再上传附件')
+    return
+  }
   if (!skuForm.sku.trim()) {
     ElMessage.warning('请先填写 SKU')
-    return false
+    return
   }
-  await skuFiles.upload(file, 'sku', skuForm.sku.trim())
-  return false
+  const result = await skuFiles.upload(file, 'sku', skuForm.sku.trim())
+  if (result) {
+    // 上传成功后同步 label_file，保证表格「标签文件」列可点击匹配
+    skuForm.label_file = result.file_name
+    if (editingSku.value?.id) {
+      await sku.update(editingSku.value.id, { label_file: result.file_name })
+    }
+  }
 }
 
 async function openRecordFile(sourceTable: string, sku: string, fileName: string, prNo?: string) {
   const fileList = await getDirectFiles(sourceTable, sku, prNo)
-  const match = fileList.find(f => f.file_name === fileName)
+  let match = fileList.find(f => f.file_name === fileName)
+  // 兜底：label_file 可能没带扩展名（如 'xxx产品标' vs 文件 'xxx产品标.pdf'）
+  if (!match) {
+    const noExt = fileName.replace(/\.[^.]+$/, '')
+    match = fileList.find(f => f.file_name.replace(/\.[^.]+$/, '') === noExt) || null
+  }
   if (match?.id) {
     const a = document.createElement('a')
     a.href = getDirectFileUrl(match.id)
@@ -726,11 +820,134 @@ const shipmentSaving = ref(false)
 const editingShipment = ref<DirectShipmentItem | null>(null)
 // 独立选中状态（不受折叠/展开影响）
 const selectedShipIds = ref(new Set<number>())
-const shipSelected = computed(() => shipment.list.filter(it => selectedShipIds.value.has(it.id)))
+const shipSelected = computed(() => filteredShipList.value.filter(it => selectedShipIds.value.has(it.id)))
 const expandedShipGroups = reactive(new Set<string>())
+const shipFilterDialogVisible = ref(false)
+const shipGroupDialogVisible = ref(false)
 
-const shipGroupBy = ref('receiving_status')
-const isShipAllSelected = computed(() => shipment.list.length > 0 && selectedShipIds.value.size >= shipment.list.length)
+// ── 可选字段（高级筛选 / 分组共用）──
+const shipFieldMeta: { key: string; label: string; type: 'text' | 'enum' | 'number' | 'date' }[] = [
+  { key: 'pr_date', label: '申购时间', type: 'date' },
+  { key: 'pr_no', label: '申购单号', type: 'text' },
+  { key: 'sku', label: 'SKU', type: 'text' },
+  { key: 'product_cn_name', label: '产品中文名', type: 'text' },
+  { key: 'pr_person', label: '申购人员', type: 'enum' },
+  { key: 'supplier', label: '供应商', type: 'text' },
+  { key: 'logistics_provider', label: '物流商', type: 'enum' },
+  { key: 'total_qty', label: '总数', type: 'number' },
+  { key: 'total_boxes', label: '总箱数', type: 'number' },
+  { key: 'is_received', label: '是否收货上架', type: 'enum' },
+  { key: 'receiving_status', label: '收货状态', type: 'enum' },
+  { key: 'shipment_no', label: '货件单号', type: 'text' },
+  { key: 'first_leg_tracking', label: '头程单号', type: 'text' },
+  { key: 'po_no', label: '采购单号', type: 'text' },
+  { key: 'special_notes', label: '备注', type: 'text' },
+]
+function shipFieldLabel(key: string) { return shipFieldMeta.find(f => f.key === key)?.label || key }
+function shipFieldType(key: string) { return shipFieldMeta.find(f => f.key === key)?.type || 'text' }
+const shipFieldOptions = computed(() => shipFieldMeta.map(f => ({ label: f.label, value: f.key })))
+function shipCondOptions(field: string) {
+  const set = new Set<string>()
+  for (const it of shipment.list) {
+    const v = ((it as any)[field] || '').toString().trim()
+    if (v) set.add(v)
+  }
+  return [...set].map(v => ({ label: v, value: v }))
+}
+
+// ── 高级筛选：多行条件（字段 + 操作符 + 值，当/且/或）──
+type ShipCond = { id: number; logic: 'and' | 'or'; field: string; op: string; value: string }
+let shipCondSeq = 0
+const shipConds = reactive<ShipCond[]>([])
+function addShipCond() { shipConds.push({ id: ++shipCondSeq, logic: 'and', field: 'sku', op: 'eq', value: '' }) }
+function removeShipCond(id: number) { const i = shipConds.findIndex(c => c.id === id); if (i > -1) shipConds.splice(i, 1) }
+function clearShipConds() { shipConds.splice(0) }
+function condOps(type: string) {
+  if (type === 'number') return [
+    { label: '等于', value: 'eq' }, { label: '大于', value: 'gt' }, { label: '小于', value: 'lt' }, { label: '不等于', value: 'ne' },
+  ]
+  if (type === 'date') return [
+    { label: '等于', value: 'eq' }, { label: '早于', value: 'lt' }, { label: '晚于', value: 'gt' }, { label: '不为空', value: 'notempty' },
+  ]
+  return [
+    { label: '等于', value: 'eq' }, { label: '不等于', value: 'ne' }, { label: '包含', value: 'contains' },
+    { label: '为空', value: 'empty' }, { label: '不为空', value: 'notempty' },
+  ]
+}
+function condMatch(item: any, c: ShipCond) {
+  const raw = (item as any)[c.field]
+  const v = raw == null ? '' : String(raw).trim()
+  const val = (c.value ?? '').toString().trim()
+  switch (c.op) {
+    case 'eq': return v === val
+    case 'ne': return v !== val
+    case 'contains': return v.includes(val)
+    case 'gt': return Number(v) > Number(val)
+    case 'lt': return Number(v) < Number(val)
+    case 'empty': return v === ''
+    case 'notempty': return v !== ''
+    default: return true
+  }
+}
+function applyShipConds(list: DirectShipmentItem[]) {
+  const conds = shipConds.filter(c => c.field && (c.op === 'empty' || c.op === 'notempty' || (c.value ?? '').toString().trim() !== ''))
+  if (!conds.length) return list
+  let res = list.filter(it => condMatch(it, conds[0]))
+  for (let i = 1; i < conds.length; i++) {
+    const c = conds[i]
+    const matched = list.filter(it => condMatch(it, c))
+    if (c.logic === 'or') { const s = new Set([...res, ...matched]); res = list.filter(it => s.has(it)) }
+    else res = res.filter(it => matched.includes(it))
+  }
+  return res
+}
+
+// ── 多级分组：最多 3 级，缩进展示 ──
+const shipGroupFields = reactive<{ field: string; dir: 'asc' | 'desc' }[]>([{ field: 'receiving_status', dir: 'asc' }])
+function addShipGroupField() { if (shipGroupFields.length < 3) shipGroupFields.push({ field: 'sku', dir: 'asc' }) }
+function removeShipGroupField(i: number) { shipGroupFields.splice(i, 1) }
+
+// ── 直发表头筛选（枚举多选，与分组/计数联动）──
+const shipFilterFields: { key: string; label: string; width: string }[] = [
+  { key: 'receiving_status', label: '收货状态', width: '150px' },
+  { key: 'logistics_provider', label: '物流商', width: '140px' },
+  { key: 'pr_person', label: '申购人员', width: '140px' },
+  { key: 'is_received', label: '收货上架', width: '130px' },
+  { key: 'shipment_no', label: '货件单号', width: '190px' },
+]
+const shipFilters = reactive<Record<string, string[]>>(
+  Object.fromEntries(shipFilterFields.map(f => [f.key, [] as string[]])),
+)
+const shipFilterOptions = computed(() => {
+  const map: Record<string, { text: string; value: string }[]> = {}
+  for (const f of shipFilterFields) map[f.key] = []
+  for (const it of shipment.list) {
+    for (const f of shipFilterFields) {
+      const v = ((it as any)[f.key] || '').toString().trim()
+      if (v && v !== '无' && !map[f.key].some(o => o.value === v)) map[f.key].push({ text: v, value: v })
+    }
+  }
+  return map
+})
+// 表头筛选（钉钉式）→ 同步到 shipFilters，驱动分组/计数联动
+function onShipFilterChange({ column, values }: { column: any; values: string[] }) {
+  const key = column.property as string
+  if (key && shipFilters[key] !== undefined) shipFilters[key] = [...values]
+}
+// 多字段组合过滤后的数据（表头筛选 + 高级筛选，分组/计数/全选都基于它）
+const filteredShipList = computed(() => {
+  let list = shipment.list
+  const active = shipFilterFields.filter(f => shipFilters[f.key].length > 0)
+  if (active.length) list = list.filter(it =>
+    active.every(f => shipFilters[f.key].includes(((it as any)[f.key] || '').toString().trim())),
+  )
+  return applyShipConds(list)
+})
+
+const isShipAllSelected = computed(() => {
+  const ids = filteredShipList.value.map(it => it.id)
+  return ids.length > 0 && ids.every(id => selectedShipIds.value.has(id))
+})
 function onShipRowCheck(row: any, checked: boolean) {
   if (checked) selectedShipIds.value.add(row.id)
   else selectedShipIds.value.delete(row.id)
@@ -739,85 +956,96 @@ function onShipRowCheck(row: any, checked: boolean) {
 
 function onShipHeaderCheck(checked: boolean) {
   if (checked) {
-    for (const group of shipmentGroups.value) {
-      expandedShipGroups.add(group.key)
-      for (const item of group.items) selectedShipIds.value.add(item.id)
-    }
+    expandAllShipGroups()
+    filteredShipList.value.forEach(it => selectedShipIds.value.add(it.id))
   } else {
     selectedShipIds.value = new Set()
   }
   selectedShipIds.value = new Set(selectedShipIds.value)
 }
 
-const shipmentGroups = computed(() => {
-  const groups: Record<string, DirectShipmentItem[]> = {}
-  for (const item of shipment.list) {
-    const key = ((item as any)[shipGroupBy.value] || '').trim() || '未分组'
-    if (!groups[key]) groups[key] = []
-    groups[key].push(item)
+// 递归构建多级分组树
+const shipGroupTree = computed(() => {
+  const fields = [...shipGroupFields]
+  const build = (list: any[], depth: number): any[] => {
+    if (depth >= fields.length || list.length === 0) return []
+    const { field, dir } = fields[depth]
+    const map = new Map<string, any[]>()
+    for (const it of list) {
+      let key = ((it as any)[field] || '').toString().trim()
+      if (!key || key === '无') key = '未分组'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(it)
+    }
+    const entries = [...map.entries()].sort((a, b) => {
+      const cmp = a[0].localeCompare(b[0], 'zh')
+      return dir === 'desc' ? -cmp : cmp
+    })
+    return entries.map(([key, items]) => {
+      const node: any = { field, key, items, depth, children: build(items, depth + 1), path: [] }
+      return node
+    })
   }
-  return Object.entries(groups).map(([key, items]) => ({ key, items }))
-})
-// 新数据到达时自动展开所有分组
-watch(shipmentGroups, (groups) => {
-  for (const g of groups) expandedShipGroups.add(g.key)
+  const tree = build(filteredShipList.value, 0)
+  const fill = (nodes: any[], prefix: string[]) => {
+    for (const n of nodes) {
+      n.path = [...prefix, n.key]
+      if (n.children.length) fill(n.children, n.path)
+    }
+  }
+  fill(tree, [])
+  return tree
 })
 
-// 单表数据：分组行 + 展开的数据行
+// 分组展开/折叠
+function allShipGroupPaths(): string[] {
+  const paths: string[] = []
+  const walk = (nodes: any[]) => { for (const n of nodes) { paths.push(n.path.join('|')); if (n.children.length) walk(n.children) } }
+  walk(shipGroupTree.value)
+  return paths
+}
+function expandAllShipGroups() { allShipGroupPaths().forEach(p => expandedShipGroups.add(p)) }
+function collapseAllShipGroups() { expandedShipGroups.clear() }
+function toggleShipGroup(key: string) {
+  if (expandedShipGroups.has(key)) expandedShipGroups.delete(key)
+  else expandedShipGroups.add(key)
+}
+// 数据/分组变化时默认全展开
+watch(shipGroupTree, () => { expandAllShipGroups() }, { deep: true })
+
+// 单表数据：多级分组行 + 展开的数据行
 const flatShipmentList = computed(() => {
   const result: any[] = []
-  for (const group of shipmentGroups.value) {
-    result.push({
-      _type: 'group',
-      id: `__group__${group.key}`,
-      _groupKey: group.key,
-      _count: group.items.length,
-    })
-    if (expandedShipGroups.has(group.key)) {
-      for (const item of group.items) {
-        result.push({ _type: 'data', _groupKey: group.key, ...item })
+  const walk = (nodes: any[]) => {
+    for (const node of nodes) {
+      const gKey = node.path.join('|')
+      result.push({
+        _type: 'group',
+        id: `__g__${gKey}`,
+        _groupKey: gKey,
+        _path: node.path,
+        _depth: node.depth,
+        _fieldLabel: shipFieldLabel(node.field),
+        _count: node.items.length,
+      })
+      if (expandedShipGroups.has(gKey)) {
+        if (node.children.length) walk(node.children)
+        else for (const item of node.items) result.push({ _type: 'data', _groupKey: gKey, ...item })
       }
     }
   }
+  walk(shipGroupTree.value)
   return result
 })
 
-// 直发分组勾选：全选 ☑ / 全空 □
-function isShipGroupAllSelected(groupKey: string): boolean {
-  const group = shipmentGroups.value.find(g => g.key === groupKey)
-  if (!group || group.items.length === 0) return false
-  return group.items.every(it => selectedShipIds.value.has(it.id))
-}
-function toggleShipGroupAll(groupKey: string, select: boolean) {
-  const group = shipmentGroups.value.find(g => g.key === groupKey)
-  if (!group) return
-  if (select) group.items.forEach(it => selectedShipIds.value.add(it.id))
-  else group.items.forEach(it => selectedShipIds.value.delete(it.id))
-  selectedShipIds.value = new Set(selectedShipIds.value)
-  // 折叠状态自动展开
-  if (!expandedShipGroups.has(groupKey)) expandedShipGroups.add(groupKey)
-}
-
-// 点击直发分组标签 → 全选该组
-function selectShipGroup(groupKey: string) { toggleShipGroupAll(groupKey, true) }
-
 function shipSpanMethod({ row, columnIndex }: { row: any; rowIndex: number; columnIndex: number }) {
   if (row._type !== 'group') return [1, 1]
-  if (columnIndex === 0) return [1, 1]   // selection 列
-  if (columnIndex === 1) return [1, 1]   // pr_date 列：只占自己的格子，不跨列
-  return [1, 1]                           // 其余列：正常渲染（空但有背景色，形成连续灰条）
+  return [1, 1]   // group 行：各列正常渲染（空白灰条）
 }
 
 function shipRowClassName({ row }: { row: any }) {
   return row._type === 'group' ? 'ship-group-row' : ''
 }
-
-function toggleShipGroup(key: string) {
-  if (expandedShipGroups.has(key)) expandedShipGroups.delete(key)
-  else expandedShipGroups.add(key)
-}
-
-function onShipGroupByChange() { expandedShipGroups.clear(); shipment.fetchAll() }
 
 // SKU 字段失焦时自动从 SKU 表填充
 // 产品标签：优先取 SKU 表的 label_file，其次用直发表自身值
@@ -936,8 +1164,9 @@ async function saveShipment() {
   }
 }
 
-async function handleFieldFileUpload(file: File, fieldName: string) {
-  if (!file) return
+async function handleFieldFileUpload(uploadFile: any, fieldName: string) {
+  const file: File | undefined = uploadFile?.raw
+  if (!file || uploadFile.status !== 'ready') return
   const sku = (shipmentForm as any).sku?.trim() || ''
   const prNo = (shipmentForm as any).pr_no?.trim() || ''
   if (!sku) { ElMessage.warning('请先填写 SKU'); return false }

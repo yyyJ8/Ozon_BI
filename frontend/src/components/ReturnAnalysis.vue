@@ -19,6 +19,9 @@ const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate 
 const selectedSkuId = ref<number>()
 const { loading, overview, trend, skuStats, reasons, fetchAll } = useReturns(localDateRange, selectedSkuId)
 
+function skuRowClassName({ row }: { row: any }): string {
+  return row.sku_id === selectedSkuId.value ? 'selected-sku-row' : ''
+}
 function onSkuRowClick(row: any) {
   if (selectedSkuId.value === row.sku_id) {
     selectedSkuId.value = undefined  // 取消选中
@@ -167,6 +170,7 @@ const minReturnOptions = [1, 2, 3, 5]
         <el-option label="昨天" value="yesterday" />
         <el-option label="近7天" value="7days" />
         <el-option label="近30天" value="30days" />
+        <el-option label="本月" value="thisMonth" />
         <el-option label="全部" value="all" />
         <el-option label="自定义" value="custom" />
       </el-select>
@@ -282,7 +286,7 @@ const minReturnOptions = [1, 2, 3, 5]
       </template>
       <el-table :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500"
         row-key="sku_id"
-        :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
+        :row-class-name="skuRowClassName"
         @row-click="onSkuRowClick" @expand-change="onExpandChange">
         <el-table-column type="expand">
           <template #default="{ row: skuRow }">

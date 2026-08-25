@@ -352,12 +352,14 @@ class SkuManagement(Base):
     sku_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     main_sku: Mapped[Optional[str]] = mapped_column(String(50))
+    product_cn_name: Mapped[Optional[str]] = mapped_column(String(255), comment="商品中文名称")
     source_url_1688: Mapped[Optional[str]] = mapped_column(Text)
     specification: Mapped[Optional[str]] = mapped_column(Text)
     sales_manager: Mapped[Optional[str]] = mapped_column(String(50))
     listed_stores: Mapped[Optional[str]] = mapped_column(String(50))
     product_status: Mapped[Optional[str]] = mapped_column(String(50))
     key_notes: Mapped[Optional[str]] = mapped_column(Text)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, comment="软删除标记，true=不在 SKU管理列表展示")
 
     length_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
     width_cm: Mapped[Optional[Decimal]] = mapped_column(Numeric(8, 2))
@@ -394,6 +396,24 @@ class SkuManagement(Base):
     competitor_1: Mapped[Optional[str]] = mapped_column(String(200))
     competitor_2: Mapped[Optional[str]] = mapped_column(String(200))
     competitor_sales: Mapped[Optional[int]] = mapped_column(Integer)
+
+    purchase_cost_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    first_leg_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    last_mile_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    product_cost_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    discount_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+    platform_payout_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    actual_payout_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_rmb: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_rub: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    profit_margin_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
+
+    target_price_3pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    target_price_5pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    target_price_10pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class SkuDailyNote(Base):
@@ -446,6 +466,7 @@ class SkuDailySnapshot(Base):
     vat: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="增值税 RUB（v5 接口，通常为 0）")
 
     green_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), comment="绿标价格/买家展示价 RUB（待定数据源）")
+    discount_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), comment="折扣 %（来自 sku_management.discount_pct）")
 
     stock_present: Mapped[int] = mapped_column(Integer, default=0, comment="可售库存件数")
     stock_reserved: Mapped[int] = mapped_column(Integer, default=0, comment="已预留库存件数")
@@ -543,7 +564,8 @@ class OzonDirectFile(Base):
     sku: Mapped[Optional[str]] = mapped_column(String(100), comment="关联 SKU（业务键）")
     pr_no: Mapped[Optional[str]] = mapped_column(String(100), comment="关联申购单号（直发跟进表业务键）")
     file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="原始文件名")
-    file_data: Mapped[Optional[bytes]] = mapped_column(LargeBinary, comment="文件二进制内容")
+    file_path: Mapped[Optional[str]] = mapped_column(String(500), comment="文件系统存储路径（相对 direct_file_dir）")
+    file_data: Mapped[Optional[bytes]] = mapped_column(LargeBinary, comment="文件二进制内容（file_path 为空时使用）")
     file_size: Mapped[Optional[int]] = mapped_column(Integer, comment="文件大小（字节）")
     file_type: Mapped[Optional[str]] = mapped_column(String(20), comment="文件扩展名")
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="上传时间")
@@ -574,6 +596,7 @@ class CargoShipment(Base):
     logistics_inbound_no: Mapped[Optional[str]] = mapped_column(String(200), comment="物流商入库单号")
     pr_no: Mapped[Optional[str]] = mapped_column(String(200), index=True, comment="关联直发申购单号（来自 ozon_direct_shipment）")
     cargo_status: Mapped[Optional[str]] = mapped_column(String(100), comment="货物状态")
+    manual_status: Mapped[Optional[str]] = mapped_column(String(50), comment="人工货物状态: 已约仓/已上架，NULL=自动推导")
     fbo_warehouse_name: Mapped[Optional[str]] = mapped_column(String(200), comment="FBO仓名称")
     booking_code: Mapped[Optional[str]] = mapped_column(String(200), comment="约仓编码")
     fbo_listing_time: Mapped[Optional[datetime]] = mapped_column(DateTime, comment="FBO上架时间")

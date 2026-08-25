@@ -1,5 +1,6 @@
 """OZON 直发信息 API — SKU 基础数据 / 直发跟进表 / 文件 / 导入导出"""
 import os
+import uuid
 from datetime import date, datetime
 from typing import Optional
 
@@ -7,9 +8,11 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import OzonDirectSku, OzonDirectShipment, OzonDirectFile
 from app.ozon_direct_logger import log_operation
+from app.clients.dingtalk import notify_received_shipment
 from app.schemas.ozon_direct import (
     DirectSkuItem, DirectSkuCreate, DirectSkuUpdate,
     DirectShipmentItem, DirectShipmentCreate, DirectShipmentUpdate,
@@ -18,6 +21,21 @@ from app.schemas.ozon_direct import (
 )
 
 router = APIRouter(prefix="/ozon-direct", tags=["ozon-direct"])
+
+# ── 附件上传限制 ──
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+ALLOWED_EXT = {".pdf", ".xlsx", ".xls", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".zip"}
+MEDIA_TYPES = {
+    "pdf": "application/pdf",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xls": "application/vnd.ms-excel",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "zip": "application/zip",
+}
 
 
 # ============================================================
@@ -172,12 +190,22 @@ def update_shipment(ship_id: int, body: DirectShipmentUpdate, db: Session = Depe
     item = db.query(OzonDirectShipment).filter_by(id=ship_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="记录不存在")
+    old_received = (item.is_received or "").strip()  # 触发判断用: 收货上架 旧值
     for key, val in body.model_dump(exclude_unset=True).items():
         setattr(item, key, val)
     item.updated_at = datetime.now()
     db.commit()
     db.refresh(item)
     log_operation("UPDATE SHIPMENT", f"id={ship_id} fields={list(body.model_dump(exclude_unset=True).keys())}")
+    # 收货上架 从非"是"变成"是" → 钉钉通知（异步，失败不影响保存）
+    if old_received != "是" and (item.is_received or "").strip() == "是":
+        notify_received_shipment(
+            pr_no=item.pr_no,
+            sku=item.sku,
+            product_name=item.product_cn_name,
+            receiving_date=item.receiving_date,
+        )
+        log_operation("NOTIFY RECEIVED", f"id={ship_id} pr_no={item.pr_no} sku={item.sku}")
     return item
 
 
@@ -206,20 +234,65 @@ def upload_file(
     pr_no: str = Query(default="", description="关联申购单号（shipment 时用）"),
     db: Session = Depends(get_db),
 ):
-    """上传文件（存入数据库）"""
+    """上传文件（大小/类型校验，同名去重覆盖；优先存文件系统，失败回退数据库）"""
     content = file.file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"文件超过 20MB 限制（当前 {len(content) / 1024 / 1024:.1f}MB）",
+        )
     ext = os.path.splitext(file.filename or "file")[1].lower()
+    if ext not in ALLOWED_EXT:
+        raise HTTPException(status_code=400, detail=f"不支持的文件类型: {ext or '无扩展名'}")
 
-    record = OzonDirectFile(
-        source_table=source_table,
-        sku=sku or None,
-        pr_no=pr_no or None,
-        file_name=file.filename or "unknown",
-        file_data=content,
-        file_size=len(content),
-        file_type=ext.lstrip(".") if ext else None,
-    )
-    db.add(record)
+    fname = file.filename or "unknown"
+    sku_val = sku or None
+    pr_no_val = pr_no or None
+
+    # 同名同来源覆盖（避免重复记录）
+    existing = db.query(OzonDirectFile).filter_by(
+        source_table=source_table, sku=sku_val, pr_no=pr_no_val, file_name=fname
+    ).first()
+
+    # 写入文件系统（#7）
+    store_path = None
+    if settings.direct_file_dir:
+        try:
+            rel_dir = "sku" if source_table == "sku" else "shipment"
+            sub = os.path.join(settings.direct_file_dir, rel_dir)
+            os.makedirs(sub, exist_ok=True)
+            disk_name = f"{uuid.uuid4().hex}{ext}"
+            with open(os.path.join(sub, disk_name), "wb") as f:
+                f.write(content)
+            store_path = os.path.join(rel_dir, disk_name)
+        except OSError:
+            store_path = None  # 写文件系统失败 → 回退存数据库
+
+    if existing:
+        # 覆盖旧内容前清理旧磁盘文件
+        if existing.file_path and existing.file_path != store_path:
+            try:
+                os.remove(os.path.join(settings.direct_file_dir, existing.file_path))
+            except OSError:
+                pass
+        existing.file_path = store_path
+        existing.file_data = None if store_path else content
+        existing.file_size = len(content)
+        existing.file_type = ext.lstrip(".") if ext else None
+        existing.uploaded_at = datetime.now()
+        record = existing
+    else:
+        record = OzonDirectFile(
+            source_table=source_table,
+            sku=sku_val,
+            pr_no=pr_no_val,
+            file_name=fname,
+            file_path=store_path,
+            file_data=None if store_path else content,
+            file_size=len(content),
+            file_type=ext.lstrip(".") if ext else None,
+        )
+        db.add(record)
     db.commit()
     db.refresh(record)
     log_operation("UPLOAD FILE", f"id={record.id} name={record.file_name} source={source_table} sku={sku} pr_no={pr_no}")
@@ -245,30 +318,43 @@ def list_files(
 
 @router.get("/files/{file_id}")
 def download_file(file_id: int, db: Session = Depends(get_db)):
-    """下载/预览文件"""
+    """下载/预览文件（优先文件系统，回退数据库二进制）"""
     record = db.query(OzonDirectFile).filter_by(id=file_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="文件不存在")
-    if not record.file_data:
+    data = record.file_data
+    if record.file_path:
+        try:
+            with open(os.path.join(settings.direct_file_dir, record.file_path), "rb") as f:
+                data = f.read()
+        except OSError:
+            data = record.file_data
+    if not data:
         raise HTTPException(status_code=404, detail="文件内容为空")
     import io
     import urllib.parse
     safe_name = urllib.parse.quote(record.file_name)
+    media_type = MEDIA_TYPES.get(record.file_type or "", "application/octet-stream")
     return StreamingResponse(
-        io.BytesIO(record.file_data),
-        media_type="application/octet-stream",
+        io.BytesIO(data),
+        media_type=media_type,
         headers={"Content-Disposition": f"inline; filename*=UTF-8''{safe_name}"},
     )
 
 
 @router.delete("/files/{file_id}")
 def delete_file(file_id: int, db: Session = Depends(get_db)):
-    """删除文件"""
+    """删除文件（同步清理文件系统存储）"""
     record = db.query(OzonDirectFile).filter_by(id=file_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="文件不存在")
     fid = record.id
     fname = record.file_name
+    if record.file_path:
+        try:
+            os.remove(os.path.join(settings.direct_file_dir, record.file_path))
+        except OSError:
+            pass
     db.delete(record)
     db.commit()
     log_operation("DELETE FILE", f"id={fid} name={fname}")
@@ -299,8 +385,7 @@ def import_excel(
     # Sheet 1: SKU基础数据
     if "SKU基础数据" in wb.sheetnames:
         ws = wb["SKU基础数据"]
-        # 清空旧数据
-        db.query(OzonDirectFile).filter_by(source_table="sku").delete()
+        # 清空旧 SKU 数据（保留附件文件记录，同名 SKU 的附件仍可匹配）
         db.query(OzonDirectSku).delete()
         db.flush()
         for row in ws.iter_rows(min_row=2, values_only=True):
@@ -322,7 +407,7 @@ def import_excel(
     # Sheet 2: 直发跟进表-N
     if "直发跟进表-N" in wb.sheetnames:
         ws = wb["直发跟进表-N"]
-        db.query(OzonDirectFile).filter_by(source_table="shipment").delete()
+        # 清空旧发货数据（保留附件文件记录）
         db.query(OzonDirectShipment).delete()
         db.flush()
         for row in ws.iter_rows(min_row=2, values_only=True):

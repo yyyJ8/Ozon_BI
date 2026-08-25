@@ -6,7 +6,7 @@ import { ElMessage } from 'element-plus'
 import type { Product, OrderListItem } from '@/types'
 import { useOrders } from '@/composables/useOrders'
 import { useLocalDateRange } from '@/composables/useLocalDateRange'
-import { getSkuNote, saveSkuNote } from '@/api'
+import { getSkuNote, saveSkuNote, getSkuNoteDates } from '@/api'
 
 const props = defineProps<{
   dateRange: [string, string] | null
@@ -56,6 +56,9 @@ function onDrawerClosed() {
 }
 
 // ── SKU 点击筛选 ────────────────────────────────────────
+function skuRowClassName({ row }: { row: any }): string {
+  return row.sku_id === selectedSkuId.value ? 'selected-sku-row' : ''
+}
 function onSkuRowClick(row: any) {
   if (selectedSkuId.value === row.sku_id) {
     selectedSkuId.value = undefined
@@ -70,10 +73,15 @@ function clearSkuFilter() {
 
 // ── SKU 搜索 ────────────────────────────────────────────
 const skuSearch = ref('')
+const onlyOptimize = ref(false)
 const filteredSkuStats = computed(() => {
   const q = skuSearch.value.trim().toLowerCase()
-  if (!q) return skuStats.value
-  return skuStats.value.filter(s =>
+  let list = skuStats.value
+  if (onlyOptimize.value) {
+    list = list.filter(s => s.recent_deals === 0 && s.stock > 0)
+  }
+  if (!q) return list
+  return list.filter(s =>
     String(s.sku_id).includes(q) || (s.offer_id || '').toLowerCase().includes(q)
   )
 })
@@ -83,7 +91,6 @@ const selectedSkuName = computed(() => {
   const s = skuStats.value.find(s => s.sku_id === selectedSkuId.value)
   return s ? (s.offer_id || `SKU ${s.sku_id}`) : ''
 })
-
 // ── 趋势图 ──────────────────────────────────────────────
 const trendChartRef = ref<HTMLDivElement>()
 let trendChart: echarts.ECharts | null = null
@@ -96,7 +103,9 @@ function renderTrendChart() {
   trendChart.getZr().off('click')
   trendChart.getZr().on('click', (e: any) => {
     if (!selectedSkuId.value) return
-    const pointInGrid = trendChart.convertFromPixel({ seriesIndex: 0 }, [e.offsetX, e.offsetY])
+    // legend 区域不触发
+    if (e.offsetY > trendChart!.getHeight() - 40) return
+    const pointInGrid = trendChart!.convertFromPixel({ seriesIndex: 0 }, [e.offsetX, e.offsetY])
     const dataIdx = Math.round(pointInGrid[0])
     if (dataIdx >= 0 && dataIdx < fullDates.length) {
       noteDate.value = fullDates[dataIdx]
@@ -110,14 +119,30 @@ function renderTrendChart() {
       formatter: (params: any) => {
         const items = Array.isArray(params) ? params : [params]
         let h = `<div style="font-size:13px;line-height:1.8"><strong>${items[0].axisValue}</strong>`
+        const units: Record<string, string> = { '实际售出': '单', '实际成交': '单', '售价': '₽', '折扣': '%', '绿标价': '₽' }
         for (const p of items) {
-          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:4px"></span>${p.seriesName}: <strong>${Number(p.value).toLocaleString()} 单</strong>` }
+          const u = units[p.seriesName] || ''
+          let v: string
+          if (u === '₽') v = Number(p.value).toLocaleString('ru-RU') + ' ₽'
+          else if (u === '%') v = (p.value != null ? Number(p.value).toFixed(1) : '—') + '%'
+          else v = Number(p.value).toLocaleString() + ' 单'
+          h += `<br/><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:4px"></span>${p.seriesName}: <strong>${v}</strong>` }
         return h + '</div>'
       },
     },
-    legend: { data: ['实际售出', '实际成交', '售价'], bottom: 0 },
-    grid: { left: 50, right: 20, top: 20, bottom: 35 },
-    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 11, rotate: dates.length > 30 ? 45 : 0 } },
+    legend: { data: ['实际售出', '实际成交', '售价', '折扣', '绿标价'], bottom: 0 },
+    grid: { left: 50, right: 20, top: 20, bottom: 40 },
+    xAxis: {
+      type: 'category', data: dates,
+      axisLabel: {
+        fontSize: 11,
+        rotate: dates.length > 30 ? 45 : 0,
+        formatter: (val: string) => noteShortSet.value.has(val) ? `${val}\n{note|●}` : val,
+        rich: {
+          note: { color: '#f56c6c', fontSize: 9, align: 'center', lineHeight: 12 },
+        },
+      },
+    },
     yAxis: [
       { type: 'value', min: 0, minInterval: 1, name: '单' },
       { type: 'value', min: 0, name: '₽', axisLabel: { formatter: (v: number) => v >= 1000 ? (v/1000).toFixed(0)+'k' : String(v) } },
@@ -127,11 +152,6 @@ function renderTrendChart() {
         name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled),
         lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
         symbol: 'circle', symbolSize: 4,
-        markPoint: noteDates.value.length ? {
-          symbol: 'pin', symbolSize: 35, symbolOffset: [0, -8],
-          itemStyle: { color: '#f56c6c' },
-          data: noteDates.value.map(d => ({ coord: [d.slice(5), 'max'] })),
-        } : undefined,
       },
       {
         name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled - d.client_return),
@@ -142,6 +162,16 @@ function renderTrendChart() {
         name: '售价', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.price),
         lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#e6a23c' },
         symbol: 'triangle', symbolSize: 6,
+      },
+      {
+        name: '折扣', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.discount),
+        lineStyle: { width: 1.5, type: 'dashed' }, itemStyle: { color: '#909399' },
+        symbol: 'diamond', symbolSize: 4,
+      },
+      {
+        name: '绿标价', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.green_price),
+        lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#67c23a' },
+        symbol: 'circle', symbolSize: 5,
       },
     ],
   }, true)
@@ -182,6 +212,7 @@ const noteDate = ref('')
 const noteContent = ref('')
 const noteLoading = ref(false)
 const noteDates = ref<string[]>([])
+const noteShortSet = computed(() => new Set(noteDates.value.map(d => d.slice(5))))
 
 async function refreshNoteDates() {
   // 当前不支持批量查，用趋势数据匹配
@@ -189,8 +220,10 @@ async function refreshNoteDates() {
 }
 watch(selectedSkuId, async (sid) => {
   if (!sid) { noteDates.value = []; return }
-  // 简单方案：载入后本地记录有备注的日期
-  noteDates.value = []
+  try {
+    noteDates.value = await getSkuNoteDates(sid)
+    if (chartReady) renderTrendChart()
+  } catch { noteDates.value = [] }
 })
 
 async function loadNote() {
@@ -239,6 +272,7 @@ const financeSummary = computed(() => {
         <el-option label="昨天" value="yesterday" />
         <el-option label="近7天" value="7days" />
         <el-option label="近30天" value="30days" />
+        <el-option label="本月" value="thisMonth" />
         <el-option label="全部" value="all" />
         <el-option label="自定义" value="custom" />
       </el-select>
@@ -258,7 +292,7 @@ const financeSummary = computed(() => {
 
     <!-- 概览卡片 -->
     <el-row :gutter="16" v-if="overview" style="flex-wrap:wrap;">
-      <el-col v-for="col in 5" :key="col" :style="{ flex: '1 1 0', minWidth: '140px' }">
+      <el-col v-for="col in 4" :key="col" :style="{ flex: '1 1 0', minWidth: '140px' }">
         <template v-if="col === 1">
           <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -303,22 +337,11 @@ const financeSummary = computed(() => {
             </div>
           </el-card>
         </template>
-        <template v-if="col === 5">
-          <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><TrendCharts /></el-icon></div>
-              <div>
-                <div style="font-size:12px;color:#909399;">广告占比</div>
-                <div style="font-size:20px;font-weight:700;color:#c0c4cc;">—</div>
-              </div>
-            </div>
-          </el-card>
-        </template>
       </el-col>
     </el-row>
     <!-- SKU 选中时额外卡片 -->
-    <el-row :gutter="16" v-if="selectedSkuId" style="margin-top:12px;">
-      <el-col :span="3">
+    <el-row :gutter="16" v-if="selectedSkuId" style="margin-top:12px;flex-wrap:wrap;">
+      <el-col :span="3" :style="{ flex: '1 1 0', minWidth: '140px' }">
         <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width:40px;height:40px;border-radius:8px;background:#409eff18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#409eff;"><el-icon><TrendCharts /></el-icon></div>
@@ -329,13 +352,24 @@ const financeSummary = computed(() => {
           </div>
         </el-card>
       </el-col>
-      <el-col :span="3">
+      <el-col :span="3" :style="{ flex: '1 1 0', minWidth: '140px' }">
         <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width:40px;height:40px;border-radius:8px;background:#67c23a18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#67c23a;"><el-icon><TrendCharts /></el-icon></div>
             <div>
               <div style="font-size:12px;color:#909399;">预估毛利率</div>
               <div style="font-size:20px;font-weight:700;color:#c0c4cc;">—</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="3" :style="{ flex: '1 1 0', minWidth: '140px' }">
+        <el-card shadow="hover" :body-style="{ padding: '14px 18px' }">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#e6a23c18;display:flex;align-items:center;justify-content:center;font-size:18px;color:#e6a23c;"><el-icon><TrendCharts /></el-icon></div>
+            <div>
+              <div style="font-size:12px;color:#909399;">广告占比</div>
+              <div style="font-size:20px;font-weight:700;color:#303133;">{{ overview.ad_ratio != null ? overview.ad_ratio.toFixed(1) + '%' : '—' }}</div>
             </div>
           </div>
         </el-card>
@@ -373,6 +407,7 @@ const financeSummary = computed(() => {
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <el-input v-if="viewMode === 'sku'" v-model="skuSearch" placeholder="搜索 SKU / 货号" clearable size="small" style="width:180px;" />
+            <el-checkbox v-if="viewMode === 'sku'" v-model="onlyOptimize" size="small">只看需优化</el-checkbox>
             <el-tag type="info" size="small">{{ viewMode === 'posting' ? listTotal + ' 单' : filteredSkuStats.length + ' / ' + skuStats.length }}</el-tag>
           </div>
         </div>
@@ -427,7 +462,7 @@ const financeSummary = computed(() => {
 
       <!-- SKU 视图 -->
       <el-table v-else :data="filteredSkuStats" stripe size="small" style="width:100%" max-height="500"
-        :row-class-name="({ row }: { row: any }) => row.sku_id === selectedSkuId ? 'selected-sku-row' : ''"
+        :row-class-name="skuRowClassName"
         @row-click="onSkuRowClick">
         <el-table-column label="图片" width="50">
           <template #default="{ row }">
@@ -455,6 +490,16 @@ const financeSummary = computed(() => {
         <el-table-column prop="current_price" label="售价" width="100" align="right" sortable>
           <template #default="{ row }">
             <span style="font-size:12px;">{{ row.current_price > 0 ? '₽ ' + formatMoney(row.current_price) : '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="佣金" width="75" align="right">
+          <template #default="{ row }">
+            <span style="font-size:12px;">{{ row.commission_pct != null ? row.commission_pct.toFixed(1) + '%' : '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="折扣" width="75" align="right" sortable :sort-method="(a:any,b:any) => (a.discount_pct||0) - (b.discount_pct||0)">
+          <template #default="{ row }">
+            <span style="font-size:12px;">{{ row.discount_pct != null ? row.discount_pct.toFixed(1) + '%' : '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="profit_rmb" label="利润 ¥" width="90" align="right" sortable>
@@ -485,11 +530,17 @@ const financeSummary = computed(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="库存" width="70" align="right">
+        <el-table-column prop="stock" label="库存" width="70" align="right" sortable>
           <template #default="{ row }">
             <span :style="{ color: row.stock > 0 ? '#303133' : '#f56c6c', fontWeight: 600 }">
               {{ fmtInt(row.stock) }}
             </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="标记" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.recent_deals === 0 && row.stock > 0" type="warning" size="small" effect="plain">需优化</el-tag>
+            <span v-else style="color:#c0c4cc;">—</span>
           </template>
         </el-table-column>
       </el-table>
