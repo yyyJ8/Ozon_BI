@@ -18,6 +18,7 @@ class OrderOverview(BaseModel):
     total_ordered_units: int
     cancellation_rate: float
     client_return_count: int = 0
+    ad_ratio: float | None = None
     avg_items_per_order: float | None
 
 
@@ -31,6 +32,8 @@ class OrderTrendItem(BaseModel):
     cancelled: int
     client_return: int = 0
     price: float | None = None
+    discount: float | None = None
+    green_price: float | None = None
 
 
 class OrderListItem(BaseModel):
@@ -122,6 +125,9 @@ class OrderSkuStats(BaseModel):
     profit_rmb: float | None = None
     profit_margin_pct: float | None = None
     green_price: float | None = None
+    commission_pct: float | None = None
+    discount_pct: float | None = None
+    recent_deals: int = 0
     fbo_count: int = 0
     fbs_count: int = 0
 

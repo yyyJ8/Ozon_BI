@@ -115,11 +115,16 @@ def sync_postings(db: Session, client: OzonClient,
             logger.warning(f"  {schema} list 拉取失败: {e}")
 
     # ── Phase 2: 从 finance_transactions 补齐缺失的 posting ──
+    # 只取与真实订单相关的流水类型（排除广告扣费、收单再分配等非订单流水）
     missing = db.execute(text("""
         SELECT DISTINCT ft.posting_number
         FROM ozon.finance_transactions ft
         WHERE ft.store_id = :store_id
           AND ft.posting_number IS NOT NULL
+          AND ft.operation_type NOT IN (
+              'MarketplaceRedistributionOfAcquiringOperation',
+              'OperationMarketplaceCostPerClick'
+          )
           AND ft.posting_number NOT IN (
               SELECT posting_number FROM ozon.postings WHERE store_id = :store_id
           )

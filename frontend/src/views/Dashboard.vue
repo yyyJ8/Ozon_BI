@@ -7,11 +7,9 @@ import type { SummaryRow, FinanceTransaction } from '@/types'
 import { getFinanceTransactions, getTransactionsByPostings, getSummary } from '@/api'
 import SummaryCards from '@/components/SummaryCards.vue'
 import TrendChart from '@/components/TrendChart.vue'
-import TopProducts from '@/components/TopProducts.vue'
 import InventoryHealth from '@/components/InventoryHealth.vue'
 import ReturnAnalysis from '@/components/ReturnAnalysis.vue'
 import AdvertisingAnalysis from '@/components/AdvertisingAnalysis.vue'
-import CostAnalysis from '@/components/CostAnalysis.vue'
 import OrderAnalysis from '@/components/OrderAnalysis.vue'
 import ProfitAnalysis from '@/components/ProfitAnalysis.vue'
 import AnomalyAnalysis from '@/components/AnomalyAnalysis.vue'
@@ -65,7 +63,7 @@ function openProductDetail(product: ProductSummary) {
 const transactionsMap = ref<Record<string, FinanceTransaction[]>>({})
 const loadingTx = ref<Record<string, boolean>>({})
 const cardsCollapsed = ref(false)
-const activeTab = ref('all')
+const activeTab = ref('sku-mgmt')
 
 // ─── 趋势图（独立数据源，始终全部店铺）──────────────────────
 const trendSummaryRows = ref<SummaryRow[]>([])
@@ -435,17 +433,6 @@ onMounted(() => {
               </template>
               <SkuManagement />
             </el-tab-pane>
-            <el-tab-pane label="全部数据" name="all">
-              <template #label>
-                <span><el-icon><DataBoard /></el-icon> 全部数据</span>
-              </template>
-              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 12px;">
-                <el-tag type="info" size="small">{{ productSummary.length }} 个商品</el-tag>
-              </div>
-              <TopProducts
-                :products="productSummary"
-              />
-            </el-tab-pane>
             <el-tab-pane label="库存健康" name="inventory">
               <template #label>
                 <span><el-icon><Box /></el-icon> 库存健康</span>
@@ -483,18 +470,6 @@ onMounted(() => {
                 <span><el-icon><TrendCharts /></el-icon> 广告分析</span>
               </template>
               <AdvertisingAnalysis :date-range="dateRange" :products="products" :active-tab="activeTab" />
-            </el-tab-pane>
-            <el-tab-pane label="成本分析" name="costs">
-              <template #label>
-                <span><el-icon><Coin /></el-icon> 成本分析</span>
-              </template>
-              <CostAnalysis
-                :stats="stats"
-                :product-summary="productSummary"
-                :date-range="dateRange"
-                :loading="loading"
-                :active-tab="activeTab"
-              />
             </el-tab-pane>
             <el-tab-pane label="利润分析" name="profit">
               <template #label>

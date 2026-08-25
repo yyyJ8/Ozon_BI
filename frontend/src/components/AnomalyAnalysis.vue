@@ -111,6 +111,7 @@ watch(() => props.activeTab, (tab) => {
         <el-option label="昨天" value="yesterday" />
         <el-option label="近7天" value="7days" />
         <el-option label="近30天" value="30days" />
+        <el-option label="本月" value="thisMonth" />
         <el-option label="全部" value="all" />
         <el-option label="自定义" value="custom" />
       </el-select>

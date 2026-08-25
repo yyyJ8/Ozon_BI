@@ -6,6 +6,7 @@ import type {
   StockStatus, StockRefreshResult,
   Store,
   ProfitOverview, ProfitTrendItem, ProfitSkuItem, ProfitDailyItem,
+  RealProfitOverview, RealProfitSkuItem, RealProfitDailyItem,
   AnomalyResponse,
   SkuManagementRow, SkuManagementUpdate,
   PlanOverview, PlanListItem, PlanListResponse, PlanDetail,
@@ -14,7 +15,8 @@ import type {
   DirectSkuItem, DirectSkuUpdate, DirectShipmentItem, DirectShipmentUpdate,
   DirectFileItem, DirectListResponse,
   SkuTableRow, SkuTableResponse, SkuPipelineDetail,
-  ReplenishmentRow,
+  PlanTableRow, PlanTableResponse, PlanPipelineDetail,
+  ReplenishmentRow, ReplenishmentConfigItem,
 } from '@/types'
 
 const BASE = '/api/v1'
@@ -273,6 +275,10 @@ export async function getOrdersSkuStats(
 
 // ── SKU 备注 ──
 
+export async function getSkuNoteDates(skuId: number, storeId: number = 1): Promise<string[]> {
+  return fetchJson<string[]>(`${BASE}/orders/sku-notes/dates?sku_id=${skuId}&store_id=${storeId}`)
+}
+
 export async function getSkuNote(skuId: number, date: string, storeId: number = 1): Promise<{ content: string | null }> {
   return fetchJson(`${BASE}/orders/sku-notes?sku_id=${skuId}&record_date=${date}&store_id=${storeId}`)
 }
@@ -334,6 +340,39 @@ export async function getProfitSkuDaily(
   return fetchJson<ProfitDailyItem[]>(`${BASE}/profit/sku-daily?${p.toString()}`)
 }
 
+// ── 真实利润 API（含采购成本）──
+
+export async function getRealProfitOverview(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<RealProfitOverview> {
+  const p = new URLSearchParams()
+  p.set('store_id', String(storeId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return fetchJson<RealProfitOverview>(`${BASE}/real-profit/overview?${p.toString()}`)
+}
+
+export async function getRealProfitSkuRanking(
+  dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<RealProfitSkuItem[]> {
+  const p = new URLSearchParams()
+  p.set('store_id', String(storeId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return fetchJson<RealProfitSkuItem[]>(`${BASE}/real-profit/sku-ranking?${p.toString()}`)
+}
+
+export async function getRealProfitSkuDaily(
+  skuId: number, dateFrom?: string, dateTo?: string, storeId: number = 1,
+): Promise<RealProfitDailyItem[]> {
+  const p = new URLSearchParams()
+  p.set('store_id', String(storeId))
+  p.set('sku_id', String(skuId))
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  return fetchJson<RealProfitDailyItem[]>(`${BASE}/real-profit/sku-daily?${p.toString()}`)
+}
+
 // ── 异常检测 API ──
 
 export async function getAnomalies(
@@ -363,6 +402,16 @@ export async function batchUpdateSkuManagement(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items }),
     },
+  )
+}
+
+export async function deleteSkuManagement(
+  skuId: number,
+  storeId: number = 1,
+): Promise<{ ok: boolean; sku_id: number; archived: boolean }> {
+  return fetchJson(
+    `${BASE}/sku-management/${skuId}?store_id=${storeId}`,
+    { method: 'DELETE' },
   )
 }
 
@@ -535,8 +584,37 @@ export async function getSkuPipelineList(
   return fetchJson<SkuTableResponse>(`${BASE}/procurement/sku-pipeline?${p.toString()}`)
 }
 
-export async function getSkuPipelineDetail(itemId: string): Promise<SkuPipelineDetail> {
-  return fetchJson<SkuPipelineDetail>(`${BASE}/procurement/sku-pipeline/${encodeURIComponent(itemId)}`)
+export async function getSkuPipelineDetail(itemId: string, dateFrom?: string, dateTo?: string): Promise<SkuPipelineDetail> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  const qs = p.toString()
+  return fetchJson<SkuPipelineDetail>(`${BASE}/procurement/sku-pipeline/${encodeURIComponent(itemId)}${qs ? '?' + qs : ''}`)
+}
+
+export async function updateCargoStatus(prNo: string, status: string): Promise<{ ok: boolean }> {
+  const p = new URLSearchParams()
+  p.set('pr_no', prNo)
+  p.set('status', status)
+  return fetchJson<{ ok: boolean }>(`${BASE}/procurement/cargo-status?${p.toString()}`, { method: 'PUT' })
+}
+
+// ── 按申购单聚合 ──
+
+export async function getPlanPipelineList(
+  dateFrom?: string, dateTo?: string, search?: string, page?: number, pageSize?: number,
+): Promise<PlanTableResponse> {
+  const p = new URLSearchParams()
+  if (dateFrom) p.set('date_from', dateFrom)
+  if (dateTo) p.set('date_to', dateTo)
+  if (search) p.set('search', search)
+  if (page) p.set('page', String(page))
+  if (pageSize) p.set('page_size', String(pageSize))
+  return fetchJson<PlanTableResponse>(`${BASE}/procurement/plan-pipeline?${p.toString()}`)
+}
+
+export async function getPlanPipelineDetail(poPlanNo: string): Promise<PlanPipelineDetail> {
+  return fetchJson<PlanPipelineDetail>(`${BASE}/procurement/plan-pipeline/${encodeURIComponent(poPlanNo)}`)
 }
 
 // ── 补货提示 ──
@@ -545,4 +623,14 @@ export async function getReplenishment(storeId?: number): Promise<ReplenishmentR
   const p = new URLSearchParams()
   if (storeId !== undefined) p.set('store_id', String(storeId))
   return fetchJson<ReplenishmentRow[]>(`${BASE}/replenishment?${p.toString()}`)
+}
+
+export async function upsertReplenishmentConfig(
+  body: ReplenishmentConfigItem,
+): Promise<ReplenishmentConfigItem> {
+  return fetchJson<ReplenishmentConfigItem>(`${BASE}/replenishment/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
 }

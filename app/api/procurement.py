@@ -19,6 +19,7 @@ from app.schemas.procurement import (
 )
 from app.schemas.supply_chain import (
     SkuTableRow, SkuTableResponse, SkuPipelineDetail,
+    PlanTableRow, PlanTableResponse, PlanPipelineDetail,
     PlanStage, OrderStage, ShippingStage,
 )
 
@@ -724,8 +725,8 @@ def sku_table(
                 MAX(poi.create_time) AS order_update
             FROM public.purchase_plan_item ppi
             JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
-            LEFT JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
-            LEFT JOIN public.purchase_order po ON po.po_no = poi.po_no
+            JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
+            JOIN public.purchase_order po ON po.po_no = poi.po_no
             WHERE ppi.platform = 'Ozon' AND pp.status != '5' AND {dc} {search_clause}
               AND ppi.item_id IS NOT NULL
             GROUP BY ppi.item_id
@@ -737,8 +738,8 @@ def sku_table(
                 po.status AS order_status,
                 poi.price AS order_price
             FROM public.purchase_plan_item ppi
-            LEFT JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
-            LEFT JOIN public.purchase_order po ON po.po_no = poi.po_no
+            JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
+            JOIN public.purchase_order po ON po.po_no = poi.po_no
             WHERE ppi.platform = 'Ozon'
               AND ppi.item_id IS NOT NULL
             ORDER BY ppi.item_id, poi.create_time DESC NULLS LAST
@@ -923,37 +924,48 @@ def sku_table(
 
 
 @router.get("/sku-pipeline/{item_id}", response_model=SkuPipelineDetail)
-def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depends(get_db)):
+def sku_pipeline_detail(
+    item_id: str,
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    pg=Depends(get_oms_pg),
+    db: Session = Depends(get_db),
+):
+    dc, params = _date_clause(date_from, date_to, "ppi")
     cur = pg.cursor()
     try:
         # 申购阶段
-        cur.execute("""
+        cur.execute(f"""
             SELECT ppi.po_plan_no, pp.status, ppi.plan_qty, ppi.already_qty,
                    ppi.direct_ship_arrival_qty, ppi.expect_date,
                    ppi.wms_rec_qty, ppi.wms_onstock_qty, ppi.create_time
             FROM public.purchase_plan_item ppi
             JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
-            WHERE ppi.item_id = %s AND ppi.platform = 'Ozon' AND pp.status != '5'
+            WHERE ppi.item_id = %(item_id)s AND ppi.platform = 'Ozon' AND pp.status != '5'
+              AND {dc}
             ORDER BY ppi.create_time DESC
-        """, (item_id,))
+        """, {"item_id": item_id, **params})
         plan_rows = cur.fetchall()
 
         # 采购阶段
-        cur.execute("""
+        cur.execute(f"""
             SELECT poi.po_no, poi.po_plan_no, po.status, poi.qty, poi.receipt_qty,
                    poi.price, poi.untaxed_amount, poi.expect_receipt_date, poi.create_time
             FROM public.purchase_order_item poi
             JOIN public.purchase_order po ON po.po_no = poi.po_no
             WHERE poi.po_plan_no IN (
-                SELECT po_plan_no FROM public.purchase_plan_item
-                WHERE item_id = %s AND platform = 'Ozon'
+                SELECT ppi.po_plan_no FROM public.purchase_plan_item ppi
+                JOIN public.purchase_plan pp2 ON pp2.po_plan_no = ppi.po_plan_no
+                WHERE ppi.item_id = %(item_id)s AND ppi.platform = 'Ozon'
+                  AND pp2.status != '5'
+                  AND {dc}
             )
             ORDER BY poi.create_time DESC
-        """, (item_id,))
+        """, {"item_id": item_id, **params})
         order_rows = cur.fetchall()
 
         # 发货阶段
-        cur.execute("""
+        cur.execute(f"""
             SELECT fsoi.shipping_order_code, fsoi.source_order_code, fsoi.po_no,
                    fso.order_status, fsoi.final_shipping_num, fsoi.planed_shipping_num,
                    fsoi.package_qty, fso.channel_code, fsoi.create_time,
@@ -961,11 +973,14 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depe
             FROM public.first_leg_shipping_order_item fsoi
             LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
             WHERE fsoi.source_order_code IN (
-                SELECT po_plan_no FROM public.purchase_plan_item
-                WHERE item_id = %s AND platform = 'Ozon'
+                SELECT ppi.po_plan_no FROM public.purchase_plan_item ppi
+                JOIN public.purchase_plan pp2 ON pp2.po_plan_no = ppi.po_plan_no
+                WHERE ppi.item_id = %(item_id)s AND ppi.platform = 'Ozon'
+                  AND pp2.status != '5'
+                  AND {dc}
             )
             ORDER BY fsoi.create_time DESC
-        """, (item_id,))
+        """, {"item_id": item_id, **params})
         ship_rows = cur.fetchall()
     finally:
         cur.close()
@@ -980,11 +995,19 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depe
             carton_qty, carton_volume, carton_gross_weight, weight, cbm, density, box_count,
             transit_warehouse, logistics_inbound_no, cargo_status, fbo_warehouse_name,
             booking_code, fbo_listing_time, warehouse_rent_start, actual_listing_qty,
-            info_remarks, batch_quotation, product_status, stocking_opinion, parent_record
+            info_remarks, batch_quotation, product_status, stocking_opinion, parent_record,
+            manual_status
             FROM ozon.cargo_shipments WHERE pr_no = ANY(:prs)"""),
         {"prs": plan_nos},
     ).fetchall()
     cargo_map = {r[0]: r for r in cargo_rows}
+
+    # 查直发表收货状态（用于自动推导 跨境在途/国内仓备货）
+    direct_rows = db.execute(
+        sa_text("SELECT pr_no, receiving_status FROM ozon.ozon_direct_shipment WHERE is_deleted = false AND pr_no = ANY(:prs)"),
+        {"prs": plan_nos},
+    ).fetchall()
+    direct_recv_map = {r[0]: r[1] for r in direct_rows}
 
     return SkuPipelineDetail(
         item_id=item_id,
@@ -1012,7 +1035,11 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depe
                 cs_box_count=_get_cs_num(cargo_map, r[0], 11),
                 cs_transit_warehouse=_get_cs(cargo_map, r[0], 12),
                 cs_logistics_inbound_no=_get_cs(cargo_map, r[0], 13),
-                cs_cargo_status=_get_cs(cargo_map, r[0], 14),
+                cs_cargo_status=(
+                    _get_cs(cargo_map, r[0], 25)  # 人工状态优先
+                    or (('跨境在途' if direct_recv_map.get(r[0]) == '已收到' else '国内仓备货') if r[0] in cargo_map else None)
+                ),
+                cs_manual_status=_get_cs(cargo_map, r[0], 25),
                 cs_fbo_warehouse_name=_get_cs(cargo_map, r[0], 15),
                 cs_booking_code=_get_cs(cargo_map, r[0], 16),
                 cs_fbo_listing_time=_fmt_val(_get_cs(cargo_map, r[0], 17)),
@@ -1026,6 +1053,279 @@ def sku_pipeline_detail(item_id: str, pg=Depends(get_oms_pg), db: Session = Depe
             )
             for r in plan_rows
         ],
+        orders=[
+            OrderStage(
+                po_no=r[0], po_plan_no=r[1], status=r[2],
+                status_label=ORDER_STATUS_LABELS.get(r[2] or "", r[2] or ""),
+                qty=float(r[3]) if r[3] else 0.0,
+                receipt_qty=float(r[4]) if r[4] else 0.0,
+                price=float(r[5]) if r[5] else 0.0,
+                untaxed_amount=float(r[6]) if r[6] else 0.0,
+                expect_receipt_date=_fmt_val(r[7]),
+                create_time=_fmt_val(r[8]),
+            )
+            for r in order_rows
+        ],
+        shippings=[
+            ShippingStage(
+                order_code=r[0], source_order_code=r[1], po_no=r[2],
+                order_status=r[3],
+                status_label=SHIPPING_STATUS_LABELS.get(r[3] or "", r[3] or ""),
+                final_shipping_num=float(r[4]) if r[4] else 0.0,
+                planed_shipping_num=float(r[5]) if r[5] else 0.0,
+                package_qty=float(r[6]) if r[6] else 0.0,
+                channel_code=r[7],
+                create_time=_fmt_val(r[8]),
+                shipping_time=_fmt_val(r[9]),
+                arrived_time=_fmt_val(r[10]),
+            )
+            for r in ship_rows
+        ],
+    )
+
+
+@router.put("/cargo-status")
+def update_cargo_status(
+    pr_no: str = Query(..., description="申购单号"),
+    status: str = Query(..., description="人工货物状态: 已约仓/已上架，传空字符串清空回自动推导"),
+    db: Session = Depends(get_db),
+):
+    """更新 cargo_shipments 的人工货物状态"""
+    value = status.strip() if status and status.strip() else None
+    # 只允许已约仓/已上架，或者清空
+    if value and value not in ("已约仓", "已上架"):
+        raise HTTPException(status_code=400, detail=f"非法状态: {value}，仅支持 已约仓/已上架")
+
+    result = db.execute(
+        sa_text("UPDATE ozon.cargo_shipments SET manual_status = :s WHERE pr_no = :pr"),
+        {"s": value, "pr": pr_no},
+    )
+    db.commit()
+    return {"ok": True, "updated": result.rowcount, "pr_no": pr_no, "status": value}
+
+
+# ═══════════════════════════════════════════════════════════════
+# 按申购单号聚合 (plan-pipeline)
+# ═══════════════════════════════════════════════════════════════
+
+@router.get("/plan-pipeline", response_model=PlanTableResponse)
+def plan_table(
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="搜索申购单号/货号"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10000, ge=1, le=10000),
+    pg=Depends(get_oms_pg),
+    db: Session = Depends(get_db),
+):
+    dc, params = _date_clause(date_from, date_to, "ppi")
+    cur = pg.cursor()
+    try:
+        search_clause = ""
+        if search:
+            params["search"] = f"%{search}%"
+            search_clause = "AND (ppi.po_plan_no ILIKE %(search)s OR ppi.item_id ILIKE %(search)s)"
+
+        sql = f"""
+        WITH plan_data AS (
+            SELECT DISTINCT ON (ppi.po_plan_no)
+                ppi.po_plan_no, ppi.item_id, pp.status AS plan_status,
+                pp.plan_type, ppi.plan_qty, ppi.already_qty, ppi.expect_date,
+                ppi.create_time, ppi.marketplace
+            FROM public.purchase_plan_item ppi
+            JOIN public.purchase_plan pp ON pp.po_plan_no = ppi.po_plan_no
+            WHERE ppi.platform = 'Ozon' AND pp.status != '5' AND {dc} {search_clause}
+              AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.po_plan_no, ppi.create_time DESC
+        ),
+        order_data AS (
+            SELECT ppi.po_plan_no,
+                   COUNT(DISTINCT poi.po_no) AS order_count,
+                   COALESCE(SUM(poi.qty), 0) AS order_qty,
+                   COALESCE(SUM(poi.receipt_qty), 0) AS receipt_qty,
+                   COALESCE(SUM(poi.untaxed_amount), 0) AS order_amount,
+                   MAX(poi.create_time) AS order_update
+            FROM public.purchase_plan_item ppi
+            JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
+            JOIN public.purchase_order po ON po.po_no = poi.po_no
+            WHERE ppi.platform = 'Ozon' AND ppi.item_id IS NOT NULL
+            GROUP BY ppi.po_plan_no
+        ),
+        latest_order AS (
+            SELECT DISTINCT ON (ppi.po_plan_no)
+                ppi.po_plan_no, poi.po_no AS order_no, po.status AS order_status,
+                poi.price AS order_price
+            FROM public.purchase_plan_item ppi
+            JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
+            JOIN public.purchase_order po ON po.po_no = poi.po_no
+            WHERE ppi.platform = 'Ozon' AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.po_plan_no, poi.create_time DESC
+        ),
+        shipping_data AS (
+            SELECT ppi.po_plan_no,
+                   COUNT(DISTINCT fsoi.shipping_order_code) AS shipping_count,
+                   COALESCE(SUM(fsoi.final_shipping_num), 0) AS final_shipping_qty,
+                   STRING_AGG(DISTINCT fsoi.shipping_order_code, ', ') AS shipping_nos,
+                   MAX(fsoi.create_time) AS shipping_update
+            FROM public.purchase_plan_item ppi
+            LEFT JOIN public.first_leg_shipping_order_item fsoi ON fsoi.source_order_code = ppi.po_plan_no
+            WHERE ppi.platform = 'Ozon' AND ppi.item_id IS NOT NULL
+            GROUP BY ppi.po_plan_no
+        ),
+        latest_shipping AS (
+            SELECT DISTINCT ON (ppi.po_plan_no)
+                ppi.po_plan_no, fso.order_code AS shipping_no,
+                fso.order_status AS shipping_status, fso.channel_code,
+                fso.shipping_time, fso.arrived_time
+            FROM public.purchase_plan_item ppi
+            LEFT JOIN public.first_leg_shipping_order_item fsoi ON fsoi.source_order_code = ppi.po_plan_no
+            LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
+            WHERE ppi.platform = 'Ozon' AND ppi.item_id IS NOT NULL
+            ORDER BY ppi.po_plan_no, fso.create_time DESC NULLS LAST
+        )
+        SELECT
+            pd.po_plan_no, pd.item_id, pd.plan_status, pd.plan_type,
+            pd.plan_qty, pd.already_qty, pd.expect_date, pd.create_time, pd.marketplace,
+            lo.order_no, lo.order_status, lo.order_price,
+            os.order_count, os.order_qty, os.receipt_qty, os.order_amount,
+            ss.shipping_nos, ls.shipping_status, ls.channel_code,
+            ls.shipping_time, ls.arrived_time,
+            ss.shipping_count, ss.final_shipping_qty,
+            GREATEST(pd.create_time, os.order_update, ss.shipping_update) AS latest_update
+        FROM plan_data pd
+        LEFT JOIN latest_order lo ON lo.po_plan_no = pd.po_plan_no
+        LEFT JOIN order_data os ON os.po_plan_no = pd.po_plan_no
+        LEFT JOIN latest_shipping ls ON ls.po_plan_no = pd.po_plan_no
+        LEFT JOIN shipping_data ss ON ss.po_plan_no = pd.po_plan_no
+        """
+
+        cur.execute(f"SELECT COUNT(*) FROM ({sql}) AS t", params)
+        total = int(cur.fetchone()[0])
+
+        params["limit"] = page_size
+        params["offset"] = (page - 1) * page_size
+        cur.execute(f"{sql} ORDER BY latest_update DESC NULLS LAST LIMIT %(limit)s OFFSET %(offset)s", params)
+        rows = cur.fetchall()
+    finally:
+        cur.close()
+
+    items = [
+        PlanTableRow(
+            po_plan_no=r[0], item_id=r[1], plan_status=r[2], plan_type=r[3],
+            plan_qty=float(r[4]) if r[4] else 0.0,
+            already_qty=float(r[5]) if r[5] else 0.0,
+            expect_date=_fmt_val(r[6]), create_time=_fmt_val(r[7]), marketplace=r[8],
+            order_no=r[9], order_status=r[10],
+            order_price=float(r[11]) if r[11] else 0.0,
+            order_count=int(r[12]) if r[12] else 0,
+            order_qty=float(r[13]) if r[13] else 0.0,
+            receipt_qty=float(r[14]) if r[14] else 0.0,
+            order_amount=float(r[15]) if r[15] else 0.0,
+            shipping_no=r[16], shipping_status=r[17], channel_code=r[18],
+            shipping_time=_fmt_val(r[19]), arrived_time=_fmt_val(r[20]),
+            shipping_count=int(r[21]) if r[21] else 0,
+            final_shipping_qty=float(r[22]) if r[22] else 0.0,
+            latest_update=_fmt_val(r[23]),
+        )
+        for r in rows
+    ]
+
+    # ── 填充中文标签 + 本地数据（products/cargo_shipments/直发表）──
+    if items:
+        item_ids = [it.item_id for it in items if it.item_id]
+        plan_nos = [it.po_plan_no for it in items]
+
+        # products：SKU ID + 商品名
+        prod_rows = db.execute(
+            sa_text("SELECT offer_id, sku_id, name FROM ozon.products WHERE offer_id = ANY(:ids)"),
+            {"ids": item_ids},
+        ).fetchall()
+        prod_map = {r[0]: (int(r[1]) if r[1] else 0, r[2]) for r in prod_rows}
+
+        # cargo_shipments：货物状态 + 人工状态 + 中转仓 + 入库单号
+        cargo_rows = db.execute(
+            sa_text("SELECT pr_no, cargo_status, manual_status, transit_warehouse, logistics_inbound_no FROM ozon.cargo_shipments WHERE pr_no = ANY(:prs)"),
+            {"prs": plan_nos},
+        ).fetchall()
+        cargo_map = {r[0]: r for r in cargo_rows}
+
+        # 直发表：收货状态 + 头程单号（按申购单号关联）
+        direct_rows = db.execute(
+            sa_text("""
+                SELECT pr_no,
+                       MAX(receiving_status) AS receiving_status,
+                       MAX(first_leg_tracking) AS first_leg_tracking
+                FROM ozon.ozon_direct_shipment
+                WHERE is_deleted = false AND pr_no = ANY(:prs)
+                GROUP BY pr_no
+            """),
+            {"prs": plan_nos},
+        ).fetchall()
+        direct_map = {r[0]: r[1] for r in direct_rows}
+        first_leg_map = {r[0]: r[2] for r in direct_rows}
+
+        for it in items:
+            it.plan_status_label = PLAN_STATUS_LABELS.get(it.plan_status or "", it.plan_status or "")
+            it.plan_type_label = PLAN_TYPE_LABELS.get(it.plan_type or "", it.plan_type or "")
+            it.order_status_label = ORDER_STATUS_LABELS.get(it.order_status or "", it.order_status or "")
+            it.shipping_status_label = SHIPPING_STATUS_LABELS.get(it.shipping_status or "", it.shipping_status or "")
+
+            pinfo = prod_map.get(it.item_id) if it.item_id else None
+            if pinfo:
+                it.sku_id = pinfo[0]
+                it.product_name = pinfo[1]
+
+            cr = cargo_map.get(it.po_plan_no)
+            if cr:
+                it.manual_status = cr[2]
+                it.transit_warehouse = cr[3]
+                it.logistics_inbound_no = cr[4]
+                # 最终状态 = 人工优先，否则自动推导
+                it.cargo_status = cr[2] or ('跨境在途' if direct_map.get(it.po_plan_no) == '已收到' else '国内仓备货')
+            elif it.po_plan_no in direct_map:
+                it.cargo_status = '跨境在途' if direct_map[it.po_plan_no] == '已收到' else '国内仓备货'
+
+            # 头程单号（直发跟进表 first_leg_tracking，按申购单号匹配）
+            it.direct_first_leg_tracking = first_leg_map.get(it.po_plan_no)
+
+    return PlanTableResponse(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get("/plan-pipeline/{po_plan_no}", response_model=PlanPipelineDetail)
+def plan_pipeline_detail(
+    po_plan_no: str,
+    pg=Depends(get_oms_pg),
+    db: Session = Depends(get_db),
+):
+    """单个申购单的采购单 + 发货单明细"""
+    cur = pg.cursor()
+    try:
+        cur.execute("""
+            SELECT poi.po_no, poi.po_plan_no, po.status, poi.qty, poi.receipt_qty,
+                   poi.price, poi.untaxed_amount, poi.expect_receipt_date, poi.create_time
+            FROM public.purchase_order_item poi
+            JOIN public.purchase_order po ON po.po_no = poi.po_no
+            WHERE poi.po_plan_no = %s
+            ORDER BY poi.create_time DESC
+        """, (po_plan_no,))
+        order_rows = cur.fetchall()
+
+        cur.execute("""
+            SELECT fsoi.shipping_order_code, fsoi.source_order_code, fsoi.po_no,
+                   fso.order_status, fsoi.final_shipping_num, fsoi.planed_shipping_num,
+                   fsoi.package_qty, fso.channel_code, fsoi.create_time,
+                   fso.shipping_time, fso.arrived_time
+            FROM public.first_leg_shipping_order_item fsoi
+            LEFT JOIN public.first_leg_shipping_order fso ON fso.order_code = fsoi.shipping_order_code
+            WHERE fsoi.source_order_code = %s
+            ORDER BY fsoi.create_time DESC
+        """, (po_plan_no,))
+        ship_rows = cur.fetchall()
+    finally:
+        cur.close()
+
+    return PlanPipelineDetail(
+        po_plan_no=po_plan_no,
         orders=[
             OrderStage(
                 po_no=r[0], po_plan_no=r[1], status=r[2],

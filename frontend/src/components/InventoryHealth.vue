@@ -3,7 +3,9 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import type { ProductSummary, SummaryRow, ReplenishmentRow } from '@/types'
-import { getStockStatus, refreshStocks, getReplenishment } from '@/api'
+import { getStockStatus, refreshStocks, getReplenishment, getSummary } from '@/api'
+import { useLocalDateRange } from '@/composables/useLocalDateRange'
+import { useStore } from '@/composables/useStore'
 
 const props = defineProps<{
   products: ProductSummary[]
@@ -19,6 +21,38 @@ const emit = defineEmits<{
 // 库存状态
 const stockStatus = ref<{ last_updated: string | null; stock_count: number }>({ last_updated: null, stock_count: 0 })
 const refreshing = ref(false)
+
+// 成交量的独立日期筛选（与退货/订单 Tab 一致）
+const { selectedStoreId } = useStore()
+const { localDateRange, periodPreset, showCustomDate, applyPreset, disabledDate } = useLocalDateRange()
+
+const salesSummaryRows = ref<SummaryRow[]>([])
+const salesLoading = ref(false)
+
+async function fetchSalesData() {
+  if (!localDateRange.value) return
+  salesLoading.value = true
+  try {
+    salesSummaryRows.value = await getSummary(
+      localDateRange.value[0], localDateRange.value[1],
+      undefined, selectedStoreId.value,
+    )
+  } catch { /* ignore */ }
+  finally { salesLoading.value = false }
+}
+
+watch(localDateRange, () => { fetchSalesData() }, { immediate: true })
+watch(selectedStoreId, () => { fetchSalesData() })
+
+// 实际成交 = ordered - cancelled - returns，按独立日期范围聚合
+const actualSalesMap = computed(() => {
+  const map = new Map<number, number>()
+  for (const r of salesSummaryRows.value) {
+    const v = (Number(r.ordered_units) || 0) - (Number(r.cancelled_units) || 0) - (Number(r.returns_units) || 0)
+    map.set(r.sku_id, (map.get(r.sku_id) || 0) + v)
+  }
+  return map
+})
 
 const replenishmentMap = ref<Map<number, { available_days: number | null; alert_level: string; actual_sales_3d: number; actual_sales_7d: number; actual_sales_14d: number; actual_sales_30d: number }>>(new Map())
 
@@ -167,16 +201,7 @@ interface InventoryItem {
   alert_level: string
 }
 
-// 实际成交 = 下单 - 取消 - 退货，按当前日期范围聚合（与订单/退货 tab 口径一致）
-const actualSalesMap = computed(() => {
-  const map = new Map<number, number>()
-  const rows = props.summaryRows
-  for (const r of rows) {
-    const v = (Number(r.ordered_units) || 0) - (Number(r.cancelled_units) || 0) - (Number(r.returns_units) || 0)
-    map.set(r.sku_id, (map.get(r.sku_id) || 0) + v)
-  }
-  return map
-})
+
 
 const ALERT_LABELS: Record<string, string> = {
   emergency: '紧急',
@@ -366,7 +391,28 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
       <template #header>
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
           <span style="font-weight: 600; white-space: nowrap;">库存列表</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: #909399;">成交</span>
+            <el-select v-model="periodPreset" style="width: 90px" size="small" @change="applyPreset">
+              <el-option label="昨天" value="yesterday" />
+              <el-option label="近7天" value="7days" />
+              <el-option label="近30天" value="30days" />
+              <el-option label="本月" value="thisMonth" />
+              <el-option label="全部" value="all" />
+              <el-option label="自定义" value="custom" />
+            </el-select>
+            <el-date-picker
+              v-if="showCustomDate"
+              v-model="localDateRange"
+              type="daterange"
+              size="small"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 220px"
+              :disabled-date="disabledDate"
+            />
             <el-input v-model="searchInput" placeholder="搜索名称 / 货号 / SKU" clearable style="width: 190px;" size="small" @clear="handleClear" @keyup.enter="applySearch" />
             <el-select v-model="statusInput" placeholder="库存状态" style="width: 105px;" size="small" @change="applySearch">
               <el-option label="全部" value="" /><el-option label="缺货" value="danger" /><el-option label="低库存" value="warning" /><el-option label="健康" value="success" />

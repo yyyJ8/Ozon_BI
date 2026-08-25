@@ -84,6 +84,62 @@ class SkuTableResponse(BaseModel):
     page_size: int
 
 
+class PlanTableRow(BaseModel):
+    """一行一个申购单（po_plan_no），扁平宽表"""
+    po_plan_no: str                                  # 申购单号
+    sku_id: int = 0                                  # products 表的 SKU ID
+    item_id: str | None = None                       # 货号（purchase_plan_item.item_id）
+    product_name: str | None = None                  # 商品名
+
+    # ── 申购 ──
+    plan_status: str | None = None
+    plan_status_label: str = ""
+    plan_type: str | None = None
+    plan_type_label: str = ""
+    plan_qty: float = 0.0                            # 计划数
+    already_qty: float = 0.0                         # 已下单
+    expect_date: str | None = None                   # 期望交期
+    create_time: str | None = None                   # 申购时间
+    direct_first_leg_tracking: str | None = None     # 头程单号（来自直发跟进表 first_leg_tracking，按申购单号关联）
+
+    # ── 采购 ──
+    order_no: str | None = None                      # 最新采购单号
+    order_status: str | None = None
+    order_status_label: str = ""
+    order_qty: float = 0.0                           # 采购总数（汇总）
+    receipt_qty: float = 0.0                         # 已收货（汇总）
+    order_count: int = 0
+    order_price: float = 0.0                         # 最新采购单价
+    order_amount: float = 0.0                        # 采购总金额（汇总）
+
+    # ── 发货 ──
+    shipping_no: str | None = None                   # 发货单号（多个逗号分隔）
+    shipping_status: str | None = None
+    shipping_status_label: str = ""
+    final_shipping_qty: float = 0.0                  # 发货总数（汇总）
+    shipping_count: int = 0
+    channel_code: str | None = None                  # 物流方式
+    shipping_time: str | None = None                 # 发货时间
+    arrived_time: str | None = None                  # 到仓时间
+
+    # ── 货物状态（4 状态模型）──
+    cargo_status: str | None = None                  # 最终货物状态
+    manual_status: str | None = None                 # 人工状态
+    transit_warehouse: str | None = None             # 中转仓
+    logistics_inbound_no: str | None = None          # 物流商入库单号
+
+    # ── 元数据 ──
+    marketplace: str | None = None
+    latest_update: str | None = None
+
+
+class PlanTableResponse(BaseModel):
+    items: list[PlanTableRow]
+    total: int
+    page: int
+    page_size: int
+
+
 # ── 详情（展开行用，保持不变）──
 
 class PlanStage(BaseModel):
@@ -112,6 +168,7 @@ class PlanStage(BaseModel):
     cs_transit_warehouse: str | None = None
     cs_logistics_inbound_no: str | None = None
     cs_cargo_status: str | None = None
+    cs_manual_status: str | None = None
     cs_fbo_warehouse_name: str | None = None
     cs_booking_code: str | None = None
     cs_fbo_listing_time: str | None = None
@@ -157,5 +214,12 @@ class SkuPipelineDetail(BaseModel):
     seller_sku: str | None = None
     main_sku_id: str | None = None
     plans: list[PlanStage] = []
+    orders: list[OrderStage] = []
+    shippings: list[ShippingStage] = []
+
+
+class PlanPipelineDetail(BaseModel):
+    """单个申购单的展开明细：采购单 + 发货单"""
+    po_plan_no: str
     orders: list[OrderStage] = []
     shippings: list[ShippingStage] = []

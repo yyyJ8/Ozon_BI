@@ -12,7 +12,7 @@ from app.services.sku_formulas import compute_formulas, INPUT_FIELDS
 db = SessionLocal()
 
 # 找出所有有 sku_management 记录的 SKU
-rows = db.query(SkuManagement, Product.marketing_seller_price).join(
+rows = db.query(SkuManagement, Product.marketing_seller_price, Product.commission_fbo_pct).join(
     Product,
     (SkuManagement.store_id == Product.store_id) & (SkuManagement.sku_id == Product.sku_id)
 ).all()
@@ -20,8 +20,10 @@ rows = db.query(SkuManagement, Product.marketing_seller_price).join(
 updated = 0
 skipped = 0
 
-for mgmt, price in rows:
+for mgmt, price, commission in rows:
     inputs = {f: getattr(mgmt, f, None) for f in INPUT_FIELDS}
+    # 佣金从 products 表读取
+    inputs["fbo_commission_pct"] = float(commission) if commission else None
     computed = compute_formulas(inputs, float(price) if price else None)
 
     changed = False

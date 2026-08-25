@@ -49,5 +49,6 @@ class ReplenishmentRow(BaseModel):
     suggested_replenishment: str = "♥☺♥"  # "♥☺♥" 或数字字符串
     available_days: Optional[float] = None
     alert_level: str = "normal"  # emergency / warning / normal
+    configured: bool = False  # 是否已配置安全/物流天数
 
     model_config = {"from_attributes": True}

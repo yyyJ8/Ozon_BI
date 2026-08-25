@@ -41,6 +41,19 @@ export function useLocalDateRange() {
       case '30days':
         localDateRange.value = [daysAgoStr(30), t]
         break
+      case 'thisMonth': {
+        // 本月 = 当月1号 → 昨天（今天数据不完整，沿用"终点用昨天"约定）
+        const now = new Date()
+        let start = daysAgoStr(now.getDate() - 1)  // 当月1号
+        // 店铺数据最早日期晚于1号时，收紧起点到实际有数据的日期
+        if (availableRange.value && availableRange.value.min_date > start) {
+          start = availableRange.value.min_date
+        }
+        // 极端情况：今天就是1号（本月还没有完整天数）→ 回退为昨天单天
+        if (start > y) start = y
+        localDateRange.value = [start, y]
+        break
+      }
       case 'all':
       default:
         if (availableRange.value) {

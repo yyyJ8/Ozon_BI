@@ -10,6 +10,7 @@ class SkuManagementItem(BaseModel):
     sku_id: int
 
     main_sku: Optional[str] = None
+    product_cn_name: Optional[str] = None
     source_url_1688: Optional[str] = None
     specification: Optional[str] = None
     sales_manager: Optional[str] = None
@@ -86,6 +87,7 @@ class SkuManagementUpdate(BaseModel):
     sku_id: int
 
     main_sku: Optional[str] = None
+    product_cn_name: Optional[str] = None
     source_url_1688: Optional[str] = None
     specification: Optional[str] = None
     sales_manager: Optional[str] = None

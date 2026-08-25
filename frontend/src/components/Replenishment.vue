@@ -1,18 +1,76 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
-import type { ReplenishmentRow } from '@/types'
-import { getReplenishment } from '@/api'
+import { Refresh, Plus, Edit } from '@element-plus/icons-vue'
+import type { ReplenishmentRow, ReplenishmentConfigItem } from '@/types'
+import { getReplenishment, upsertReplenishmentConfig } from '@/api'
 import { useStore } from '@/composables/useStore'
 
-const { selectedStoreId } = useStore()
+const { selectedStoreId, stores, fetchStores } = useStore()
 
 // ── 数据状态 ──
 const rows = ref<ReplenishmentRow[]>([])
 const loading = ref(false)
 const selectedRow = ref<ReplenishmentRow | null>(null)
 const onlyNeedReplenishment = ref(false)
+
+// ── 配置编辑弹窗 ──
+const dialogVisible = ref(false)
+const isEdit = ref(false)
+const saving = ref(false)
+const form = ref<ReplenishmentConfigItem>({
+  store_id: 0,
+  offer_id: '',
+  product_name: null,
+  safety_days: 5,
+  logistics_days: 50,
+})
+
+function openAdd() {
+  isEdit.value = false
+  form.value = {
+    store_id: selectedStoreId.value || stores.value[0]?.id || 1,
+    offer_id: '',
+    product_name: null,
+    safety_days: 5,
+    logistics_days: 50,
+  }
+  dialogVisible.value = true
+}
+
+function openEdit(row: ReplenishmentRow) {
+  isEdit.value = true
+  form.value = {
+    store_id: row.store_id,
+    offer_id: row.offer_id,
+    product_name: row.product_name,
+    safety_days: row.safety_days,
+    logistics_days: row.logistics_days,
+  }
+  dialogVisible.value = true
+}
+
+async function saveConfig() {
+  if (!form.value.store_id) {
+    ElMessage.warning('请选择店铺')
+    return
+  }
+  if (!form.value.offer_id) {
+    ElMessage.warning('请填写货号 offer_id')
+    return
+  }
+  saving.value = true
+  try {
+    await upsertReplenishmentConfig({ ...form.value })
+    ElMessage.success('配置已保存')
+    dialogVisible.value = false
+    await fetchData()
+  } catch (e: any) {
+    ElMessage.error('保存失败: ' + (e.message || '未知'))
+  } finally {
+    saving.value = false
+  }
+}
 
 // ── 筛选后的行 ──
 const HIDDEN_STATUSES = ['已清零', '淘汰']
@@ -41,7 +99,10 @@ async function fetchData() {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  if (!stores.value.length) fetchStores()
+  fetchData()
+})
 watch(selectedStoreId, fetchData)
 
 // ── 统计 ──
@@ -108,6 +169,7 @@ function formatNum(n: number, decimals?: number): string {
           只显示需补货
         </el-checkbox>
         <el-button size="small" :icon="Refresh" @click="fetchData" :loading="loading">刷新</el-button>
+        <el-button size="small" type="primary" :icon="Plus" @click="openAdd">新增配置</el-button>
         <span style="font-size:12px;color:#909399;">
           共 {{ stats.total }} 个 SKU，
           <span style="color:#f56c6c;font-weight:600;">{{ stats.need }} 个需补货</span>
@@ -204,7 +266,8 @@ function formatNum(n: number, decimals?: number): string {
 
         <el-table-column label="安全+物流" width="85" align="center">
           <template #default="{ row }">
-            <span style="font-size:11px;color:#909399;">{{ row.safety_days }}+{{ row.logistics_days }}</span>
+            <el-tag v-if="!row.configured" type="info" size="small" effect="plain">未配置</el-tag>
+            <span v-else style="font-size:11px;color:#909399;">{{ row.safety_days }}+{{ row.logistics_days }}</span>
           </template>
         </el-table-column>
 
@@ -257,6 +320,13 @@ function formatNum(n: number, decimals?: number): string {
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="80" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" link type="primary" :icon="Edit" @click.stop="openEdit(row)">
+              编辑
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -270,6 +340,7 @@ function formatNum(n: number, decimals?: number): string {
               <span style="font-size:11px;color:#909399;font-weight:400;">
                 {{ selectedRow.offer_id }}
               </span>
+              <el-tag v-if="!selectedRow.configured" type="info" size="small" effect="plain">未配置天数</el-tag>
             </div>
           </template>
 
@@ -379,6 +450,37 @@ function formatNum(n: number, decimals?: number): string {
         </el-card>
       </template>
     </div>
+
+    <!-- 配置编辑/新增弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑补货配置' : '新增补货配置'"
+      width="480px"
+    >
+      <el-form :model="form" label-width="90px">
+        <el-form-item label="店铺">
+          <el-select v-model="form.store_id" :disabled="isEdit" style="width:100%">
+            <el-option v-for="s in stores" :key="s.id" :label="s.name" :value="s.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="货号">
+          <el-input v-model="form.offer_id" :disabled="isEdit" placeholder="如 10220-Y07U0033-OB01" />
+        </el-form-item>
+        <el-form-item v-if="!isEdit" label="产品名称">
+          <el-input v-model="form.product_name" placeholder="选填" />
+        </el-form-item>
+        <el-form-item label="安全天数">
+          <el-input-number v-model="form.safety_days" :min="0" :max="365" />
+        </el-form-item>
+        <el-form-item label="物流天数">
+          <el-input-number v-model="form.logistics_days" :min="0" :max="365" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveConfig">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

@@ -8,12 +8,15 @@ from sqlalchemy import func, text
 from app.database import SessionLocal
 from app.models import (
     ReplenishmentConfig, Product, Stock,
-    SkuDailySummary, CargoShipment, SkuManagement,
+    SkuDailySummary, SkuManagement,
 )
 
 
 def get_replenishment_data(store_id: int = 0) -> list[dict]:
     """获取所有 SKU 的补货提示数据（含公式计算结果）。
+
+    以 ozon.products 为主表 LEFT JOIN 补货配置，因此**即使某商品没有配置
+    安全/物流天数也会展示**（此时天数用默认值 5/45 兜底，configured=False）。
 
     Args:
         store_id: 店铺 ID，0 = 全部店铺
@@ -25,15 +28,15 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
     try:
         today = date.today()
 
-        # ── 1. 查询配置 + 关联产品 ────────────────────────
-        config_query = db.query(
-            ReplenishmentConfig,
+        # ── 1. 查询商品 + 关联配置/管理 ────────────────────────
+        product_query = db.query(
             Product,
+            ReplenishmentConfig,
             SkuManagement,
         ).outerjoin(
-            Product,
-            (ReplenishmentConfig.store_id == Product.store_id)
-            & (ReplenishmentConfig.offer_id == Product.offer_id),
+            ReplenishmentConfig,
+            (Product.store_id == ReplenishmentConfig.store_id)
+            & (Product.offer_id == ReplenishmentConfig.offer_id),
         ).outerjoin(
             SkuManagement,
             (Product.store_id == SkuManagement.store_id)
@@ -41,46 +44,27 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
         )
 
         if store_id != 0:
-            config_query = config_query.filter(ReplenishmentConfig.store_id == store_id)
+            product_query = product_query.filter(Product.store_id == store_id)
 
-        config_rows = config_query.all()
+        product_rows = product_query.all()
 
-        if not config_rows:
+        if not product_rows:
             return []
 
-        # 构建 sku_id 列表
-        sku_store_map = {}  # sku_id -> store_id
-        offer_image_map = {}  # sku_id -> primary_image
-        offer_name_map = {}  # sku_id -> product_name from products
-        mgmt_status_map = {}  # sku_id -> product_status
-        mgmt_manager_map = {}  # sku_id -> sales_manager
-
-        valid_rows = []
-        for cfg, prod, mgmt in config_rows:
-            if prod is None:
-                continue
-            sku_id = prod.sku_id
-            st_id = cfg.store_id
-            sku_store_map[sku_id] = st_id
-            offer_image_map[sku_id] = prod.primary_image
-            offer_name_map[sku_id] = prod.name
-            mgmt_status_map[sku_id] = mgmt.product_status if mgmt else None
-            mgmt_manager_map[sku_id] = mgmt.sales_manager if mgmt else None
-            valid_rows.append((cfg, prod))
-
-        if not valid_rows:
-            return []
-
-        all_sku_ids = list(sku_store_map.keys())
+        all_sku_ids = [p.sku_id for p, _, _ in product_rows]
+        offer_to_sku = {
+            p.offer_id: p.sku_id for p, _, _ in product_rows if p.offer_id
+        }
+        offer_ids = list(offer_to_sku.keys())
 
         # ── 2. 库存 ───────────────────────────────────────
-        stock_rows = (
+        stock_query = (
             db.query(Stock.sku_id, func.coalesce(func.sum(Stock.present), 0))
             .filter(Stock.sku_id.in_(all_sku_ids))
         )
         if store_id != 0:
-            stock_rows = stock_rows.filter(Stock.store_id == store_id)
-        stock_map = {sku: int(s) for sku, s in stock_rows.group_by(Stock.sku_id).all()}
+            stock_query = stock_query.filter(Stock.store_id == store_id)
+        stock_map = {sku: int(s) for sku, s in stock_query.group_by(Stock.sku_id).all()}
 
         # ── 3. 销量（3/7/14/30天）: ordered - cancelled - client_return ──
         periods = {
@@ -143,33 +127,65 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
 
             # 实际成交 = ordered - cancelled - client_return
             for sku in all_sku_ids:
-                sales_map[sku][key] = max(0, ordered_map.get(sku, 0) - cancelled_map.get(sku, 0) - client_return_map.get(sku, 0))
+                sales_map[sku][key] = max(
+                    0,
+                    ordered_map.get(sku, 0) - cancelled_map.get(sku, 0) - client_return_map.get(sku, 0),
+                )
 
-        # ── 4. 跨境在途（cargo_shipments，状态=跨境在途）────
-        cross_border_map = {sku: 0 for sku in all_sku_ids}
-        cargo_rows = (
-            db.query(CargoShipment.sku, func.coalesce(func.sum(CargoShipment.replenishment_qty), 0))
-            .filter(
-                CargoShipment.sku.in_([p.offer_id for _, p in valid_rows]),
-                CargoShipment.cargo_status == "跨境在途",
-            )
-        )
-        if store_id != 0:
-            # cargo_shipments 不分 store，按 SKU 聚合
-            pass
-        for sku_offer_id, qty in cargo_rows.group_by(CargoShipment.sku).all():
-            # 找到对应的 sku_id
-            for cfg, prod in valid_rows:
-                if prod.offer_id == sku_offer_id:
-                    cross_border_map[prod.sku_id] = int(qty)
-                    break
+        # ── 4. 跨境在途（ozon_direct_shipment，按货号+渠道拆分）────
+        # 口径：直发表 receiving_status='已收到'（货代已收货=已发运）且未上架
+        #      （排除 cargo_shipments 中 cargo_status='已上架' 的申购单），
+        #      按 货号 + logistics_provider 聚合 total_qty；
+        #      货号匹配不到 products 的直接跳过（不做额外处理）。
+        #      渠道: SDK/运盟/昆仑/超光速；未知渠道归入超光速(cgs)。
+        channel_map: dict[int, dict[str, int]] = {}
+        if offer_ids:
+            listed_prs = db.execute(
+                text("SELECT DISTINCT pr_no FROM ozon.cargo_shipments WHERE cargo_status = '已上架' AND pr_no IS NOT NULL")
+            ).scalars().all() or [""]
+            cross_rows = db.execute(
+                text("""
+                    SELECT d.sku, COALESCE(d.logistics_provider, '') AS provider, COALESCE(SUM(d.total_qty), 0) AS qty
+                    FROM ozon.ozon_direct_shipment d
+                    WHERE d.is_deleted = false
+                      AND d.receiving_status = '已收到'
+                      AND d.sku = ANY(:offer_ids)
+                      AND NOT (d.pr_no = ANY(:listed_prs))
+                    GROUP BY d.sku, d.logistics_provider
+                """),
+                {"offer_ids": offer_ids, "listed_prs": listed_prs},
+            ).fetchall()
+            for offer_id, provider, qty in cross_rows:
+                sku = offer_to_sku.get(offer_id)
+                if sku is None:
+                    continue  # 货号匹配不到商品，跳过
+                channel_map.setdefault(sku, {})[provider or ""] = int(qty or 0)
 
-        # ── 5. 国内在途（omsprod purchase_order_item）────
-        domestic_map = _get_domestic_in_transit(all_sku_ids)
+        # ── 5. 国内在途（ozon_direct_shipment，receiving_status 为空=国内仓备货）────
+        # 口径：与跨境在途同源（直发表），receiving_status 为空（货代未确认收到、
+        #       未进入跨境段）即国内在途；'订单取消' 不计；按货号聚合 total_qty；
+        #       货号匹配不到 products 的跳过。
+        domestic_map = {sku: 0 for sku in all_sku_ids}
+        if offer_ids:
+            dom_rows = db.execute(
+                text("""
+                    SELECT d.sku, COALESCE(SUM(d.total_qty), 0)
+                    FROM ozon.ozon_direct_shipment d
+                    WHERE d.is_deleted = false
+                      AND d.receiving_status IS NULL
+                      AND d.sku = ANY(:offer_ids)
+                    GROUP BY d.sku
+                """),
+                {"offer_ids": offer_ids},
+            ).fetchall()
+            for offer_id, qty in dom_rows:
+                sku = offer_to_sku.get(offer_id)
+                if sku is not None:
+                    domestic_map[sku] = int(qty)
 
         # ── 6. 组装结果 + 计算 ────────────────────────────
         results = []
-        for cfg, prod in valid_rows:
+        for prod, cfg, mgmt in product_rows:
             sku_id = prod.sku_id
             stock = stock_map.get(sku_id, 0)
 
@@ -178,10 +194,22 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
             sales_14 = sales_map[sku_id]["sales_14d"]
             sales_30 = sales_map[sku_id]["sales_30d"]
 
-            cb_total = cross_border_map.get(sku_id, 0)
+            # 跨境在途（按渠道拆分）
+            ch = channel_map.get(sku_id, {})
+            sdk = ch.get("SDK", 0)
+            yunmeng = ch.get("运盟", 0)
+            kunlun = ch.get("昆仑", 0)
+            cgs = ch.get("超光速", 0) + sum(
+                v for k, v in ch.items() if k not in ("SDK", "运盟", "昆仑", "超光速")
+            )
+            cb_total = sdk + yunmeng + kunlun + cgs
+
             dom_in_transit = domestic_map.get(sku_id, 0)
-            safety = cfg.safety_days or 5
-            logistics = cfg.logistics_days or 45
+
+            # 无配置时用默认值兜底，configured=False 便于前端标记"未配置"
+            configured = cfg is not None
+            safety = cfg.safety_days if (cfg and cfg.safety_days) else 5
+            logistics = cfg.logistics_days if (cfg and cfg.logistics_days) else 45
 
             # 公式计算
             weighted_daily = _calc_weighted_daily(sales_3, sales_7, sales_14, sales_30)
@@ -191,23 +219,23 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
             alert_level = _calc_alert_level(available_days, safety, logistics)
 
             results.append({
-                "store_id": cfg.store_id,
+                "store_id": prod.store_id,
                 "sku_id": sku_id,
-                "offer_id": cfg.offer_id,
-                "product_name": offer_name_map.get(sku_id) or cfg.product_name,
-                "primary_image": offer_image_map.get(sku_id),
-                "product_status": mgmt_status_map.get(sku_id),
-                "sales_manager": mgmt_manager_map.get(sku_id),
+                "offer_id": prod.offer_id,
+                "product_name": prod.name,
+                "primary_image": prod.primary_image,
+                "product_status": mgmt.product_status if mgmt else None,
+                "sales_manager": mgmt.sales_manager if mgmt else None,
                 # 输入数据
                 "stock_present": stock,
                 "sales_3d": sales_3,
                 "sales_7d": sales_7,
                 "sales_14d": sales_14,
                 "sales_30d": sales_30,
-                "cross_border_sdk": 0,  # cargo_shipments 目前归入 cgs 渠道
-                "cross_border_yunmeng": 0,
-                "cross_border_kunlun": 0,
-                "cross_border_cgs": cb_total,
+                "cross_border_sdk": sdk,
+                "cross_border_yunmeng": yunmeng,
+                "cross_border_kunlun": kunlun,
+                "cross_border_cgs": cgs,
                 "domestic_in_transit": dom_in_transit,
                 "safety_days": safety,
                 "logistics_days": logistics,
@@ -219,6 +247,8 @@ def get_replenishment_data(store_id: int = 0) -> list[dict]:
                 "suggested_replenishment": suggested,
                 "available_days": available_days,
                 "alert_level": alert_level,
+                # 是否已配置安全/物流天数
+                "configured": configured,
             })
 
         return results
@@ -274,44 +304,3 @@ def _calc_alert_level(available_days: float | None, safety_days: int, logistics_
     if available_days <= safety_days + logistics_days:
         return "warning"
     return "normal"
-
-
-def _get_domestic_in_transit(sku_ids: list[int]) -> dict[int, int]:
-    """从 omsprod 获取国内在途（采购未完结数量）"""
-    result = {sku: 0 for sku in sku_ids}
-    try:
-        from app.database_oms import oms_pg_ctx
-        with oms_pg_ctx() as conn:
-            cur = conn.cursor()
-            # 查询未完结的采购订单行: qty - receipt_qty
-            cur.execute("""
-                SELECT poi.item_id, SUM(poi.qty - COALESCE(poi.receipt_qty, 0)) AS in_transit
-                FROM purchase_order_item poi
-                WHERE poi.item_id IS NOT NULL
-                  AND poi.qty > COALESCE(poi.receipt_qty, 0)
-                GROUP BY poi.item_id
-            """)
-            rows = cur.fetchall()
-            cur.close()
-
-        # item_id 在 omsprod 中可能对应 products.offer_id
-        # 需要映射 offer_id → sku_id
-        if rows:
-            db = SessionLocal()
-            try:
-                offer_ids = [r[0] for r in rows]
-                prod_map = dict(
-                    db.query(Product.offer_id, Product.sku_id)
-                    .filter(Product.offer_id.in_(offer_ids))
-                    .all()
-                )
-                for offer_id, qty in rows:
-                    sku_id = prod_map.get(offer_id)
-                    if sku_id and sku_id in result:
-                        result[sku_id] = int(qty)
-            finally:
-                db.close()
-    except Exception:
-        pass  # omsprod 不可用时兜底为 0
-
-    return result

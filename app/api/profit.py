@@ -3,6 +3,9 @@
 
 与 sku_daily_summary 独立，用于验证和纠正现有数据。
 日期归因: 有 posting_number → posting.created_at；无 → operation_date。
+
+注意: 如需含采购成本的真实利润，请使用 real_profit.py（/real-profit/*），
+它在本模块基础上 JOIN omsprod purchase_order_item 获取采购成本。
 """
 from datetime import date, datetime, timedelta
 from decimal import Decimal

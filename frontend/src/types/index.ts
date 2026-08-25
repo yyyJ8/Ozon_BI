@@ -270,6 +270,7 @@ export interface OrderOverview {
   total_ordered_units: number
   cancellation_rate: number
   client_return_count: number
+  ad_ratio: number | null
   avg_items_per_order: number | null
 }
 
@@ -282,6 +283,8 @@ export interface OrderTrendItem {
   cancelled: number
   client_return: number
   price: number | null
+  discount: number | null
+  green_price: number | null
 }
 
 export interface OrderListItem {
@@ -369,6 +372,9 @@ export interface OrderSkuStats {
   profit_rmb: number | null
   profit_margin_pct: number | null
   green_price: number | null
+  commission_pct: number | null
+  discount_pct: number | null
+  recent_deals: number
   stock: number
   fbo_count: number
   fbs_count: number
@@ -468,6 +474,82 @@ export interface ProfitDailyItem {
   other_costs: number
 }
 
+// ── 真实利润（含采购成本 + 头程费用）──
+
+export interface RealProfitOverview {
+  revenue: number
+  net_profit: number
+  profit_margin: number
+  total_costs: number
+  total_commissions: number
+  total_logistics: number
+  total_storage: number
+  total_advertising: number
+  total_promotion: number
+  total_returns: number
+  total_other: number
+  ordered_units: number
+  sku_count: number
+  day_count: number
+  total_purchase_cost_rmb: number
+  total_purchase_cost_rub: number
+  sku_with_purchase_cost: number
+  total_first_leg_cost_rmb: number
+  total_first_leg_cost_rub: number
+  sku_with_first_leg_cost: number
+  real_net_profit: number
+  real_profit_margin: number
+}
+
+export interface RealProfitSkuItem {
+  sku_id: number
+  offer_id: string | null
+  name: string | null
+  primary_image: string | null
+  revenue: number
+  costs: number
+  net_profit: number
+  profit_margin: number
+  ordered_units: number
+  commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  promotion_costs: number
+  returns_amount: number
+  other_costs: number
+  stock_present: number
+  stock_reserved: number
+  purchase_cost_rmb: number
+  exchange_rate: number
+  has_purchase_cost: boolean
+  first_leg_cost_rmb: number
+  has_first_leg_cost: boolean
+  real_net_profit: number
+  real_profit_margin: number
+}
+
+export interface RealProfitDailyItem {
+  date: string
+  revenue: number
+  costs: number
+  net_profit: number
+  profit_margin: number
+  commissions: number
+  logistics_costs: number
+  storage_fees: number
+  advertising: number
+  promotion_costs: number
+  returns_amount: number
+  other_costs: number
+  purchase_cost_rub: number
+  first_leg_cost_rub: number
+  has_purchase_cost: boolean
+  has_first_leg_cost: boolean
+  real_net_profit: number
+  real_profit_margin: number
+}
+
 // ── SKU 管理（可编辑表格）──
 
 export interface SkuManagementRow {
@@ -484,6 +566,7 @@ export interface SkuManagementRow {
 
   // sku_management 表（可编辑）
   main_sku: string | null
+  product_cn_name: string | null
   source_url_1688: string | null
   specification: string | null
   sales_manager: string | null
@@ -900,6 +983,59 @@ export interface SkuTableResponse {
   page_size: number
 }
 
+// ── 按申购单聚合 ──
+
+export interface PlanTableRow {
+  po_plan_no: string
+  sku_id: number
+  item_id: string | null
+  product_name: string | null
+  plan_status: string | null
+  plan_status_label: string
+  plan_type: string | null
+  plan_type_label: string
+  plan_qty: number
+  already_qty: number
+  expect_date: string | null
+  create_time: string | null
+  direct_first_leg_tracking: string | null
+  order_no: string | null
+  order_status: string | null
+  order_status_label: string
+  order_qty: number
+  receipt_qty: number
+  order_count: number
+  order_price: number
+  order_amount: number
+  shipping_no: string | null
+  shipping_status: string | null
+  shipping_status_label: string
+  final_shipping_qty: number
+  shipping_count: number
+  channel_code: string | null
+  shipping_time: string | null
+  arrived_time: string | null
+  cargo_status: string | null
+  manual_status: string | null
+  transit_warehouse: string | null
+  logistics_inbound_no: string | null
+  marketplace: string | null
+  latest_update: string | null
+}
+
+export interface PlanTableResponse {
+  items: PlanTableRow[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface PlanPipelineDetail {
+  po_plan_no: string
+  orders: OrderStage[]
+  shippings: ShippingStage[]
+}
+
 export interface PlanStage {
   po_plan_no: string
   status: string | null
@@ -1076,6 +1212,14 @@ export interface DirectListResponse<T> {
 
 // ── 补货提示 ──
 
+export interface ReplenishmentConfigItem {
+  store_id: number
+  offer_id: string
+  product_name: string | null
+  safety_days: number
+  logistics_days: number
+}
+
 export interface ReplenishmentRow {
   store_id: number
   sku_id: number
@@ -1105,4 +1249,5 @@ export interface ReplenishmentRow {
   suggested_replenishment: string
   available_days: number | null
   alert_level: string  // 'emergency' | 'warning' | 'normal'
+  configured: boolean  // 是否已配置安全/物流天数
 }
