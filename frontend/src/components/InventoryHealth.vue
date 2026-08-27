@@ -350,7 +350,7 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
                 📈 {{ selectedSkuId === null ? '库存趋势 + 下单' : selectedSkuLabel + ' 趋势' }}
               </span>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <el-tooltip content="库存 = 从当前实时库存往回推算：stock[t-1] ≈ stock[t] + delivered[t] - returns[t]。每日 9:00 / 19:00 自动同步 stocks 表" placement="top">
+                <el-tooltip content="库存 = 从当前实时库存往回推算：stock[t-1] ≈ stock[t] + delivered[t] - returns[t]。每日 5:00 自动同步 stocks 表" placement="top">
                   <span style="font-size: 11px; color: #909399; cursor: help; border-bottom: 1px dashed #c0c4cc;">推算规则</span>
                 </el-tooltip>
                 <el-button size="small" :loading="refreshing" @click="handleRefresh">

@@ -1,11 +1,10 @@
 """
-定时同步调度 — 每天按 .env 配置的时间自动同步所有启用店铺
+定时同步调度 — 所有任务统一在早上 5:00 依次执行
 
-时间安排:
-  5:00  (固定) — 广告 SKU 明细（异步报告极慢，凌晨 Ozon 队列空闲）
-  9:00  (.env)  — 全量同步（商品/销售/财务/履约/退货/广告活动级）
-  19:00 (.env)  — 全量同步（同上）
-  5:00  (固定) — 每日快照（价格+库存 → sku_daily_snapshot，Ozon 莫斯科 24:00 = 北京 5:00）
+时间安排（全部统一在早上 5:00 依次执行）:
+  5:00  (固定) — 每日快照（绿标价/售价/库存 → sku_daily_snapshot，Ozon 莫斯科 24:00 = 北京 5:00）
+  5:05  (固定) — 全量同步（商品/销售/财务/履约/退货/广告活动级）
+  5:20  (固定) — 广告 SKU 明细（异步报告极慢，放最后避免阻塞）
 """
 from datetime import date, timedelta
 
@@ -14,7 +13,6 @@ from loguru import logger
 
 from app.clients.ozon import get_ozon_client
 from app.clients.perf import get_perf_client
-from app.config import settings
 from app.database import SessionLocal
 from app.models import Store
 from app.services.sync_service import run_full_sync
@@ -122,18 +120,10 @@ def sync_recent_data():
 
 
 def start_scheduler():
-    """启动定时调度"""
-    # 凌晨 5:00 — SKU 广告明细（固定，不通过 .env 配置）
-    scheduler.add_job(
-        sync_sku_detail,
-        trigger="cron",
-        hour=5,
-        minute=0,
-        id="sku_detail_at_05h",
-        replace_existing=True,
-        misfire_grace_time=600,
-    )
+    """启动定时调度 — 全部任务统一在早上 5:00 依次执行
 
+    顺序: 5:00 每日快照(绿标价/售价/库存) → 5:05 全量同步 → 5:20 广告 SKU 明细(最后，避免阻塞)
+    """
     # 每天 5:00 — 价格+库存每日快照（Ozon 莫斯科 24:00 = 北京 5:00）
     scheduler.add_job(
         daily_snapshot,
@@ -145,24 +135,30 @@ def start_scheduler():
         misfire_grace_time=600,
     )
 
-    # 白天同步时间点 — 从 .env 读取（默认 9:00 和 19:00）
-    hours = [int(h.strip()) for h in settings.sync_cron_hours.split(",") if h.strip().isdigit()]
-    if not hours:
-        hours = [9, 19]
+    # 每天 5:05 — 全量同步（商品/销售/财务/履约/退货/广告活动级）
+    scheduler.add_job(
+        sync_recent_data,
+        trigger="cron",
+        hour=5,
+        minute=5,
+        id="full_sync_at_0505h",
+        replace_existing=True,
+        misfire_grace_time=600,
+    )
 
-    for hour in hours:
-        scheduler.add_job(
-            sync_recent_data,
-            trigger="cron",
-            hour=hour,
-            minute=0,
-            id=f"daily_sync_at_{hour:02d}h",
-            replace_existing=True,
-            misfire_grace_time=600,
-        )
+    # 每天 5:20 — 广告 SKU 明细（异步报告慢，放最后不阻塞前面）
+    scheduler.add_job(
+        sync_sku_detail,
+        trigger="cron",
+        hour=5,
+        minute=20,
+        id="sku_detail_at_0520h",
+        replace_existing=True,
+        misfire_grace_time=600,
+    )
 
     scheduler.start()
-    logger.info(f"定时调度已启动: SKU明细=5:00, 全量同步={hours}，覆盖所有启用店铺")
+    logger.info("定时调度已启动: 快照=5:00, 全量同步=5:05, SKU广告明细=5:20")
 
 
 def stop_scheduler():
