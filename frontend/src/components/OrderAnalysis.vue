@@ -99,6 +99,10 @@ function renderTrendChart() {
   if (!trendChart || !trend.value.length) return
   const dates = trend.value.map(d => d.date.slice(5))
   const fullDates = trend.value.map(d => d.date)
+  // 今天的数据不展示（今天未结束/未归档/售价不准），但 X 轴日期保留今天
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const hideToday = (fn: (d: any) => number | null) => (d: any) => (d.date === todayStr ? null : fn(d))
   trendChart.off('click')
   trendChart.getZr().off('click')
   trendChart.getZr().on('click', (e: any) => {
@@ -149,27 +153,27 @@ function renderTrendChart() {
     ],
     series: [
       {
-        name: '实际售出', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled),
+        name: '实际售出', type: 'line', data: trend.value.map(hideToday(d => d.ordered - d.cancelled)),
         lineStyle: { width: 3, type: 'dashed' }, itemStyle: { color: '#409eff' },
         symbol: 'circle', symbolSize: 4,
       },
       {
-        name: '实际成交', type: 'line', data: trend.value.map(d => d.ordered - d.cancelled - d.client_return),
+        name: '实际成交', type: 'line', data: trend.value.map(hideToday(d => d.ordered - d.cancelled - d.client_return)),
         lineStyle: { width: 3 }, itemStyle: { color: '#67c23a' },
         symbol: 'diamond', symbolSize: 6, areaStyle: { color: 'rgba(103,194,58,0.1)' },
       },
       {
-        name: '售价', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.price),
+        name: '售价', type: 'line', yAxisIndex: 1, data: trend.value.map(hideToday(d => d.price)),
         lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#e6a23c' },
         symbol: 'triangle', symbolSize: 6,
       },
       {
-        name: '折扣', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.discount),
+        name: '折扣', type: 'line', yAxisIndex: 1, data: trend.value.map(hideToday(d => d.discount)),
         lineStyle: { width: 1.5, type: 'dashed' }, itemStyle: { color: '#909399' },
         symbol: 'diamond', symbolSize: 4,
       },
       {
-        name: '绿标价', type: 'line', yAxisIndex: 1, data: trend.value.map(d => d.green_price),
+        name: '绿标价', type: 'line', yAxisIndex: 1, data: trend.value.map(hideToday(d => d.green_price)),
         lineStyle: { width: 2, type: 'dotted' }, itemStyle: { color: '#67c23a' },
         symbol: 'circle', symbolSize: 5,
       },
