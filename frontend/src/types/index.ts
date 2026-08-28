@@ -491,12 +491,9 @@ export interface RealProfitOverview {
   ordered_units: number
   sku_count: number
   day_count: number
-  total_purchase_cost_rmb: number
-  total_purchase_cost_rub: number
-  sku_with_purchase_cost: number
-  total_first_leg_cost_rmb: number
-  total_first_leg_cost_rub: number
-  sku_with_first_leg_cost: number
+  total_product_cost_rmb: number
+  total_product_cost_rub: number
+  sku_with_product_cost: number
   real_net_profit: number
   real_profit_margin: number
 }
@@ -520,11 +517,9 @@ export interface RealProfitSkuItem {
   other_costs: number
   stock_present: number
   stock_reserved: number
-  purchase_cost_rmb: number
+  product_cost_rmb: number
   exchange_rate: number
-  has_purchase_cost: boolean
-  first_leg_cost_rmb: number
-  has_first_leg_cost: boolean
+  has_product_cost: boolean
   real_net_profit: number
   real_profit_margin: number
 }
@@ -542,10 +537,8 @@ export interface RealProfitDailyItem {
   promotion_costs: number
   returns_amount: number
   other_costs: number
-  purchase_cost_rub: number
-  first_leg_cost_rub: number
-  has_purchase_cost: boolean
-  has_first_leg_cost: boolean
+  product_cost_rub: number
+  has_product_cost: boolean
   real_net_profit: number
   real_profit_margin: number
 }

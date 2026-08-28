@@ -101,16 +101,12 @@ class RealProfitOverview(BaseModel):
     ordered_units: int
     sku_count: int
     day_count: int
-    # 采购成本（单价 × 销量）
-    total_purchase_cost_rmb: float       # 采购总成本 (RMB)
-    total_purchase_cost_rub: float       # 采购总成本 (₽)
-    sku_with_purchase_cost: int          # 有采购单价的 SKU 数
-    # 头程费用（单价 × 销量）
-    total_first_leg_cost_rmb: float      # 头程总成本 (RMB)
-    total_first_leg_cost_rub: float      # 头程总成本 (₽)
-    sku_with_first_leg_cost: int         # 有头程单价的 SKU 数
-    # 真实利润
-    real_net_profit: float               # 真实净利润 = 平台净利 - 采购₽ - 头程₽
+    # 产品成本（单件 ¥ × 销量，含采购+送仓+头程）
+    total_product_cost_rmb: float        # 产品成本总 (RMB)
+    total_product_cost_rub: float        # 产品成本总 (₽)
+    sku_with_product_cost: int           # 有产品成本的 SKU 数
+    # 真实利润（近似值，与公司财务可能存在偏差）
+    real_net_profit: float               # 真实净利润 = 平台净利 - 产品成本₽
     real_profit_margin: float            # 真实利润率
 
 
@@ -135,15 +131,12 @@ class RealProfitSkuItem(BaseModel):
     other_costs: float = 0
     stock_present: int = 0
     stock_reserved: int = 0
-    # 采购成本（单价）
-    purchase_cost_rmb: float = 0         # 采购单价 (RMB/件)
+    # 产品成本（单件 ¥，含采购+送仓+头程）
+    product_cost_rmb: float = 0          # 单件产品成本 (RMB/件)
     exchange_rate: float = 0             # 使用的汇率
-    has_purchase_cost: bool = False      # 是否已有采购单价
-    # 头程费用（单价）
-    first_leg_cost_rmb: float = 0        # 头程单价 (RMB/件)
-    has_first_leg_cost: bool = False     # 是否已有头程单价
+    has_product_cost: bool = False       # 是否已有产品成本
     # 真实利润
-    real_net_profit: float = 0           # 真实净利润 = 平台净利 - (采购+头程)单价×销量×汇率
+    real_net_profit: float = 0           # 真实净利润 = 平台净利 - 产品成本单价×销量×汇率
     real_profit_margin: float = 0        # 真实利润率
 
 
@@ -161,10 +154,8 @@ class RealProfitDailyItem(BaseModel):
     promotion_costs: float = 0
     returns_amount: float = 0
     other_costs: float = 0
-    # 采购成本 + 头程（按收入占比分摊到日）
-    purchase_cost_rub: float = 0         # 当日摊采购成本 (₽)
-    first_leg_cost_rub: float = 0        # 当日摊头程成本 (₽)
-    has_purchase_cost: bool = False
-    has_first_leg_cost: bool = False
+    # 产品成本（按收入占比分摊到日）
+    product_cost_rub: float = 0          # 当日摊产品成本 (₽)
+    has_product_cost: bool = False
     real_net_profit: float = 0
     real_profit_margin: float = 0

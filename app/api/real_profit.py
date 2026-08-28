@@ -1,15 +1,22 @@
 """
-真实利润分析 API — 在 Ozon 平台 P&L 基础上加入采购成本（COGS）+ 头程费用
+真实利润分析 API — 基于 Ozon 平台 P&L + sku_management 的产品成本(¥)
 
 数据来源:
-  - Ozon 平台费用: profit.py _aggregate_profit() 实时聚合（finance_transactions）
-  - 采购单价:      omsprod purchase_order_item.price（远程 PostgreSQL）
-  - 头程单价:      sku_management.first_leg_cost_rmb（公式引擎估算）
-  - 汇率:          sku_management.exchange_rate（本地），默认 12.0
+  - Ozon 平台费用: profit.py _aggregate_profit() 实时聚合（finance_transactions）→ 平台毛利
+  - 产品成本:      ozon.sku_management.product_cost_rmb（单件全成本 ¥，含采购成本+送仓费+头程×1.06）
+  - 汇率:          ozon.sku_management.exchange_rate（本地），未填写的取默认值 13.0
 
-映射链路: purchase_order_item.item_id → products.offer_id → products.sku_id
+真实净利 = 平台毛利 − 单件产品成本(¥) × 销量 × 汇率
 
-真实净利 = 平台净利 − 采购单价×销量×汇率 − 头程单价×销量×汇率
+⚠️ 关于偏差的说明:
+  本模块的"真实净利"是把单件产品成本(¥) 按销量×汇率折算后，从平台毛利里扣掉得到的**近似值**。
+  它用于**经营层面的快速参考**，与公司财务的实际结算口径（真实采购款、头程实付、
+  实际换汇/收款手续费、税费、损耗、退货处理等）**可能存在偏差**，偏差是正常的。
+  主要偏差来源:
+    1. 产品成本 = 采购成本 + 送仓费 + 头程×1.06（含税估算），非实际采购/头程实付单。
+    2. 汇率用固定值（默认 13.0，或 sku_management 里的汇率），非按结算日牌价。
+    3. 销量用 postings 件数，与财务回款计入的件数日期口径略有出入。
+  如需与公司财务对账，请以财务系统为准，本数字仅作经营参考。
 """
 from datetime import date, timedelta
 from typing import Optional
@@ -19,7 +26,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.database_oms import get_oms_pg
 from app.api.profit import _aggregate_profit, _to_float
 from app.schemas.profit import (
     RealProfitOverview,
@@ -30,57 +36,18 @@ from app.schemas.profit import (
 router = APIRouter(prefix="/real-profit", tags=["real-profit"])
 
 STORE_ID = Query(default=1, description="店铺 ID，0=全部店铺")
-DEFAULT_EXCHANGE_RATE = 12.0
+DEFAULT_EXCHANGE_RATE = 13.0
 
 
-def _get_purchase_unit_prices(pg_conn, item_ids: list[str]) -> dict[str, float]:
-    """
-    从 omsprod 获取每个 item_id（= offer_id）的最近采购单价（RMB/件）。
-
-    注意: purchase_order_item.item_id 大多为 NULL，真正的 SKU 编码在
-    purchase_plan_item.item_id。关联链路:
-      purchase_order_item.po_plan_no → purchase_plan_item.po_plan_no
-      → purchase_plan_item.item_id
-
-    取最近一次已完成(status=7)采购单的单价。
-    """
-    if not item_ids:
-        return {}
-
-    cur = pg_conn.cursor()
-    result: dict[str, float] = {}
-    try:
-        cur.execute("""
-            SELECT DISTINCT ON (ppi.item_id)
-                ppi.item_id,
-                poi.price
-            FROM public.purchase_plan_item ppi
-            JOIN public.purchase_order_item poi ON poi.po_plan_no = ppi.po_plan_no
-            JOIN public.purchase_order po ON po.po_no = poi.po_no
-            WHERE ppi.item_id = ANY(%s)
-              AND ppi.platform = 'Ozon'
-              AND po.status = '7'   -- 已完结
-              AND poi.price IS NOT NULL
-            ORDER BY ppi.item_id, po.create_time DESC
-        """, (item_ids,))
-        for row in cur.fetchall():
-            item_id, price = row[0], float(row[1]) if row[1] else 0.0
-            if price > 0:
-                result[item_id] = price
-    finally:
-        cur.close()
-    return result
-
-
-def _get_first_leg_unit_costs(db: Session, sku_ids: list[int]) -> dict[int, float]:
-    """从本地 sku_management 获取每个 SKU 的头程单价（RMB/件，公式引擎估算）"""
+def _get_product_cost_rmb(db: Session, sku_ids: list[int]) -> dict[int, float]:
+    """从本地 sku_management 读取单件产品成本（¥，含采购+送仓+头程）"""
     if not sku_ids:
         return {}
 
     rows = db.execute(text("""
-        SELECT sku_id, first_leg_cost_rmb
+        SELECT sku_id, product_cost_rmb
         FROM ozon.sku_management
-        WHERE sku_id = ANY(:skus) AND first_leg_cost_rmb IS NOT NULL
+        WHERE sku_id = ANY(:skus) AND product_cost_rmb IS NOT NULL
     """), {"skus": sku_ids}).fetchall()
 
     result = {}
@@ -92,7 +59,7 @@ def _get_first_leg_unit_costs(db: Session, sku_ids: list[int]) -> dict[int, floa
 
 
 def _get_exchange_rates(db: Session, sku_ids: list[int]) -> dict[int, float]:
-    """从本地 sku_management 获取每个 SKU 的汇率，未填写的返回默认值"""
+    """从本地 sku_management 获取每个 SKU 的汇率，未填写的返回默认值 13.0"""
     if not sku_ids:
         return {}
 
@@ -128,16 +95,6 @@ def _get_sku_ordered_units(db: Session, store_id: int, date_from: date, date_to:
     return {r[0]: int(r[1] or 0) for r in rows}
 
 
-def _get_offer_id_map(db: Session, sku_ids: list[int]) -> dict[int, str]:
-    """sku_id → offer_id 映射"""
-    if not sku_ids:
-        return {}
-    rows = db.execute(text(
-        "SELECT sku_id, offer_id FROM ozon.products WHERE sku_id = ANY(:skus) AND offer_id IS NOT NULL"
-    ), {"skus": sku_ids}).fetchall()
-    return {int(r[0]): r[1] for r in rows}
-
-
 # ═══════════════════════════════════════════════════════════════
 # API 端点
 # ═══════════════════════════════════════════════════════════════
@@ -149,9 +106,8 @@ def real_profit_overview(
     date_to: Optional[date] = Query(default=None),
     store_id: int = STORE_ID,
     db: Session = Depends(get_db),
-    pg=Depends(get_oms_pg),
 ):
-    """含采购成本 + 头程费用的真实利润总览"""
+    """含产品成本的真实利润总览"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
@@ -189,42 +145,28 @@ def real_profit_overview(
     net_profit = total_revenue + total_costs
     profit_margin = (net_profit / total_revenue * 100) if total_revenue > 0 else 0.0
 
-    # ── 2. 下单件数（按 SKU）──
+    # ── 2. 产品成本(¥) + 汇率 ──
     sku_list = list(skus)
     units_map = _get_sku_ordered_units(db, store_id, date_from, date_to)
     total_units = sum(units_map.values())
 
-    # ── 3. 采购单价 + 头程单价 + 汇率 ──
-    offer_map = _get_offer_id_map(db, sku_list)
-    purchase_unit = _get_purchase_unit_prices(pg, list(offer_map.values()))
-    first_leg_unit = _get_first_leg_unit_costs(db, sku_list)
+    product_cost_map = _get_product_cost_rmb(db, sku_list)
     exchange_rates = _get_exchange_rates(db, sku_list)
 
-    total_purchase_rmb = 0.0
-    total_purchase_rub = 0.0
-    total_first_leg_rmb = 0.0
-    total_first_leg_rub = 0.0
-    sku_with_purchase = 0
-    sku_with_first_leg = 0
+    total_product_cost_rmb = 0.0
+    total_product_cost_rub = 0.0
+    sku_with_product_cost = 0
 
     for sid in sku_list:
-        offer = offer_map.get(sid)
         units = units_map.get(sid, 0)
         rate = exchange_rates.get(sid, DEFAULT_EXCHANGE_RATE)
+        cost = product_cost_map.get(sid, 0.0)
+        if cost > 0:
+            total_product_cost_rmb += cost * units
+            total_product_cost_rub += cost * units * rate
+            sku_with_product_cost += 1
 
-        p_cost = purchase_unit.get(offer, 0.0) if offer else 0.0
-        if p_cost > 0:
-            total_purchase_rmb += p_cost * units
-            total_purchase_rub += p_cost * units * rate
-            sku_with_purchase += 1
-
-        fl_cost = first_leg_unit.get(sid, 0.0)
-        if fl_cost > 0:
-            total_first_leg_rmb += fl_cost * units
-            total_first_leg_rub += fl_cost * units * rate
-            sku_with_first_leg += 1
-
-    real_net_profit = net_profit - total_purchase_rub - total_first_leg_rub
+    real_net_profit = net_profit - total_product_cost_rub
     real_profit_margin = (real_net_profit / total_revenue * 100) if total_revenue > 0 else 0.0
 
     return RealProfitOverview(
@@ -242,12 +184,9 @@ def real_profit_overview(
         ordered_units=total_units,
         sku_count=len(skus),
         day_count=len(days),
-        total_purchase_cost_rmb=round(total_purchase_rmb, 2),
-        total_purchase_cost_rub=round(total_purchase_rub, 2),
-        sku_with_purchase_cost=sku_with_purchase,
-        total_first_leg_cost_rmb=round(total_first_leg_rmb, 2),
-        total_first_leg_cost_rub=round(total_first_leg_rub, 2),
-        sku_with_first_leg_cost=sku_with_first_leg,
+        total_product_cost_rmb=round(total_product_cost_rmb, 2),
+        total_product_cost_rub=round(total_product_cost_rub, 2),
+        sku_with_product_cost=sku_with_product_cost,
         real_net_profit=round(real_net_profit, 2),
         real_profit_margin=round(real_profit_margin, 2),
     )
@@ -259,9 +198,8 @@ def real_profit_sku_ranking(
     date_to: Optional[date] = Query(default=None),
     store_id: int = STORE_ID,
     db: Session = Depends(get_db),
-    pg=Depends(get_oms_pg),
 ):
-    """含采购成本 + 头程费用的 SKU 利润排行"""
+    """含产品成本的 SKU 利润排行"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
@@ -295,11 +233,9 @@ def real_profit_sku_ranking(
     """), {"store_id": store_id, "skus": sku_ids}).fetchall()
     prod_map = {r[0]: r for r in prod_rows}
 
-    # ── 3. 下单件数 + 采购单价 + 头程单价 + 汇率 ──
+    # ── 3. 下单件数 + 产品成本(¥) + 汇率 ──
     units_map = _get_sku_ordered_units(db, store_id, date_from, date_to)
-    offer_map = _get_offer_id_map(db, sku_ids)
-    purchase_unit = _get_purchase_unit_prices(pg, list(offer_map.values()))
-    first_leg_unit = _get_first_leg_unit_costs(db, sku_ids)
+    product_cost_map = _get_product_cost_rmb(db, sku_ids)
     exchange_rates = _get_exchange_rates(db, sku_ids)
 
     # ── 4. 组装结果 ──
@@ -312,24 +248,21 @@ def real_profit_sku_ranking(
         profit_margin = (net_profit / g["revenue"] * 100) if g["revenue"] > 0 else 0.0
 
         pinfo = prod_map.get(sid)
-        offer_id = pinfo[1] if pinfo else None
         units = units_map.get(sid, 0)
         rate = exchange_rates.get(sid, DEFAULT_EXCHANGE_RATE)
 
-        # 采购单价 + 头程单价
-        p_cost = purchase_unit.get(offer_id, 0.0) if offer_id else 0.0
-        fl_cost = first_leg_unit.get(sid, 0.0)
-        has_purchase = p_cost > 0
-        has_first_leg = fl_cost > 0
+        # 产品成本(¥ 单件，含采购+送仓+头程)
+        p_cost = product_cost_map.get(sid, 0.0)
+        has_product_cost = p_cost > 0
 
-        # 真实净利 = 平台净利 - (采购单价 + 头程单价) × 销量 × 汇率
-        cogs_rub = (p_cost + fl_cost) * units * rate
+        # 真实净利 = 平台净利 - 单件产品成本(¥) × 销量 × 汇率
+        cogs_rub = p_cost * units * rate
         real_net = net_profit - cogs_rub
         real_margin = (real_net / g["revenue"] * 100) if g["revenue"] > 0 else 0.0
 
         result_list.append(RealProfitSkuItem(
             sku_id=sid,
-            offer_id=offer_id,
+            offer_id=pinfo[1] if pinfo else None,
             name=pinfo[2] if pinfo else None,
             primary_image=pinfo[3] if pinfo else None,
             revenue=round(g["revenue"], 2),
@@ -346,11 +279,9 @@ def real_profit_sku_ranking(
             other_costs=round(abs(g["other_costs"]), 2),
             stock_present=int(pinfo[4]) if pinfo else 0,
             stock_reserved=int(pinfo[5]) if pinfo else 0,
-            purchase_cost_rmb=round(p_cost, 2),
+            product_cost_rmb=round(p_cost, 2),
             exchange_rate=round(rate, 4),
-            has_purchase_cost=has_purchase,
-            first_leg_cost_rmb=round(fl_cost, 2),
-            has_first_leg_cost=has_first_leg,
+            has_product_cost=has_product_cost,
             real_net_profit=round(real_net, 2),
             real_profit_margin=round(real_margin, 2),
         ))
@@ -366,9 +297,8 @@ def real_profit_sku_daily(
     date_to: Optional[date] = Query(default=None),
     store_id: int = STORE_ID,
     db: Session = Depends(get_db),
-    pg=Depends(get_oms_pg),
 ):
-    """含采购成本 + 头程费用的单 SKU 每日利润明细（成本按收入占比分摊到日）"""
+    """含产品成本的单 SKU 每日利润明细（成本按收入占比分摊到日）"""
     if date_to is None:
         date_to = date.today()
     if date_from is None:
@@ -392,24 +322,18 @@ def real_profit_sku_daily(
 
     total_revenue = sum(g["revenue"] for g in daily.values())
 
-    # ── 2. 采购单价 + 头程单价 + 汇率 ──
-    offer_map = _get_offer_id_map(db, [sku_id])
-    offer_id = offer_map.get(sku_id)
-    purchase_unit = _get_purchase_unit_prices(pg, [offer_id] if offer_id else [])
-    first_leg_unit = _get_first_leg_unit_costs(db, [sku_id])
+    # ── 2. 产品成本(¥) + 汇率 ──
+    product_cost_map = _get_product_cost_rmb(db, [sku_id])
     exchange_rates = _get_exchange_rates(db, [sku_id])
 
-    p_cost = purchase_unit.get(offer_id, 0.0) if offer_id else 0.0
-    fl_cost = first_leg_unit.get(sku_id, 0.0)
+    p_cost = product_cost_map.get(sku_id, 0.0)
     rate = exchange_rates.get(sku_id, DEFAULT_EXCHANGE_RATE)
     units = _get_sku_ordered_units(db, store_id, date_from, date_to).get(sku_id, 0)
 
-    has_purchase = p_cost > 0
-    has_first_leg = fl_cost > 0
+    has_product_cost = p_cost > 0
 
-    # 采购/头程总成本（₽）= 单价 × 销量 × 汇率
-    total_purchase_rub = p_cost * units * rate if has_purchase else 0.0
-    total_first_leg_rub = fl_cost * units * rate if has_first_leg else 0.0
+    # 产品总成本（₽）= 单件成本 ¥ × 销量 × 汇率
+    total_product_rub = p_cost * units * rate if has_product_cost else 0.0
 
     # ── 3. 组装结果（成本按收入占比分摊到日）──
     result_list = []
@@ -421,12 +345,11 @@ def real_profit_sku_daily(
         net_profit = g["revenue"] + total_costs
         profit_margin = (net_profit / g["revenue"] * 100) if g["revenue"] > 0 else 0.0
 
-        # 按收入占比分摊采购/头程成本
+        # 按收入占比分摊产品成本
         share = g["revenue"] / total_revenue if total_revenue > 0 else 0.0
-        daily_purchase = total_purchase_rub * share
-        daily_first_leg = total_first_leg_rub * share
+        daily_product = total_product_rub * share
 
-        real_net = net_profit - daily_purchase - daily_first_leg
+        real_net = net_profit - daily_product
         real_margin = (real_net / g["revenue"] * 100) if g["revenue"] > 0 else 0.0
 
         result_list.append(RealProfitDailyItem(
@@ -442,10 +365,8 @@ def real_profit_sku_daily(
             promotion_costs=round(abs(g["promotion_costs"]), 2),
             returns_amount=round(abs(g["returns_amount"]), 2),
             other_costs=round(abs(g["other_costs"]), 2),
-            purchase_cost_rub=round(daily_purchase, 2),
-            first_leg_cost_rub=round(daily_first_leg, 2),
-            has_purchase_cost=has_purchase,
-            has_first_leg_cost=has_first_leg,
+            product_cost_rub=round(daily_product, 2),
+            has_product_cost=has_product_cost,
             real_net_profit=round(real_net, 2),
             real_profit_margin=round(real_margin, 2),
         ))

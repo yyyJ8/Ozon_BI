@@ -109,13 +109,9 @@ const pieItems = computed<PieItem[]>(() => {
     const val = (overview.value as unknown as Record<string, number>)[mapping[cat.key]] || 0
     if (val > 0) raw.push({ name: cat.name, value: val, color: cat.color })
   }
-  // 如有采购成本，追加
-  if (overview.value.total_purchase_cost_rub > 0) {
-    raw.push({ name: '采购成本', value: overview.value.total_purchase_cost_rub, color: '#ff6b6b' })
-  }
-  // 如有头程费用，追加
-  if (overview.value.total_first_leg_cost_rub > 0) {
-    raw.push({ name: '头程费用', value: overview.value.total_first_leg_cost_rub, color: '#8e44ad' })
+  // 如有产品成本（含采购+送仓+头程），追加
+  if (overview.value.total_product_cost_rub > 0) {
+    raw.push({ name: '产品成本', value: overview.value.total_product_cost_rub, color: '#ff6b6b' })
   }
   return raw
 })
@@ -360,7 +356,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
           <div style="text-align: center;">
             <div style="color: #909399; font-size: 13px; margin-bottom: 8px;">
               真实净利
-              <el-tooltip content="平台毛利 − 采购成本 − 头程费用" placement="top">
+              <el-tooltip content="平台毛利 − 产品成本（¥ 单件 × 销量 × 汇率13）。单件成本含采购+送仓+头程，估算值，与公司财务可能有偏差，仅供经营参考。" placement="top">
                 <span style="font-size:11px;color:#c0c4cc;">ⓘ</span>
               </el-tooltip>
             </div>
@@ -403,7 +399,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
       </el-col>
     </el-row>
 
-    <!-- 费用构成 + 采购成本信息 -->
+    <!-- 费用构成 + 产品成本信息 -->
     <div v-if="overview" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 10px 4px 0;">
       <span style="font-size: 12px; color: #909399;">Ozon费用:</span>
       <el-tag size="small" type="info">佣金 ₽{{ formatMoneyShort(overview.total_commissions) }}</el-tag>
@@ -414,24 +410,33 @@ watch(() => selectedStoreId.value, () => { loadData() })
       <el-tag size="small" type="info">退货 ₽{{ formatMoneyShort(overview.total_returns) }}</el-tag>
       <el-tag size="small" type="info">其他 ₽{{ formatMoneyShort(overview.total_other) }}</el-tag>
       <span style="color:#dcdfe6;margin:0 4px;">|</span>
-      <span style="font-size:12px;color:#ff6b6b;">采购成本:</span>
+      <span style="font-size:12px;color:#ff6b6b;">产品成本:</span>
       <el-tag size="small" type="danger" effect="plain">
-        ¥ {{ overview.total_purchase_cost_rmb.toFixed(2) }}
-        ≈ ₽ {{ formatMoneyShort(overview.total_purchase_cost_rub) }}
+        ¥ {{ overview.total_product_cost_rmb.toFixed(2) }}
+        ≈ ₽ {{ formatMoneyShort(overview.total_product_cost_rub) }}
       </el-tag>
       <el-tag size="small" type="warning" effect="plain">
-        {{ overview.sku_with_purchase_cost }}/{{ overview.sku_count }} SKU 有成本
-      </el-tag>
-      <span style="color:#dcdfe6;margin:0 4px;">|</span>
-      <span style="font-size:12px;color:#8e44ad;">头程费用:</span>
-      <el-tag size="small" type="warning" effect="plain">
-        ¥ {{ overview.total_first_leg_cost_rmb.toFixed(2) }}
-        ≈ ₽ {{ formatMoneyShort(overview.total_first_leg_cost_rub) }}
-      </el-tag>
-      <el-tag size="small" type="info" effect="plain">
-        {{ overview.sku_with_first_leg_cost }}/{{ overview.sku_count }} SKU 有头程
+        {{ overview.sku_with_product_cost }}/{{ overview.sku_count }} SKU 有成本
       </el-tag>
     </div>
+
+    <!-- 偏差说明 -->
+    <el-alert
+      v-if="overview"
+      style="margin-top: 10px;"
+      type="warning"
+      :closable="false"
+      show-icon
+    >
+      <template #title>
+        <span style="font-size: 12px;">
+          注：下方「真实净利 / 真实利润率」为<span style="font-weight:600;">估算值</span>
+          （单件产品成本 ¥ 含采购+送仓+头程×1.06，× 销量 × 汇率13）。因产品成本为估算、汇率为固定值、
+          销量与财务回款口径略有差异，<span style="font-weight:600;">与公司财务实际结算可能存在偏差</span>，
+          仅供经营参考，对账请以公司财务为准。
+        </span>
+      </template>
+    </el-alert>
 
     <!-- 利润趋势图 -->
     <el-card shadow="hover" style="margin-top: 16px;">
@@ -589,22 +594,21 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="采购单价" width="85" align="right" sortable
-          :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.purchase_cost_rmb - b.purchase_cost_rmb">
+        <el-table-column label="产品成本 ¥" width="95" align="right" sortable
+          :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.product_cost_rmb - b.product_cost_rmb">
           <template #default="{ row }">
-            <span v-if="row.has_purchase_cost" style="font-family:monospace;font-size:12px;color:#ff6b6b;">
-              {{ formatRmb(row.purchase_cost_rmb) }}
+            <span v-if="row.has_product_cost" style="font-family:monospace;font-size:12px;color:#ff6b6b;">
+              {{ formatRmb(row.product_cost_rmb) }}
             </span>
             <span v-else style="color:#c0c4cc;font-size:11px;">未填写</span>
           </template>
         </el-table-column>
-        <el-table-column label="头程单价" width="85" align="right" sortable
-          :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.first_leg_cost_rmb - b.first_leg_cost_rmb">
+        <el-table-column label="汇率" width="60" align="right">
           <template #default="{ row }">
-            <span v-if="row.has_first_leg_cost" style="font-family:monospace;font-size:12px;color:#8e44ad;">
-              {{ formatRmb(row.first_leg_cost_rmb) }}
+            <span v-if="row.has_product_cost" style="font-family:monospace;font-size:12px;color:#909399;">
+              {{ row.exchange_rate.toFixed(1) }}
             </span>
-            <span v-else style="color:#c0c4cc;font-size:11px;">未填写</span>
+            <span v-else style="color:#c0c4cc;">—</span>
           </template>
         </el-table-column>
         <el-table-column label="真实净利" width="110" align="right" sortable
@@ -612,13 +616,13 @@ watch(() => selectedStoreId.value, () => { loadData() })
           <template #default="{ row }">
             <span
               :style="{
-                color: row.has_purchase_cost || row.has_first_leg_cost
+                color: row.has_product_cost
                   ? (row.real_net_profit >= 0 ? '#409eff' : '#f56c6c')
                   : '#c0c4cc',
                 fontWeight: 700, fontFamily: 'monospace',
               }"
             >
-              {{ (row.has_purchase_cost || row.has_first_leg_cost) ? '₽ ' + formatMoney(row.real_net_profit) : '—' }}
+              {{ row.has_product_cost ? '₽ ' + formatMoney(row.real_net_profit) : '—' }}
             </span>
           </template>
         </el-table-column>
@@ -626,7 +630,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.real_profit_margin - b.real_profit_margin">
           <template #default="{ row }">
             <el-tag
-              v-if="row.has_purchase_cost || row.has_first_leg_cost"
+              v-if="row.has_product_cost"
               :type="row.real_profit_margin >= 20 ? '' : row.real_profit_margin >= 0 ? 'warning' : 'danger'"
               size="small"
             >
@@ -679,15 +683,11 @@ watch(() => selectedStoreId.value, () => { loadData() })
                 ₽ {{ formatMoney(detailSku.net_profit) }}
               </strong>
             </div>
-            <div v-if="detailSku.has_purchase_cost">
-              <span style="color: #909399;">采购单价</span>
-              <strong style="color: #ff6b6b;">{{ formatRmb(detailSku.purchase_cost_rmb) }}</strong>
+            <div v-if="detailSku.has_product_cost">
+              <span style="color: #909399;">产品成本 ¥</span>
+              <strong style="color: #ff6b6b;">{{ formatRmb(detailSku.product_cost_rmb) }}</strong>
             </div>
-            <div v-if="detailSku.has_first_leg_cost">
-              <span style="color: #909399;">头程单价</span>
-              <strong style="color: #8e44ad;">{{ formatRmb(detailSku.first_leg_cost_rmb) }}</strong>
-            </div>
-            <div v-if="detailSku.has_purchase_cost || detailSku.has_first_leg_cost">
+            <div v-if="detailSku.has_product_cost">
               <span style="color: #909399;">真实净利</span>
               <strong :style="{ color: detailSku.real_net_profit >= 0 ? '#409eff' : '#f56c6c' }">
                 ₽ {{ formatMoney(detailSku.real_net_profit) }}
@@ -729,31 +729,23 @@ watch(() => selectedStoreId.value, () => { loadData() })
               </span>
             </template>
           </el-table-column>
-          <el-table-column v-if="detailSku?.has_purchase_cost" label="采购摊" width="80" align="right">
+          <el-table-column v-if="detailSku?.has_product_cost" label="成本摊" width="80" align="right">
             <template #default="{ row }">
-              <span v-if="row.has_purchase_cost" style="font-family:monospace;color:#ff6b6b;">
-                ₽ {{ formatMoney(row.purchase_cost_rub) }}
+              <span v-if="row.has_product_cost" style="font-family:monospace;color:#ff6b6b;">
+                ₽ {{ formatMoney(row.product_cost_rub) }}
               </span>
               <span v-else style="color:#c0c4cc;">—</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="detailSku?.has_first_leg_cost" label="头程摊" width="80" align="right">
-            <template #default="{ row }">
-              <span v-if="row.has_first_leg_cost" style="font-family:monospace;color:#8e44ad;">
-                ₽ {{ formatMoney(row.first_leg_cost_rub) }}
-              </span>
-              <span v-else style="color:#c0c4cc;">—</span>
-            </template>
-          </el-table-column>
-          <el-table-column v-if="detailSku?.has_purchase_cost || detailSku?.has_first_leg_cost" prop="real_net_profit" label="真实净利" width="100" align="right" sortable>
+          <el-table-column v-if="detailSku?.has_product_cost" prop="real_net_profit" label="真实净利" width="100" align="right" sortable>
             <template #default="{ row }">
               <span
                 :style="{
-                  color: (row.has_purchase_cost || row.has_first_leg_cost) ? (row.real_net_profit >= 0 ? '#409eff' : '#f56c6c') : '#c0c4cc',
+                  color: (row.has_product_cost) ? (row.real_net_profit >= 0 ? '#409eff' : '#f56c6c') : '#c0c4cc',
                   fontWeight: 600, fontFamily: 'monospace',
                 }"
               >
-                {{ (row.has_purchase_cost || row.has_first_leg_cost) ? '₽ ' + formatMoney(row.real_net_profit) : '—' }}
+                {{ (row.has_product_cost) ? '₽ ' + formatMoney(row.real_net_profit) : '—' }}
               </span>
             </template>
           </el-table-column>
