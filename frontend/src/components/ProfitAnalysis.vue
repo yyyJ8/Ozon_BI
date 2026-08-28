@@ -71,6 +71,20 @@ function formatRmb(v: number): string {
   return '¥ ' + v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// 产品成本：单件 + 全部（¥），以及全部折算 ₽，用于单元格/tooltip
+function costCell(row: RealProfitSkuItem): string {
+  const unit = row.product_cost_rmb
+  const total = unit * row.ordered_units
+  return `${formatRmb(unit)} / ${formatRmb(total)}`
+}
+
+function costTip(row: RealProfitSkuItem): string {
+  const unit = row.product_cost_rmb
+  const total = unit * row.ordered_units
+  const rub = total * row.exchange_rate
+  return `单件成本 ${formatRmb(unit)}；全部成本 ${formatRmb(total)}\n≈ ₽ ${rub.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 function pctOfRevenue(cost: number, revenue: number): string {
   if (!revenue || revenue === 0) return '—'
   return (Math.abs(cost) / revenue * 100).toFixed(1) + '%'
@@ -555,11 +569,6 @@ watch(() => selectedStoreId.value, () => { loadData() })
         <el-table-column label="货号" width="130" show-overflow-tooltip>
           <template #default="{ row }">{{ row.offer_id || '—' }}</template>
         </el-table-column>
-        <el-table-column label="商品名" min-width="110" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span style="font-size: 12px">{{ row.name || '—' }}</span>
-          </template>
-        </el-table-column>
         <el-table-column label="销量" width="55" align="right">
           <template #default="{ row }">{{ row.ordered_units }}</template>
         </el-table-column>
@@ -594,12 +603,17 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="产品成本 ¥" width="95" align="right" sortable
+        <el-table-column label="产品成本 ¥(单件/全部)" width="150" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.product_cost_rmb - b.product_cost_rmb">
           <template #default="{ row }">
-            <span v-if="row.has_product_cost" style="font-family:monospace;font-size:12px;color:#ff6b6b;">
-              {{ formatRmb(row.product_cost_rmb) }}
-            </span>
+            <el-tooltip v-if="row.has_product_cost" :content="costTip(row)" placement="top">
+              <span
+                style="font-family:monospace;font-size:12px;color:#ff6b6b;white-space:nowrap;"
+                :title="costTip(row)"
+              >
+                {{ costCell(row) }}
+              </span>
+            </el-tooltip>
             <span v-else style="color:#c0c4cc;font-size:11px;">未填写</span>
           </template>
         </el-table-column>
