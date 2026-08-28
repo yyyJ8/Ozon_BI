@@ -566,7 +566,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
         <el-table-column label="SKU" width="105">
           <template #default="{ row }">{{ row.sku_id }}</template>
         </el-table-column>
-        <el-table-column label="货号" width="130" show-overflow-tooltip>
+        <el-table-column label="货号" min-width="130" show-overflow-tooltip>
           <template #default="{ row }">{{ row.offer_id || '—' }}</template>
         </el-table-column>
         <el-table-column label="销量" width="55" align="right">
@@ -582,7 +582,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="收入" width="100" align="right" sortable
+        <el-table-column label="收入" min-width="100" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.revenue - b.revenue">
           <template #default="{ row }">
             <span :style="{ color: row.revenue > 0 ? '#303133' : '#c0c4cc', fontFamily: 'monospace' }">
@@ -590,7 +590,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="平台净利" width="100" align="right" sortable
+        <el-table-column label="平台净利" min-width="100" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.net_profit - b.net_profit">
           <template #default="{ row }">
             <span
@@ -603,7 +603,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="产品成本 ¥(单件/全部)" width="150" align="right" sortable
+        <el-table-column label="产品成本 ¥(单件/全部)" min-width="150" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.product_cost_rmb - b.product_cost_rmb">
           <template #default="{ row }">
             <el-tooltip v-if="row.has_product_cost" :content="costTip(row)" placement="top">
@@ -625,7 +625,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             <span v-else style="color:#c0c4cc;">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="真实净利" width="110" align="right" sortable
+        <el-table-column label="真实净利" min-width="110" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.real_net_profit - b.real_net_profit">
           <template #default="{ row }">
             <span
@@ -640,7 +640,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="真实利润率" width="85" align="right" sortable
+        <el-table-column label="真实利润率" min-width="85" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.real_profit_margin - b.real_profit_margin">
           <template #default="{ row }">
             <el-tag
@@ -653,7 +653,7 @@ watch(() => selectedStoreId.value, () => { loadData() })
             <span v-else style="color: #c0c4cc; font-size: 11px;">缺成本</span>
           </template>
         </el-table-column>
-        <el-table-column label="平台利润率" width="80" align="right" sortable
+        <el-table-column label="平台利润率" min-width="80" align="right" sortable
           :sort-method="(a: RealProfitSkuItem, b: RealProfitSkuItem) => a.profit_margin - b.profit_margin">
           <template #default="{ row }">
             <el-tag
