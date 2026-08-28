@@ -9,8 +9,8 @@
   commissions      ← OperationAgentDeliveredToCustomer.sale_commission
   logistics_costs  ← services JSON 中含 "Logistic" 的条目（Ozon API 不填充 delivery_charge 字段）
   storage_fees     ← TemporaryStorage amount
-  advertising      ← ad_sku_daily_stats.spend + SEARCH_PROMO revenue 分摊
-  promotion_costs  ← OperationPromotionWithCostPerOrder
+  advertising      ← ad_sku_daily_stats.spend（SKU 活动，按点击付费）
+  promotion_costs  ← OperationPromotionWithCostPerOrder（按订单付费）
   returns_amount   ← OperationItemReturn / ClientReturnAgentOperation
   other_costs      ← 剩余负 amount
 """
@@ -23,6 +23,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.models import FinanceTransaction, Posting, SkuDailySummary
+from app.services.ad_spend_adjustment import apply_adjustments, load_active_adjustments
 
 
 def _parse_amount(val) -> Decimal:
@@ -274,52 +275,13 @@ def build_costs(db: Session, start_date: date, end_date: date, store_id: int) ->
 
     logger.info(f"ad_sku_daily_stats 广告费: {len(ad_rows)} 个组合")
 
-    # 4b: SEARCH_PROMO 按当日 revenue 占比分摊
-    search_promo_rows = db.execute(text("""
-        SELECT ads.stat_date, SUM(ads.spend) AS total_spend
-        FROM ozon.ad_daily_stats ads
-        JOIN ozon.ad_campaigns ac ON ads.campaign_id = ac.campaign_id AND ads.store_id = ac.store_id
-        WHERE ads.store_id = :store_id
-          AND ads.stat_date BETWEEN :from_date AND :to_date
-          AND ac.campaign_type = 'SEARCH_PROMO'
-        GROUP BY ads.stat_date
-    """), {"store_id": store_id, "from_date": start_date, "to_date": end_date}).fetchall()
+    # 4b 已移除: SEARCH_PROMO 按单付费统一走 promotion_costs
+    # （OperationPromotionWithCostPerOrder，Finance API 实际结算口径 + posting 级归因），
+    # 不再按 revenue 分摊进 advertising，避免同一笔钱重复计费。
 
-    if search_promo_rows:
-        daily_spend = {r.stat_date: Decimal(str(r.total_spend or 0)) for r in search_promo_rows}
-        revenue_rows = db.execute(text("""
-            SELECT "date", sku_id, revenue
-            FROM ozon.sku_daily_summary
-            WHERE store_id = :store_id
-              AND "date" BETWEEN :from_date AND :to_date
-              AND revenue > 0
-        """), {"store_id": store_id, "from_date": start_date, "to_date": end_date}).fetchall()
-
-        daily_revenue: dict[date, dict[int, Decimal]] = {}
-        daily_revenue_total: dict[date, Decimal] = {}
-        for rdate, sid, rev in revenue_rows:
-            rev_d = Decimal(str(rev or 0))
-            if rdate not in daily_revenue:
-                daily_revenue[rdate] = {}
-            daily_revenue[rdate][sid] = rev_d
-            daily_revenue_total[rdate] = daily_revenue_total.get(rdate, Decimal("0")) + rev_d
-
-        promo_attributed = 0
-        for rdate, total_spend in daily_spend.items():
-            if total_spend == 0:
-                continue
-            rev_map = daily_revenue.get(rdate, {})
-            day_total_rev = daily_revenue_total.get(rdate, Decimal("0"))
-            if day_total_rev <= 0:
-                continue
-            for sid, rev in rev_map.items():
-                share = rev / day_total_rev
-                attributed = total_spend * share
-                g = _get_group((rdate, sid))
-                g["advertising"] += attributed * -1
-                promo_attributed += 1
-
-        logger.info(f"SEARCH_PROMO 分摊: {len(daily_spend)} 天, {promo_attributed} 个组合")
+    # 4c: 广告花费归因调整（A→B 转移规则，实时应用）
+    adjustments = load_active_adjustments(db, store_id)
+    apply_adjustments(groups, adjustments, _get_group)
 
     # ── 5. 写入 sku_daily_summary ──
     updated = 0

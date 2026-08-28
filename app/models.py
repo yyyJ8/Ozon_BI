@@ -626,3 +626,29 @@ class ReplenishmentConfig(Base):
     logistics_days: Mapped[int] = mapped_column(Integer, default=45, comment="物流天数")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")
+
+
+# ============================================================
+# AdSpendAdjustment — 广告花费归因调整规则
+# ============================================================
+class AdSpendAdjustment(Base):
+    """广告花费归因调整 — 把 from_sku 的部分广告花费转移到 to_sku
+    （只存规则，不落调整后数据；原始 spend 永不动，规则随时可改可回滚）"""
+    __tablename__ = "ad_spend_adjustments"
+    __table_args__ = {"schema": "ozon"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="规则 ID")
+    store_id: Mapped[int] = mapped_column(Integer, nullable=False, comment="店铺 ID")
+    from_sku_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="转出方 SKU（广告入口，花费被高估）")
+    to_sku_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="转入方 SKU（实际成交，花费被低估）")
+    ratio: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(5, 2), comment="转移比例 %（如 50=转移50%），与 fixed_amount 二选一")
+    fixed_amount: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), comment="固定转移金额 RUB（按日），与 ratio 二选一")
+    campaign_id: Mapped[Optional[str]] = mapped_column(
+        String(20), comment="可选：仅作用于某活动；NULL=全局（当前计算仅支持全局）")
+    date_from: Mapped[Optional[date]] = mapped_column(Date, comment="生效起始日（含）")
+    date_to: Mapped[Optional[date]] = mapped_column(Date, comment="生效结束日（含）")
+    note: Mapped[Optional[str]] = mapped_column(Text, comment="备注")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")

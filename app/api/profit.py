@@ -22,6 +22,7 @@ from app.schemas.profit import (
     ProfitSkuItem,
     ProfitDailyItem,
 )
+from app.services.ad_spend_adjustment import apply_adjustments, load_active_adjustments
 
 router = APIRouter(prefix="/profit", tags=["profit"])
 
@@ -267,28 +268,14 @@ def _aggregate_profit(db: Session, store_id: int, date_from: date, date_to: date
         g = _get_group(key)
         g["advertising"] -= spend  # 广告费为负
 
-    # 6b: SEARCH_PROMO 按日 revenue 占比分摊
-    sp_rows = db.execute(text(f"""
-        SELECT ads.stat_date, SUM(ads.spend) AS total_spend
-        FROM ozon.ad_daily_stats ads
-        JOIN ozon.ad_campaigns ac ON ads.campaign_id = ac.campaign_id AND ads.store_id = ac.store_id
-        WHERE ads.store_id = :store_id
-          AND ads.stat_date BETWEEN :date_from AND :date_to_excl - INTERVAL '1 day'
-          AND ac.campaign_type = 'SEARCH_PROMO'
-        GROUP BY ads.stat_date
-    """), params).fetchall()
+    # 6b 已移除: SEARCH_PROMO 按单付费统一走 promotion_costs
+    # （OperationPromotionWithCostPerOrder，Finance API 实际结算口径 + posting 级归因），
+    # 不再按 revenue 分摊进 advertising，避免同一笔钱重复计费。
 
-    if sp_rows:
-        for sp_row in sp_rows:
-            stat_date, spend = sp_row[0], _to_float(sp_row[1])
-            if spend == 0:
-                continue
-            day_groups = {k: v for k, v in groups.items() if k[0] == stat_date and v["revenue"] > 0}
-            day_total_rev = sum(v["revenue"] for v in day_groups.values())
-            if day_total_rev > 0:
-                for k, v in day_groups.items():
-                    share = v["revenue"] / day_total_rev
-                    v["advertising"] -= spend * share
+    # 6c: 广告花费归因调整（A→B 转移规则，实时应用；store_id=0 跨店聚合时不应用）
+    if store_id != 0:
+        adjustments = load_active_adjustments(db, store_id)
+        apply_adjustments(groups, adjustments, _get_group)
 
     # ── 7. 计算 net_profit, profit_margin ──
     for key, g in groups.items():
