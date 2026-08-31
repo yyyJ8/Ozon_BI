@@ -82,7 +82,11 @@ def _get_exchange_rates(db: Session, sku_ids: list[int]) -> dict[int, float]:
 
 
 def _get_sku_ordered_units(db: Session, store_id: int, date_from: date, date_to: date) -> dict[int, int]:
-    """按 SKU 聚合下单件数（postings.created_at 维度）"""
+    """
+    按 SKU 聚合"已成交"件数（postings.created_at 维度）。
+    只统计 status='delivered'（已交付/已结算）的单，避免把取消/在途未结算的单算进销量，
+    从而与 finance_transactions 的财务回款口径对齐，防止产品成本被高估。
+    """
     store_clause = "p.store_id = :store_id AND " if store_id != 0 else ""
     params = {"store_id": store_id, "date_from": date_from, "date_to_excl": date_to + timedelta(days=1)}
     rows = db.execute(text(f"""
@@ -90,6 +94,7 @@ def _get_sku_ordered_units(db: Session, store_id: int, date_from: date, date_to:
         FROM ozon.postings p,
              jsonb_array_elements(p.products) AS prod
         WHERE {store_clause}p.created_at >= :date_from AND p.created_at < :date_to_excl
+          AND p.status = 'delivered'
         GROUP BY (prod->>'sku')::bigint
     """), params).fetchall()
     return {r[0]: int(r[1] or 0) for r in rows}
