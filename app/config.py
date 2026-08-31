@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # ── 钉钉机器人通知（为空则不发送）──
     dingtalk_webhook_url: str = ""
     dingtalk_secret: str = ""
+    # 通知时 @ 的手机号（逗号分隔，可空；必须是钉钉注册手机号）
+    dingtalk_at_mobiles: str = ""
 
     @property
     def database_url(self) -> str:

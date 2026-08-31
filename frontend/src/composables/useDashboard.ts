@@ -58,6 +58,7 @@ export function useDashboard() {
       commission_rate: number | null
       stock_present: number
       stock_reserved: number
+      stock_month_start: number | null
       day_count: number
     }>()
 
@@ -85,6 +86,7 @@ export function useDashboard() {
         commission_rate: p.commission_fbo_pct != null ? Number(p.commission_fbo_pct) * 100 : null,
         stock_present: p.stock_present,
         stock_reserved: p.stock_reserved,
+        stock_month_start: p.stock_month_start ?? null,
         day_count: 0,
       })
     }

@@ -19,3 +19,4 @@ class ProductItem(BaseModel):
     commission_fbo_pct: Optional[Decimal] = None
     stock_present: int = 0
     stock_reserved: int = 0
+    stock_month_start: Optional[int] = None  # 月初库存（当月1号快照，取不到则为空）

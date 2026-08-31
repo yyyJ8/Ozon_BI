@@ -15,6 +15,7 @@ export interface Product {
   commission_fbo_pct: number | null
   stock_present: number
   stock_reserved: number
+  stock_month_start: number | null
 }
 
 export interface SummaryRow {
@@ -109,6 +110,7 @@ export interface ProductSummary {
   commission_rate: number | null
   stock_present: number
   stock_reserved: number
+  stock_month_start: number | null  // 月初库存（当月1号快照，取不到为 null）
   day_count: number
 }
 

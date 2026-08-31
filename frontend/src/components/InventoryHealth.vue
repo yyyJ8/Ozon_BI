@@ -194,6 +194,7 @@ interface InventoryItem {
   name: string
   primary_image: string | null
   stock_present: number
+  stock_month_start: number | null
   actual_sales: number
   status: 'danger' | 'warning' | 'success'
   status_label: string
@@ -225,6 +226,7 @@ const items = computed<InventoryItem[]>(() => {
       return {
         sku_id: p.sku_id, offer_id: p.offer_id, name: p.name,
         primary_image: p.primary_image, stock_present: p.stock_present,
+        stock_month_start: p.stock_month_start ?? null,
         actual_sales: actualSalesMap.value.get(p.sku_id) ?? 0,
         status, status_label,
         available_days: rp?.available_days ?? null,
@@ -440,6 +442,17 @@ function statusTagType(s: string) { return s === 'danger' ? 'danger' : s === 'wa
         <el-table-column prop="stock_present" label="现有库存" width="80" align="right" sortable>
           <template #default="{ row }">
             <span :style="{ color: row.stock_present <= 0 ? '#f56c6c' : row.stock_present < 10 ? '#e6a23c' : '#303133', fontWeight: row.stock_present <= 0 ? 700 : 400 }">{{ row.stock_present }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="stock_month_start" label="月初库存" width="80" align="right" sortable>
+          <template #header>
+            <el-tooltip content="当月1号的每日快照库存（莫斯科日口径）；该SKU月初无快照则显示 —" placement="top">
+              <span>月初库存</span>
+            </el-tooltip>
+          </template>
+          <template #default="{ row }">
+            <span v-if="row.stock_month_start === null">—</span>
+            <span v-else>{{ row.stock_month_start }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="actual_sales" label="实际成交" width="80" align="right" sortable />

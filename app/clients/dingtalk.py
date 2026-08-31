@@ -12,6 +12,7 @@ import hmac
 import threading
 import time
 from datetime import date, datetime, timedelta, timezone
+from typing import Optional
 from urllib.parse import quote_plus
 
 import httpx
@@ -34,8 +35,11 @@ def _sign(timestamp_ms: int) -> str:
     return quote_plus(base64.b64encode(hmac_code))
 
 
-def send_dingtalk(text: str) -> bool:
-    """发送文本消息到钉钉群（同步）。未配置 webhook 时返回 False，不抛异常。"""
+def send_dingtalk(text: str, at_mobiles: Optional[list[str]] = None) -> bool:
+    """发送文本消息到钉钉群（同步）。未配置 webhook 时返回 False，不抛异常。
+
+    at_mobiles: @ 的手机号列表（钉钉按手机号匹配 @人）
+    """
     url = (settings.dingtalk_webhook_url or "").strip()
     if not url:
         logger.debug("[钉钉] webhook 未配置，跳过通知")
@@ -48,6 +52,10 @@ def send_dingtalk(text: str) -> bool:
         url = f"{url}{sep}timestamp={timestamp}&sign={sign}"
 
     payload = {"msgtype": "text", "text": {"content": text}}
+    at_list = [m.strip() for m in (at_mobiles or []) if m.strip()]
+    if at_list:
+        payload["text"]["content"] = text + "".join(f" @{m}" for m in at_list)
+        payload["at"] = {"atMobiles": at_list}
     try:
         resp = httpx.post(url, json=payload, timeout=5)
         data = resp.json()
@@ -60,9 +68,17 @@ def send_dingtalk(text: str) -> bool:
     return False
 
 
-def send_dingtalk_async(text: str):
+def send_dingtalk_async(text: str, at_mobiles: Optional[list[str]] = None):
     """后台线程发送，不阻塞业务请求"""
-    threading.Thread(target=send_dingtalk, args=(text,), daemon=True).start()
+    threading.Thread(
+        target=send_dingtalk, args=(text,), kwargs={"at_mobiles": at_mobiles}, daemon=True
+    ).start()
+
+
+def _at_mobiles() -> list[str]:
+    """从 .env 读取通知时 @ 的手机号列表"""
+    raw = (settings.dingtalk_at_mobiles or "").strip()
+    return [m.strip() for m in raw.split(",") if m.strip()]
 
 
 def notify_received_shipment(pr_no, sku, product_name, receiving_date):
@@ -78,4 +94,4 @@ def notify_received_shipment(pr_no, sku, product_name, receiving_date):
         rd = receiving_date.strftime("%Y-%m-%d") if isinstance(receiving_date, date) else str(receiving_date)
         lines.append(f"收货时间：{rd}")
     lines.append(f"通知时间：{now.strftime('%Y-%m-%d %H:%M:%S')}")
-    send_dingtalk_async("\n".join(lines))
+    send_dingtalk_async("\n".join(lines), at_mobiles=_at_mobiles())
